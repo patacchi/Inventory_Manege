@@ -3,6 +3,7 @@ SMTL4.csr
 PrivateKey.key
 Sqlite3Demo.bas
 *.laccdb
+*.bak
 ~$*
 TempDB/
 #/x64/
