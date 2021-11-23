@@ -3,7 +3,7 @@
 *.frm diff=sjis
 #*.frx diff=sjis
 /.gitignore merge=ours
-#/bin/dbtest.xlsm merge=ours
+/bin/IE_Comunicate_Module_Rep.xlsm merge=ours
 *.xlsm filter=lfs diff=lfs merge=lfs -text
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.xlsx filter=lfs diff=lfs merge=lfs -text
