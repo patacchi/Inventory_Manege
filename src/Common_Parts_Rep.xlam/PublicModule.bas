@@ -1,6 +1,5 @@
 Attribute VB_Name = "PublicModule"
 Option Explicit
-'Option Base 1
 'éQè∆ê›íË
 'Microsoft AciteX Data Objects 2.8 Library      %ProgramFiles(x86)%\Common Files\System\msado28.tlb
 'Microsoft ADO Ext. 6.0 for DDL and Security    %ProgramFiles(x86)%\Common Files\System\msadox.dll

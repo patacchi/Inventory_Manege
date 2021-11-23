@@ -1,5 +1,6 @@
 Attribute VB_Name = "modWinAPI"
 Option Explicit
+'U‚èU‚è‚É‚È‚Á‚Ä‚éWin32APIéŒ¾‚Í‚»‚Ì‚¤‚¿‚Ü‚Æ‚ß‚é—\’è
 '-----------------------------------------------------------------------------------------------------------------------
 'UNC‘Î‰‚Ì‚½‚ßAWin32APIg—p
 Public Declare PtrSafe Function SetCurrentDirectoryW Lib "kernel32" (ByVal lpPathName As LongPtr) As LongPtr

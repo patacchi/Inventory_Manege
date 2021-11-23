@@ -1,4 +1,5 @@
 Attribute VB_Name = "Windows_API"
+'‚»‚Ì‚¤‚¿Common_Parts‚É“‡—\’è
 '''Win32APIŠÖ˜A‚Ì’è‹`‚ğ‚Ü‚Æ‚ß‚é
 #If Win64 Then
     Public Declare PtrSafe Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hwnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, ByVal lParam As LongPtr) As Long

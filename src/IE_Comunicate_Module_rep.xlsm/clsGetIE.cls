@@ -19,10 +19,12 @@ Option Explicit
 '''Microsoft HTML Object Libraly
 Private Const START_ROW_DEFAULT As Long = 6                                 'シート書き出しの際のデフォルトスタート行
 Private Const START_COLUMN_DEFAULT As Long = 2                              'シート書き出しのデフォルトスタート列
+Private Const TOP_DOC_CHR As String = "t"                               '結果格納用Dictionaryのトップフレームの文字列
 'IE接続に関するメンバ変数
 Private IEObject As InternetExplorer                                        'IEオブジェクト
 Private strURL As String                                                    'IEで開くURLを保持するメンバ変数
 Private isVisible As Boolean                                                'IE画面を表示するかどうか、Trueで表示
+Private dicReturnHTMLDocs As Dictionary                                     '各フレーム毎にHTML Doumentを入れるkeyはフレーム番号(t001・・・),valueはHTML Document
 Private tableRow As HTMLTableRow                                            'テーブルの<tr>の内容、行情報
 Private tableData As HTMLTableCell                                          'テーブルの<td>の内容、個別のデータ
 'シート書き出しの際に使用するメンバ変数
@@ -67,6 +69,7 @@ Property Let shRow(longargRow As Long)
     End If
 End Property
 'ieObject 値を設定するのに必要かも
+'ieObjectを返す
 Property Get IEInstance() As InternetExplorer
     Set IEInstance = IEObject
     Exit Property
@@ -77,6 +80,16 @@ Property Get Visible() As Boolean
 End Property
 Property Let Visible(boolargVisible As Boolean)
     isVisible = boolargVisible
+End Property
+'dicHTMLDocs
+'読み取り専用
+Property Get ResultHTMLDoc(Optional ByRef argstrURL As String = "") As Dictionary
+    '引数に与えられたURLを元にメンバ変数のdicReturnHTMLDocsを更新してみる
+    If dicReturnHTMLDocs Is Nothing Then
+        Set dicReturnHTMLDocs = New Dictionary
+    End If
+    SetHTMLDocbyURL (argstrURL)
+    Set ResultHTMLDoc = dicReturnHTMLDocs
 End Property
 'コンストラクタ
 '実際の処理内容はメソッドに分離する
@@ -98,7 +111,7 @@ Private Sub Initialize()
     longColumn = START_COLUMN_DEFAULT
     longRow = START_ROW_DEFAULT
 '    Set ieObject = New InternetExplorer
-    '
+    Set dicReturnHTMLDocs = New Dictionary
     Set IEObject = New InternetExplorerMedium
     isVisible = False
 End Sub
@@ -147,8 +160,7 @@ End Function
 '''--------------------------------------------------------------------------------------------------------------
 '''Parms
 '''strargURL        IEに渡すURLを指定
-Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
-    Dim localDic As Dictionary
+Public Sub SetHTMLDocbyURL(Optional strargURL As String)
     Dim longElementCount As Long
     Dim intFrameCount As Integer
     Dim topDoc As HTMLDocument
@@ -160,7 +172,6 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
     If strargURL = "" Then
         MsgBox "URLが指定されていません（必須）"
         DebugMsgWithTime "OpenIEwithURL: URL is empty"
-        Set ReturnHTMLDocbyURL = localDic
         GoTo CloseAndExit
     End If
     '指定のページを開く
@@ -195,52 +206,83 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
     End If
     If topDoc Is Nothing Then
         'もしこの時点でHTMLDocがNothingだったら何かあったと思うので、以後の処理は中止する
-        DebugMsgWithTime "ReturnHTMLDocbyURL: topHTMLDoc is nothing"
-        Set ReturnHTMLDocbyURL = localDic
+        DebugMsgWithTime "SetHTMLDocbyURL: topHTMLDoc is nothing"
+'        Set SetHTMLDocbyURL = localDic
     End If
     'この時点で親ドキュメントは読み込み完了しているので、Dictionaryに追加してやる
-    Set localDic = New Dictionary
-    localDic.Add "top", topDoc
-    intFrameCount = 0
-    If topDoc.frames.Length > 0 Then
+    AddResultdicHTML topDoc
+CloseAndExit:
+    Exit Sub
+End Sub
+'''Author Daisuke_Oota
+'''--------------------------------------------------------------------------------------------------------------
+'''Summary
+'''HTMLドキュメントを引数として、クラスのメンバ変数のDictionaryにフレーム階層文字列とHTMLDocumentを追加してやる
+'''子フレームが見つかった場合は再帰呼び出しを行う
+'''--------------------------------------------------------------------------------------------------------------
+'''Parms
+'''atrHTMLDoc   その時点でのフレームのトップドキュメント
+'''strFrameNum  フレームの階層文字列 トップはt（Const定義によ）その後は、framesのインデックス番号を階層ごとに追加してやる
+Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef strFrameNum As String = "")
+    If strFrameNum = "" Then
+        'フレーム階層文字が空白だったらtopドキュメントのはずなのでconstのトップど階層文字列を設定してやる
+        strFrameNum = TOP_DOC_CHR
+    Else
+        '階層文字に指定があった場合は、１階層下のトップなので、0を後ろに付加してやる
+        strFrameNum = strFrameNum & TOP_DOC_CHR
+    End If
+    'この時点でトップドキュメントをDictionaryに追加してやる
+    If Not argHTMLDoc Is Nothing Then
+        dicReturnHTMLDocs.Add strFrameNum, argHTMLDoc
+    End If
+    If argHTMLDoc.frames.Length > 0 Then
         'フレームが存在する場合
         Application.StatusBar = "フレームが存在するのでフレームの読み込み完了待機に入ります。"
-        For intFrameCount = 0 To topDoc.frames.Length - 1
-            'フレームの存在する数分ループ
+        'フレーム数分ループする
+        Dim intFrameCount As Integer
+        Dim frameDoc As HTMLDocument
+        For intFrameCount = 0 To argHTMLDoc.frames.Length - 1
+            'セキュリティの設定でドメインが違うと例外を吐くようなので、とりあえず無視する
             On Error Resume Next
-                Set frameDoc = topDoc.frames(intFrameCount).document
-                'エラー発生してたらデバッグウィンドウに表示してやる
-                If Err.Number <> 0 Then
-                    DebugMsgWithTime "ReturnHTMLDocbyURL code: " & Err.Number & " Description: " & Err.Description & " FrameCount: " & intFrameCount
-                End If
+            Set frameDoc = argHTMLDoc.frames(intFrameCount).document
+            'エラー発生してたらデバッグ出力する
+            If Err.Number <> 0 Then
+                DebugMsgWithTime "AddResultdicHTML code: " & Err.Number & " Description: " & Err.Description
+            End If
             On Error GoTo 0
             If Not frameDoc Is Nothing Then
-                'フレームの中身があるみたい
-                Application.StatusBar = intFrameCount & " 番目のフレーム読み込み完了待ち"
+                '中身がある場合は
+                Application.StatusBar = intFrameCount & " 番目のフレームの読み込み完了待ち"
                 'フレームの読み込み完了を待つ
                 Call IsReadComp(frameDoc)
-                'Dictionaryに追加してやる
-                localDic.Add intFrameCount, frameDoc
-                Set frameDoc = Nothing
+                'まずは階層文字に現在のフレームカウントを付加して、Dictionaryに追加してやる
+                Dim strlocalFrameNum As String
+                strlocalFrameNum = strFrameNum & CStr(intFrameCount)
+                If dicReturnHTMLDocs.Exists(strlocalFrameNum) Then
+                    '同じキーが存在してたら・・・んー・・？
+                    DebugMsgWithTime "AddResultdicHTML: same FrameNumStr available"
+                    'とりあえず処理中断
+                    Stop
+                End If
+                dicReturnHTMLDocs.Add strlocalFrameNum, frameDoc
+                'ここで現在のフレームに更に子フレームがあるか判断し
+                'ある場合は再帰呼び出しを行う
+                If frameDoc.frames.Length > 0 Then
+                    '更にフレームがあったので現在のフレーム階層文字列を引数として再帰呼び出し
+                    AddResultdicHTML frameDoc, strlocalFrameNum
+                End If
+            Else
+                '中身がない場合は、このループはもう何もしない
             End If
+            '次のループのために初期化してやる
+            Set frameDoc = Nothing
         Next intFrameCount
         Application.StatusBar = "フレーム読み込完了"
-        '結果を返してやる
-        Set ReturnHTMLDocbyURL = localDic
-        Application.StatusBar = "結果書き出し完了"
-        GoTo CloseAndExit
     Else
         'フレームが存在しない場合
-'        'topのみをDictionaryに入れて返す
-'        localDic.Add intFrameCount, topDoc
-        Set ReturnHTMLDocbyURL = localDic
-        GoTo CloseAndExit
-        Exit Function
+        '最初でトップドキュメントを追加してるので､ここでは何もしない
     End If
-CloseAndExit:
-    Set localDic = Nothing
-    Exit Function
-End Function
+End Sub
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary

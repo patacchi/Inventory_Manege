@@ -8,6 +8,8 @@ Sqlite3Demo.bas
 #DevelopブランチではxlsmバイナリファイルはGit管理外とする
 #bin/*.xl*
 bin/*_Local.xl*
+src/*/*.frx
+src/Common_Parts_Rep.xlam/*.frx
 #!bin/Common_Parts_Rep.xlam
 #!bin/IE_Comunicate_Module_Rep.xlsm
 *_Local.xl*/

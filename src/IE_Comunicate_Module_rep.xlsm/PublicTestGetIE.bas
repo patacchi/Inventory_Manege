@@ -12,6 +12,7 @@ Public Sub IETest()
     Set getIETest = New clsGetIE
     '在庫情報検索ページを設定
     getIETest.URL = zaikoSerchURL
+'    getIETest.URL = "file:///C:/Users/q3005sbe/AppData/Local/Rep/Backup/FrameSampe.htm"
     'Debug用
 '    isCollect = getIETest.OpenIEwithURL
     '指定したURLのHTML DocをDictionaryで受け取るテスト
@@ -20,20 +21,21 @@ Public Sub IETest()
     If longDebugFlag And DEBUG_SHOW_IE Then
         'IE表示フラグが立ってたのでプロパティ設定
         getIETest.Visible = True
-    End If
+End If
     On Error Resume Next
     Dim dicReturnHTMLDoc As Dictionary
-    Set dicReturnHTMLDoc = getIETest.ReturnHTMLDocbyURL
+    Set dicReturnHTMLDoc = getIETest.ResultHTMLDoc
     If Err.Number <> 0 Then
         'エラー発生してたらとりあえずここに来てみる
-        Stop
+        DebugMsgWithTime "IETest code: " & Err.Number & " Description: " & Err.Description
     End If
     SetZaikoSerch_TehaiCode getIETest, InputBox("手配コードを入力して下さい")
     Application.Wait 2
     '試しに検索ボタンをクリックしてみる
     getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
     Dim localHTMLDoc As HTMLDocument
-    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
+'    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
+    Set localHTMLDoc = dicReturnHTMLDoc("t10")
     Dim elementStrArray() As String
     elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
     Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
