@@ -5,8 +5,9 @@ Sqlite3Demo.bas
 *.laccdb
 *.bak
 ~$*
-#DevelopブランチではxlsmバイナリファイルはGit管理外とする
-bin/*.xl*
+#Binaryブランチでは、_Local以外のxl__ファイルも管理対象とする
+Developブランチではxlsm等のバイナリファイルはgit管理外です.txt
+#bin/*.xl*
 bin/*_Local.xl*
 *_Local.xl*/
 TempDB/
