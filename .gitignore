@@ -6,9 +6,10 @@ Sqlite3Demo.bas
 *.bak
 ~$*
 #DevelopブランチではxlsmバイナリファイルはGit管理外とする
-bin/*.xl*
+#bin/*.xl*
 bin/*_Local.xl*
-!bin/Common_Parts_Rep.xlam
+#!bin/Common_Parts_Rep.xlam
+#!bin/IE_Comunicate_Module_Rep.xlsm
 *_Local.xl*/
 TempDB/
 #/x64/
