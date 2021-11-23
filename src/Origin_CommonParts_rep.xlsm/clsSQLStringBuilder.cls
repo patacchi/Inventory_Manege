@@ -6,7 +6,7 @@ Attribute VB_Name = "clsSQLStringBuilder"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 'SQL文字操作（主に結合）のためのクラス
 '開始履歴、終了履歴を設定して、文字列連結は配列のJoinで行う方向
