@@ -5,8 +5,9 @@ Sqlite3Demo.bas
 *.laccdb
 *.bak
 ~$*
-bin/dbtest_CommonParts_Local.xlsm
-bin/dbtest_CommonParts_rep.xlsm
-bin/IE_Comunicate_Module_Local.xlsm
+#DevelopブランチではxlsmバイナリファイルはGit管理外とする
+bin/*.xl*
+bin/*_Local.xl*
+*_Local.xl*/
 TempDB/
 #/x64/

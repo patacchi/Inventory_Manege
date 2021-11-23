@@ -6,7 +6,7 @@ Attribute VB_Name = "clsADOHandle"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
+Attribute VB_Exposed = True
 Option Explicit
 '''ADODBによりDBを操作するクラス
 '2021_10_10 IE連携のために新規作成 Patacchi

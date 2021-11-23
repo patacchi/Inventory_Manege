@@ -130,7 +130,7 @@ Public Function OpenIEwithURL(Optional strargURL As String) As Boolean
     End If
     If strargURL = "" Then
         MsgBox "URLが指定されていません（必須）"
-        Debug.Print "OpenIEwithURL: URL is empty"
+        DebugMsgWithTime "OpenIEwithURL: URL is empty"
         OpenIEwithURL = False
         Exit Function
     End If
@@ -159,7 +159,7 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
     End If
     If strargURL = "" Then
         MsgBox "URLが指定されていません（必須）"
-        Debug.Print "OpenIEwithURL: URL is empty"
+        DebugMsgWithTime "OpenIEwithURL: URL is empty"
         Set ReturnHTMLDocbyURL = localDic
         GoTo CloseAndExit
     End If
@@ -182,7 +182,7 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
     'ここで、指定されていたURLとieobjectのLocationが違っていた場合は、ログイン画面にリダイレクトされてると思うので
     '一旦VisibleをTrueにしてやって、ログイン処理をしてもらう
     If strargURL <> IEObject.LocationURL Then
-        Debug.Print "URL不一致、リダイレクトされた可能性があります"
+        DebugMsgWithTime "URL不一致、リダイレクトされた可能性があります"
         '強制的にVisibleをTrueにする
         IEObject.Visible = True
         'ログイン処理完了したら元のページに戻るはずなので、ieobjectのLocationURLが指定されたものになるまで待機
@@ -195,7 +195,7 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
     End If
     If topDoc Is Nothing Then
         'もしこの時点でHTMLDocがNothingだったら何かあったと思うので、以後の処理は中止する
-        Debug.Print "ReturnHTMLDocbyURL: topHTMLDoc is nothing"
+        DebugMsgWithTime "ReturnHTMLDocbyURL: topHTMLDoc is nothing"
         Set ReturnHTMLDocbyURL = localDic
     End If
     'この時点で親ドキュメントは読み込み完了しているので、Dictionaryに追加してやる
@@ -211,7 +211,7 @@ Public Function ReturnHTMLDocbyURL(Optional strargURL As String) As Dictionary
                 Set frameDoc = topDoc.frames(intFrameCount).document
                 'エラー発生してたらデバッグウィンドウに表示してやる
                 If Err.Number <> 0 Then
-                    Debug.Print "ReturnHTMLDocbyURL code: " & Err.Number & " Description: " & Err.Description & " FrameCount: " & intFrameCount
+                    DebugMsgWithTime "ReturnHTMLDocbyURL code: " & Err.Number & " Description: " & Err.Description & " FrameCount: " & intFrameCount
                 End If
             On Error GoTo 0
             If Not frameDoc Is Nothing Then
@@ -271,7 +271,7 @@ End Function
 Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName As String, Optional argChildTagName As String = "") As String()
     '親タグの要素を取得する
     If (argHTMLDoc Is Nothing) Or (argTopTagName = "") Then
-        Debug.Print "getTextArrayByTagName HTMLDocument or TopTagName is empty"
+        DebugMsgWithTime "getTextArrayByTagName HTMLDocument or TopTagName is empty"
     End If
     Dim localarrString() As String
     On Error GoTo ErrorCatch
@@ -289,7 +289,7 @@ Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName 
     Dim longRowCount As Long
     longRowCount = 0
     For Each varElement In parentElement
-'        Debug.Print varElement.innerText
+'        DebugMsgWithTime varElement.innerText
         'ここで要素のTextをString配列に追加していってやる予定
         localarrString(longRowCount) = varElement.innerText
         longRowCount = longRowCount + 1
@@ -301,7 +301,7 @@ Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName 
     getTextArrayByTagName = localarrString
     Exit Function
 ErrorCatch:
-    Debug.Print "getTestArrayByTagNae code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "getTestArrayByTagNae code: " & Err.Number & " Description: " & Err.Description
     getTextArrayByTagName = localarrString
     Exit Function
 End Function
