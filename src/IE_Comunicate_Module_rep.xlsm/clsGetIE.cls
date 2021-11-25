@@ -30,6 +30,21 @@ Private tableData As HTMLTableCell                                          'ƒe
 'ƒV[ƒg‘‚«o‚µ‚ÌÛ‚Ég—p‚·‚éƒƒ“ƒo•Ï”
 Private longColumn As Long                                                  'ƒV[ƒg‘‚«o‚·Û‚Ì—ñ”Ô†
 Private longRow As Long                                                     'ƒV[ƒg‘‚«o‚·Û‚Ìs”Ô†
+'----------------------------------------------------------------------------------------------------------------
+'SaveAs‚Ì’è”’è‹`ƒXƒ^[ƒg
+'Sleep Default Time
+Private Const SLEEP_DEFAULT_MILLISEC As Long = 500                          'ƒ‹[ƒv‘Ò‚¿‚Ì•W€ƒ~ƒŠ•b
+Private Const WM_SYSCHAR As Long = &H106&                                   'PostMessage—pASystem Charactor ALTƒL[‰Ÿ‚µ‚½ó‘Ô‚ÌƒL[ƒƒbƒZ[ƒW
+Private Const NOTIFICATION_CLASS_NAME As String = "Frame Notification Bar"  'FindWindow—pA’Ê’mƒo[‚ÌƒNƒ‰ƒX–¼
+Private Const NOTIFICATION_SAVE_BUTTON_NAME As String = "•Û‘¶"              '’Ê’mƒo[‚Ì[•Û‘¶]ƒ{ƒ^ƒ“‚ÌName
+Private Const NOTIFICATION_TEXT As String = "’Ê’mƒo[‚ÌƒeƒLƒXƒg"            '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ÌName
+Private Const NOTIFICATION_CLOSE_BUTTON_NAME As String = "•Â‚¶‚é"           '’Ê’mƒo[‚Ì[•Â‚¶‚é]ƒ{ƒ^ƒ“‚ÌName
+Private Const ROLE_SYSTEM_BUTTONDROPDOWN = &H38&                            'ƒhƒƒbƒvƒ_ƒEƒ“ƒ{ƒ^ƒ“
+Private Const CONTEXT_MENU_CLASS_NAME As String = "#32768"                  'ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[‚ÌƒNƒ‰ƒX–¼A–¼‘O‚ğ•t‚¯‚Ä•Û‘¶‚Ìƒhƒƒbƒvƒ_ƒEƒ“‚µ‚½æ‚Ì‚ª‚±‚ê
+Private Const SAVEASDIALOG_NAME As String = "–¼‘O‚ğ•t‚¯‚Ä•Û‘¶"              '–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚ÌName
+Private Const SAVEASDIALOG_FILE_NAME As String = "ƒtƒ@ƒCƒ‹–¼:"              'ƒtƒ@ƒCƒ‹–¼ƒRƒ“ƒ{ƒ{ƒbƒNƒX‚ÌName
+Private Const SAVEASDIALOG_SAVEAS_BUTTON_NAME As String = "•Û‘¶(S)"         '•Û‘¶ƒ{ƒ^ƒ“‚ÌName
+Private Const SAVEASTIMEOUT As Long = 30                                    'SaveAsƒEƒBƒ“ƒhƒE‚ğŒŸõ‚·‚é‚Æ‚«‚Ìƒ^ƒCƒ€ƒAƒEƒgŠÔ
 'ƒvƒƒpƒeƒBiƒAƒNƒZƒTj
 'URL
 Property Get URL() As String
@@ -389,4 +404,328 @@ ErrorCatch:
     DebugMsgWithTime "GetHTMLdicBydicHTMLDocandTagName: " & Err.Number & " Description: " & Err.Description
     Set GetHTMLdicBydicHTMLDocandTagName = dicResult
     Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'SaveAs Modules
+'''IE‚Ìƒnƒ“ƒhƒ‹‚Æ•Û‘¶ƒtƒ@ƒCƒ‹–¼‚ğˆø”‚Æ‚µ‚ÄA–¼‘O‚ğ•t‚¯‚Ä•Û‘¶‚Ìƒ{ƒ^ƒ“‘€ì‚ğ‚·‚é
+'Return ÅI“I‚É•Û‘¶‚³‚ê‚½ƒtƒ‹ƒpƒX‚ğString‚Å•Ô‚·
+'’Iw’è‚³‚ê‚½ƒtƒ@ƒCƒ‹‚ª‘¶İ‚·‚éê‡‚Í‹­§“I‚Éíœ‚³‚ê‚Ü‚·III
+Public Function DownloadNotificationBarSaveAs(ByVal strargSaveFilePath As String, Optional ByRef hIE As LongPtr) As String
+    If hIE = 0 Then
+        If Not ieObject Is Nothing Then
+            hIE = ieObject.hwnd
+        End If
+    End If
+    'ƒnƒ“ƒhƒ‹‚Æ•Û‘¶ƒtƒ@ƒCƒ‹–¼‚Í•K{‚È‚Ì‚ÅA‚Ç‚¿‚ç‚©‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚ç”²‚¯‚é
+    If hIE = 0 Or strargSaveFilePath = "" Then
+        Debug.Print Now() & " DownloadNotificationBarSaveAs: handle or Save Filneme is empty"
+        DownloadNotificationBarSaveAs = ""
+        Exit Function
+    End If
+    On Error GoTo ErrorCatch
+    'w’è‚³‚ê‚½ƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚Ä‚¢‚½‚çíœ‚·‚é
+    With CreateObject("Scripting.FileSystemObject")
+      If .FileExists(strargSaveFilePath) Then .DeleteFile strargSaveFilePath, True
+    End With
+    Dim uiAuto As CUIAutomation
+    Set uiAuto = New CUIAutomation
+    '’Ê’mƒo[‚Ì[•Ê–¼‚Å•Û‘¶]‚ğ‰Ÿ‚·
+    If Not PressSaveAsNotificationBar(uiAuto, hIE) Then
+        '¸”s‚µ‚½‚æ‚¤‚Å‚·‚Ë
+        'ƒGƒ‰[•\¦‚Æ‚©‚ÍŠeƒvƒƒV[ƒWƒƒ‚É‹Lq‚·‚é
+        DownloadNotificationBarSaveAs = ""
+        Exit Function
+    End If
+    '[–¼‘O‚ğ•t‚¯‚Ä•Û‘¶]ƒ_ƒCƒAƒƒO‘€ì
+    If Not SaveAsFilenameDialog(uiAuto, strargSaveFilePath) Then
+        DownloadNotificationBarSaveAs = ""
+        Exit Function
+    End If
+    'IE‚ğ’Êí•\¦‚É–ß‚·
+    Call ShowWindow(hIE, SW_RESTORE)
+    'ƒ_ƒEƒ“ƒ[ƒhŠ®—¹Œã’Ê’mƒo[‚ğ•Â‚¶‚é
+    '–ß‚è’l‚Æ‚µ‚Äƒtƒ@ƒCƒ‹–¼‚ª—ˆ‚Ä‚é‚Í‚¸‚È‚Ì‚ÅAˆø”‚æ‚èƒfƒBƒŒƒNƒgƒŠ–¼‚ğ•t‰Á‚µAƒtƒ‹ƒpƒX‚ğ•Ô‚·
+    Dim strResultFileName As String
+    strResultFileName = ClosingNotificationBar(uiAuto, hIE)
+    With CreateObject("Scripting.FilesystemObject")
+        'ƒfƒBƒŒƒNƒgƒŠ–¼‚ğ•t‰Á‚µAƒtƒ‹ƒpƒX‚É‚·‚é
+        DownloadNotificationBarSaveAs = .BuildPath(.GetParentFolderName(strargSaveFilePath), strResultFileName)
+        'ƒfƒoƒbƒOo—Í
+        Debug.Print "DownloadNotificationBarSaveAs complete. file name: " & .BuildPath(.GetParentFolderName(strargSaveFilePath), strResultFileName)
+    End With
+    Set uiAuto = Nothing
+    Exit Function
+ErrorCatch:
+    Debug.Print Now() & " DownloadNotificationBarSaveAs code: " & Err.Number & " Description: " & Err.Description
+    DownloadNotificationBarSaveAs = ""
+    Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'''’Ê’mƒo[‚Ì[•Ê–¼‚Å•Û‘¶]‚ğ‰Ÿ‚·
+Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As Boolean
+    'uiAuto‚ÆIEƒnƒ“ƒhƒ‹—¼•û‚Æ‚à•K{‚È‚Ì‚Åˆø”ƒ`ƒFƒbƒN‚µ–³‚©‚Á‚½‚ç”²‚¯‚é
+    If argUIAuto Is Nothing Or hIEWnd = 0 Then
+        Debug.Print Now() & " PressSaverAsNothificationBar: uiAuto or IEHandle empry"
+        PressSaveAsNotificationBar = False
+        Exit Function
+    End If
+    '’Ê’mƒo[‚ğæ“¾
+    Dim hWndNotification As LongPtr
+    Dim dateStart As Date
+    'ˆ—ŠJnŠÔ‚ğæ“¾
+    dateStart = Now()
+    Application.StatusBar = "’Ê’mƒo[æ“¾’†"
+    On Error GoTo ErrorCatch
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        hWndNotification = FindWindowEx(hIEWnd, 0&, NOTIFICATION_CLASS_NAME, vbNullString)
+        'ƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ‰ß‚¬‚Ä‚¢‚½‚ç‹­§I—¹‚·‚é
+        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
+            MsgBox "’Ê’mƒo[ŒŸõ‚É" & SAVEASTIMEOUT & "•b‚Ìƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ’´‰ß‚µ‚Ü‚µ‚½Bˆ—‚ğ’†’f‚µ‚Ü‚·"
+            PressSaveAsNotificationBar = False
+            Exit Function
+        End If
+    Loop Until hWndNotification
+    '’Ê’mƒo[‚ª‰Â‹ó‘Ô‚É‚È‚é‚Ü‚Å‘Ò‹@i‚±‚ê‚ğ‚â‚ç‚È‚¢‚Æ‘€ì‚É¸”s‚·‚é‚±‚Æ‚ª‚ ‚éEEE‚ç‚µ‚¢j
+    Application.StatusBar = "’Ê’mƒo[€”õ’†"
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        'ƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ‰ß‚¬‚Ä‚¢‚½‚ç‹­§I—¹‚·‚é
+        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
+            MsgBox "’Ê’mƒo[ŒŸõ‚É" & SAVEASTIMEOUT & "•b‚Ìƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ’´‰ß‚µ‚Ü‚µ‚½Bˆ—‚ğ’†’f‚µ‚Ü‚·"
+            PressSaveAsNotificationBar = False
+            Exit Function
+        End If
+    Loop Until IsWindowVisible(hWndNotification)
+    Debug.Print Second(Now() - dateStart) & " •b‚Å’Ê’mƒo[æ“¾Š®—¹"
+    '[•Û‘¶]ƒXƒvƒŠƒbƒgƒ{ƒ^ƒ“æ“¾
+'    Application.StatusBar = "•Û‘¶ƒ{ƒ^ƒ“æ“¾’†"
+    Dim elmNotificationBar As IUIAutomationElement
+    Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
+    Dim elmASaveSplitButton As IUIAutomationElement
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Set elmASaveSplitButton = GetUIElement(argUIAuto, _
+                                                elmNotificationBar, UIA_NamePropertyId, _
+                                                NOTIFICATION_SAVE_BUTTON_NAME, _
+                                                UIA_SplitButtonControlTypeId)
+    Loop While elmASaveSplitButton Is Nothing
+    '[•Û‘¶]ƒ{ƒ^ƒ“‚Ìƒhƒƒbƒvƒ_ƒEƒ“æ“¾
+    Dim elmSaveAsDropDownButton As IUIAutomationElement
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Set elmSaveAsDropDownButton = GetUIElement(argUIAuto, _
+                                                    elmNotificationBar, _
+                                                    UIA_LegacyIAccessibleRolePropertyId, _
+                                                    ROLE_SYSTEM_BUTTONDROPDOWN, _
+                                                    UIA_SplitButtonControlTypeId)
+    Loop While elmSaveAsDropDownButton Is Nothing
+    '[•Û‘¶]ƒhƒƒbƒvƒ_ƒEƒ“ƒ{ƒ^ƒ“‰Ÿ‰º
+    Dim iptn As IUIAutomationInvokePattern
+    Set iptn = elmSaveAsDropDownButton.GetCurrentPattern(UIA_InvokePatternId)
+    'ƒƒjƒ…[ƒEƒBƒ“ƒhƒEiƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[j‚Ìæ“¾
+    Application.StatusBar = "ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[æ“¾"
+    Dim elmSaveMenyu As IUIAutomationElement
+    Do
+        'ƒhƒƒbƒvƒ_ƒEƒ“ƒ{ƒ^ƒ“.click()
+        iptn.Invoke
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Set elmSaveMenyu = GetUIElement(argUIAuto, _
+                                        argUIAuto.GetRootElement, _
+                                        UIA_ClassNamePropertyId, _
+                                        CONTEXT_MENU_CLASS_NAME, _
+                                        UIA_MenuControlTypeId)
+    Loop While elmSaveMenyu Is Nothing
+    '[–¼‘O‚ğ•t‚¯‚Ä•Û‘¶(A)]ƒ{ƒ^ƒ“‰Ÿ‰º
+    '‚±‚±‚¾‚¯PostMessage‚Ås‚¤
+    Dim hWndSaveMenu As LongPtr
+    hWndSaveMenu = FindWindow(CONTEXT_MENU_CLASS_NAME, vbNullString)
+    PostMessage hWndSaveMenu, WM_SYSCHAR, vbKeyA, 0&
+    PressSaveAsNotificationBar = True
+    Exit Function
+ErrorCatch:
+    Debug.Print "PressSaveAsNothificationBar code: " & Err.Number & " Description: = " & Err.Description
+    PressSaveAsNotificationBar = False
+    Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'''[–¼‘O‚ğ•t‚¯‚Ä•Û‘¶]ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚Ì‘€ì
+Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal strSaveFilePath As String) As Boolean
+    If argUIAuto Is Nothing Or strSaveFilePath = "" Then
+        'ˆø”‚ª‹ó‚¾‚Á‚½‚ç”²‚¯‚é
+        Debug.Print "SaveAsFilenameDialog: UIAuto or SaveFilePath is empty"
+        SaveAsFilenameDialog = False
+        Exit Function
+    End If
+    '[–¼‘O‚ğ•t‚¯‚Ä•Û‘¶]ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚Ìæ“¾
+    Application.StatusBar = "–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‘€ì’†"
+    On Error GoTo ErrorCatch
+    Dim elmSaveAsDialog As IUIAutomationElement
+    Do
+        DoEvents
+        Set elmSaveAsDialog = GetUIElement(argUIAuto, _
+                                            argUIAuto.GetRootElement, _
+                                            UIA_NamePropertyId, _
+                                            SAVEASDIALOG_NAME, _
+                                            UIA_WindowControlTypeId)
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop While elmSaveAsDialog Is Nothing
+    'ƒtƒ@ƒCƒ‹–¼ƒGƒfƒBƒbƒgƒ{ƒbƒNƒXiƒRƒ“ƒ{ƒ{ƒbƒNƒXj‚Ìæ“¾
+    Dim elmFileNameComboBox As IUIAutomationElement
+    Do
+        Set elmFileNameComboBox = GetUIElement(argUIAuto, _
+                                                elmSaveAsDialog, _
+                                                UIA_NamePropertyId, _
+                                                SAVEASDIALOG_FILE_NAME, _
+                                                UIA_EditControlTypeId)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop While elmFileNameComboBox Is Nothing
+    'ƒtƒ@ƒCƒ‹ƒpƒX‚Ì“ü—Í
+    Dim vptn As IUIAutomationValuePattern
+    Set vptn = elmFileNameComboBox.GetCurrentPattern(UIA_ValuePatternId)
+    vptn.SetValue strSaveFilePath
+    '–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒO‚ÌÅ¬‰»‚ğ‚İ‚é
+    Dim hWndSaveAsDialog As LongPtr
+    hWndSaveAsDialog = FindWindow("#32770", SAVEASDIALOG_NAME)
+    If hWndSaveAsDialog <> 0 Then
+        'Å¬‰»‚µ‚Ä‚İ‚é
+        Call ShowWindow(hWndSaveAsDialog, SW_MINIMIZE)
+    End If
+    Application.StatusBar = "•Û‘¶ˆ—’†"
+    '[•Û‘¶(S)]ƒ{ƒ^ƒ“æ“¾
+    Dim elmSaveButton As IUIAutomationElement
+    Do
+        Set elmSaveButton = GetUIElement(argUIAuto, _
+                                        elmSaveAsDialog, _
+                                        UIA_NamePropertyId, _
+                                        SAVEASDIALOG_SAVEAS_BUTTON_NAME, _
+                                        UIA_ButtonControlTypeId)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop While elmSaveButton Is Nothing
+    '[•Û‘¶]ƒ{ƒ^ƒ“‰Ÿ‰º
+    Dim iptn As IUIAutomationInvokePattern
+    Set iptn = elmSaveButton.GetCurrentPattern(UIA_InvokePatternId)
+    iptn.Invoke
+    SaveAsFilenameDialog = True
+    Exit Function
+ErrorCatch:
+    Debug.Print "SaveAsFilenameDialog code: " & Err.Number & " Description: " & Err.Description
+    SaveAsFilenameDialog = False
+    Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'''ƒ_ƒEƒ“ƒ[ƒhŠ®—¹ŒãA’Ê’mƒo[‚ğ•Â‚¶‚é
+Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As String
+    On Error GoTo ErrorCatch
+    Application.StatusBar = "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿"
+    '’Ê’mƒo[‚ğæ“¾‚·‚é
+    Dim hWndNotification As LongPtr
+    'ˆ—ŠJnŠÔ‚ğæ“¾
+    Dim dateStart As Date
+    dateStart = Now()
+    Do
+        hWndNotification = FindWindowEx(hIEWnd, 0, NOTIFICATION_CLASS_NAME, vbNullString)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        'ƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ‰ß‚¬‚Ä‚¢‚½‚ç‹­§I—¹‚·‚é
+        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
+            MsgBox "’Ê’mƒo[ŒŸõ‚É" & SAVEASTIMEOUT & "•b‚Ìƒ^ƒCƒ€ƒAƒEƒgŠÔ‚ğ’´‰ß‚µ‚Ü‚µ‚½Bˆ—‚ğ’†’f‚µ‚Ü‚·"
+            Debug.Print "ClosingNotificationBar: NotificationBar find timeout"
+            ClosingNotificationBar = False
+            Exit Function
+        End If
+    Loop Until hWndNotification
+    '‰Â‹ó‘Ô‚É‚È‚é‚Ü‚Å‘Ò‹@
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop Until IsWindowVisible(hWndNotification)
+    Dim elmNotificationBar As IUIAutomationElement
+    Do
+        Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop While elmNotificationBar Is Nothing
+    '[’Ê’mƒo[‚ÌƒeƒLƒXƒg]æ“¾
+    Dim elmNotificationText As IUIAutomationElement
+    Do
+        Set elmNotificationText = GetUIElement(argUIAuto, _
+                                                elmNotificationBar, _
+                                                UIA_NamePropertyId, _
+                                                NOTIFICATION_TEXT, _
+                                                UIA_TextControlTypeId)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Application.StatusBar = "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿ " & Second(Now() - dateStart) & " •bŒo‰ß..."
+    Loop While elmNotificationText Is Nothing
+    '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚Ì“à—e‚ğæ“¾‚µ‚Ä‚İ‚é
+    Dim vptnNotificationText As IUIAutomationValuePattern
+    Set vptnNotificationText = elmNotificationText.GetCurrentPattern(UIA_ValuePatternId)
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Application.StatusBar = vptnNotificationText.CurrentValue
+    Loop While InStr(vptnNotificationText.CurrentValue, "ƒ_ƒEƒ“ƒ[ƒhÏ‚İ") >= 1
+    'ƒeƒLƒXƒgo—Í‚µ‚Ä‚İ‚é
+    Dim strResultText As String
+    strResultText = vptnNotificationText.CurrentValue
+'    'ƒfƒoƒbƒOo—Í‚·‚é
+'    Debug.Print strResultText
+    Dim arrResult() As String
+    arrResult = Strings.Split(strResultText, " ")
+    '[•Â‚¶‚é]ƒ{ƒ^ƒ“æ“¾
+    Dim elmCloseButton As IUIAutomationElement
+    Do
+        Set elmCloseButton = GetUIElement(argUIAuto, _
+                                            elmNotificationBar, _
+                                            UIA_NamePropertyId, _
+                                            NOTIFICATION_CLOSE_BUTTON_NAME, _
+                                            UIA_ButtonControlTypeId)
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+    Loop While elmCloseButton Is Nothing
+    '[•Â‚¶‚é]ƒ{ƒ^ƒ“‰Ÿ‰º
+    Dim iptnClose As IUIAutomationInvokePattern
+    Set iptnClose = elmCloseButton.GetCurrentPattern(UIA_InvokePatternId)
+    iptnClose.Invoke
+    If UBound(arrResult) >= 1 Then
+        ClosingNotificationBar = arrResult(0)
+        Exit Function
+    Else
+        Debug.Print "ClosingNotificationBar: Œ‹‰Ê‚ÌƒeƒLƒXƒgæ“¾¸”s‚µ‚Ä‚é‚Á‚Û‚¢"
+        ClosingNotificationBar = ""
+        Exit Function
+    End If
+ErrorCatch:
+    Debug.Print "ClosingNotificationBar code: " & Err.Number & " Description: " & Err.Description
+    ClosingNotificationBar = ""
+    Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'''uiAuto w’è‚³‚ê‚½ƒvƒƒpƒeƒBIDAƒRƒ“ƒgƒ[ƒ‹ƒ^ƒCƒvID‚Åw’è‚³‚ê‚½’l‚ğ‚Â—v‘f‚ğ•Ô‚·
+'''return IUIAutomationElement
+Private Function GetUIElement(ByVal uiAuto As CUIAutomation, _
+                                ByVal elmParent As IUIAutomationElement, _
+                                ByVal propertyID As Long, _
+                                ByVal propertyValue As Variant, _
+                                Optional ByVal ctrlType As Long = 0) _
+                                As IUIAutomationElement
+    'ŒŸõğŒ‚Ìİ’è
+    Dim condFirst As IUIAutomationCondition
+    Set condFirst = uiAuto.CreatePropertyCondition(propertyID, propertyValue)
+    If ctrlType <> 0 Then
+        'ƒRƒ“ƒgƒ[ƒ‹ID‚ªw’è‚³‚ê‚Ä‚¢‚éê‡‚Í’Ç‰Á‚ÅˆÈ‰º‚ğÀs‚·‚é
+        Dim condSecond As IUIAutomationCondition
+        Set condSecond = uiAuto.CreatePropertyCondition(UIA_ControlTypePropertyId, ctrlType)
+        'propetryValue ‚¨‚æ‚Ñ ctrlID—¼•û‚Éˆê’v‚·‚éğŒ‚ğì¬‚·‚é
+        Set condFirst = uiAuto.CreateAndCondition(condFirst, condSecond)
+    End If
+    Set GetUIElement = elmParent.FindFirst(TreeScope_Subtree, condFirst)
 End Function

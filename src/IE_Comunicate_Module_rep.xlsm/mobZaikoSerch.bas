@@ -1,7 +1,8 @@
-Attribute VB_Name = "PublicTestGetIE"
+Attribute VB_Name = "mobZaikoSerch"
 Option Explicit
 Private Const zaikoSerchURL As String = "http://www.freeway.fuchu.toshiba.co.jp/faz/zaikoSearch/"
 Private Const DEBUG_SHOW_IE As Long = &H1                   'IEの画面を表示させるフラグ(1bit)
+Private Const ZAIKO_SERCH_DL_TREE As String = "d1d0"        '在庫検索のダウンロードボタン（検索後のページ）がある階層文字列
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary
@@ -29,8 +30,39 @@ Public Sub IETest()
         'エラー発生してたらとりあえずここに来てみる
         DebugMsgWithTime "IETest code: " & Err.Number & " Description: " & Err.Description
     End If
-    SetZaikoSerch_TehaiCode getIETest, InputBox("手配コードを入力して下さい")
+'    SetZaikoSerch_TehaiCode getIETest, InputBox("手配コードを入力して下さい")
+    '検索する手配コードを一時的にshIEData.cells(4,3)に記入することとする
+    SetZaikoSerch_TehaiCode getIETest, CStr(shIEData.Cells(4, 3).Value)
     Application.Wait 2
+    '全フレームより指定したタグのHTML Documentを取ってくる
+    Dim dicTagElms As Dictionary
+    Set dicTagElms = getIETest.GetHTMLdicBydicHTMLDocandTagName(dicReturnHTMLDoc, "Input")
+    'ダウンロードボタンを押してみる
+    Dim docZaikoDLButton As HTMLDocument
+    If dicReturnHTMLDoc.Exists(ZAIKO_SERCH_DL_TREE) Then
+        '結果dicにダウンロードボタンの階層文字列がある場合のみ実行
+        Set docZaikoDLButton = dicReturnHTMLDoc(ZAIKO_SERCH_DL_TREE)
+    End If
+    'confirm偽造
+    'ToDo 今のところ失敗してるっぽいので、ここを何とか・・・
+    docZaikoDLButton.parentWindow.execScript "confirm = function(){return true;}"
+    'ダウンロードボタンくりこ
+    docZaikoDLButton.parentWindow.execScript "download()"
+    'confirm偽造するまでSleepで待つことにする
+    Sleep 3000
+    '保存ファイル名生成
+    Dim strFilePath As String
+    Dim fsoLink As Scripting.FileSystemObject
+    Set fsoLink = New FileSystemObject
+    strFilePath = fsoLink.BuildPath(fsoLink.GetSpecialFolder(TemporaryFolder), Format(Now(), "yyyymmddhhmmss"))
+    'SaveAs 操作
+    Dim strResultFullPath As String
+    strResultFullPath = getIETest.DownloadNotificationBarSaveAs(strFilePath, getIETest.IEInstance.hwnd)
+    '帰ってきたBookを開いてみる
+    getIETest.IEInstance.Visible = False
+    Dim wkbNewBook As Workbook
+    Set wkbNewBook = Workbooks.Open(strResultFullPath)
+    wkbNewBook.Activate
     '試しに検索ボタンをクリックしてみる
     getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
 '    Dim localHTMLDoc As HTMLDocument
@@ -38,10 +70,8 @@ Public Sub IETest()
 '    Set localHTMLDoc = dicReturnHTMLDoc("t10")
 '    Dim elementStrArray() As String
 '    elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
-    Dim dicTagElms As Dictionary
-    Set dicTagElms = getIETest.GetHTMLdicBydicHTMLDocandTagName(dicReturnHTMLDoc, "A")
     Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
-    Stop
+    'Stop
     Set getIETest = Nothing
 End Sub
 '''Author Daisuke_Oota

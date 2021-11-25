@@ -1,4 +1,4 @@
-Attribute VB_Name = "IE_Connect"
+Attribute VB_Name = "IE_Connect_Test"
 Option Explicit
 Private Const START_COLUMN As Long = 2
 Private Const START_ROW As Long = 4
