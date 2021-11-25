@@ -12,4 +12,7 @@ Attribute VB_Name = "UserForm1"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
+Attribute VB_Exposed = False
+Private Sub UserForm_Activate()
+    Call FormResize(FindWindow(vbNullString, Me.Caption))
+End Sub

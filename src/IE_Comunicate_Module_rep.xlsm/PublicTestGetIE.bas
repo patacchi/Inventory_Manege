@@ -21,7 +21,7 @@ Public Sub IETest()
     If longDebugFlag And DEBUG_SHOW_IE Then
         'IE表示フラグが立ってたのでプロパティ設定
         getIETest.Visible = True
-End If
+    End If
     On Error Resume Next
     Dim dicReturnHTMLDoc As Dictionary
     Set dicReturnHTMLDoc = getIETest.ResultHTMLDoc
@@ -33,11 +33,13 @@ End If
     Application.Wait 2
     '試しに検索ボタンをクリックしてみる
     getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
-    Dim localHTMLDoc As HTMLDocument
-'    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
-    Set localHTMLDoc = dicReturnHTMLDoc("t10")
-    Dim elementStrArray() As String
-    elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
+'    Dim localHTMLDoc As HTMLDocument
+''    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
+'    Set localHTMLDoc = dicReturnHTMLDoc("t10")
+'    Dim elementStrArray() As String
+'    elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
+    Dim dicTagElms As Dictionary
+    Set dicTagElms = getIETest.GetHTMLdicBydicHTMLDocandTagName(dicReturnHTMLDoc, "A")
     Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
     Stop
     Set getIETest = Nothing

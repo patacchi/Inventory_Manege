@@ -19,9 +19,9 @@ Option Explicit
 '''Microsoft HTML Object Libraly
 Private Const START_ROW_DEFAULT As Long = 6                                 'ƒV[ƒg‘‚«o‚µ‚ÌÛ‚ÌƒfƒtƒHƒ‹ƒgƒXƒ^[ƒgs
 Private Const START_COLUMN_DEFAULT As Long = 2                              'ƒV[ƒg‘‚«o‚µ‚ÌƒfƒtƒHƒ‹ƒgƒXƒ^[ƒg—ñ
-Private Const TOP_DOC_CHR As String = "t"                               'Œ‹‰ÊŠi”[—pDictionary‚ÌƒgƒbƒvƒtƒŒ[ƒ€‚Ì•¶š—ñ
+Private Const TOP_DOC_CHR As String = "d"                                   'Œ‹‰ÊŠi”[—pDictionary‚ÌƒgƒbƒvƒtƒŒ[ƒ€‚Ì•¶š—ñ
 'IEÚ‘±‚ÉŠÖ‚·‚éƒƒ“ƒo•Ï”
-Private IEObject As InternetExplorer                                        'IEƒIƒuƒWƒFƒNƒg
+Private ieObject As InternetExplorer                                        'IEƒIƒuƒWƒFƒNƒg
 Private strURL As String                                                    'IE‚ÅŠJ‚­URL‚ğ•Û‚·‚éƒƒ“ƒo•Ï”
 Private isVisible As Boolean                                                'IE‰æ–Ê‚ğ•\¦‚·‚é‚©‚Ç‚¤‚©ATrue‚Å•\¦
 Private dicReturnHTMLDocs As Dictionary                                     'ŠeƒtƒŒ[ƒ€–ˆ‚ÉHTML Doument‚ğ“ü‚ê‚ékey‚ÍƒtƒŒ[ƒ€”Ô†(t001EEE),value‚ÍHTML Document
@@ -35,9 +35,9 @@ Private longRow As Long                                                     'ƒV
 Property Get URL() As String
     URL = strURL
 End Property
-Property Let URL(strargURL As String)
-    If Not strargURL = "" Then
-        strURL = strargURL
+Property Let URL(strargUrl As String)
+    If Not strargUrl = "" Then
+        strURL = strargUrl
     End If
 End Property
 'Column
@@ -71,7 +71,7 @@ End Property
 'ieObject ’l‚ğİ’è‚·‚é‚Ì‚É•K—v‚©‚à
 'ieObject‚ğ•Ô‚·
 Property Get IEInstance() As InternetExplorer
-    Set IEInstance = IEObject
+    Set IEInstance = ieObject
     Exit Property
 End Property
 'Visible
@@ -112,7 +112,7 @@ Private Sub Initialize()
     longRow = START_ROW_DEFAULT
 '    Set ieObject = New InternetExplorer
     Set dicReturnHTMLDocs = New Dictionary
-    Set IEObject = New InternetExplorerMedium
+    Set ieObject = New InternetExplorerMedium
     isVisible = False
 End Sub
 '''Author Daisuke_Oota
@@ -122,13 +122,13 @@ End Sub
 '''--------------------------------------------------------------------------------------------------------------
 Private Sub Finalize()
     On Error GoTo ErrorCatch
-    If Not IEObject Is Nothing Then
-        IEObject.Quit
+    If Not ieObject Is Nothing Then
+        ieObject.Quit
     End If
-    Set IEObject = Nothing
+    Set ieObject = Nothing
     Exit Sub
 ErrorCatch:
-    Set IEObject = Nothing
+    Set ieObject = Nothing
     Exit Sub
 End Sub
 '''Author Daisuke_Oota
@@ -136,20 +136,20 @@ End Sub
 '''Summary
 '''w’è‚³‚ê‚½URL‚ğƒuƒ‰ƒEƒU‚ÅŠJ‚­
 '''--------------------------------------------------------------------------------------------------------------
-Public Function OpenIEwithURL(Optional strargURL As String) As Boolean
+Public Function OpenIEwithURL(Optional strargUrl As String) As Boolean
     'URL‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚ç‘¦”²‚¯‚é
-    If strargURL = "" Then
-        strargURL = strURL
+    If strargUrl = "" Then
+        strargUrl = strURL
     End If
-    If strargURL = "" Then
+    If strargUrl = "" Then
         MsgBox "URL‚ªw’è‚³‚ê‚Ä‚¢‚Ü‚¹‚ñi•K{j"
         DebugMsgWithTime "OpenIEwithURL: URL is empty"
         OpenIEwithURL = False
         Exit Function
     End If
     'isVisibleƒvƒƒpƒeƒB‚Ìİ’è’l‚ğ”½‰f‚³‚¹‚é
-    IEObject.Visible = isVisible
-    IEObject.navigate strargURL
+    ieObject.Visible = isVisible
+    ieObject.navigate strargUrl
 End Function
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
@@ -160,30 +160,30 @@ End Function
 '''--------------------------------------------------------------------------------------------------------------
 '''Parms
 '''strargURL        IE‚É“n‚·URL‚ğw’è
-Public Sub SetHTMLDocbyURL(Optional strargURL As String)
+Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
     Dim longElementCount As Long
     Dim intFrameCount As Integer
     Dim topDoc As HTMLDocument
     Dim frameDoc As HTMLDocument
     'ˆø”‚ÉURL‚ªw’è‚³‚ê‚Ä‚¢‚È‚­‚ÄAƒvƒƒpƒeƒB‚Åw’è‚ª‚ ‚éê‡‚ÍA‚»‚¿‚ç‚ğg‚Á‚Ä‚â‚é
-    If strargURL = "" And Not (strURL = "") Then
-        strargURL = strURL
+    If strargUrl = "" And Not (strURL = "") Then
+        strargUrl = strURL
     End If
-    If strargURL = "" Then
+    If strargUrl = "" Then
         MsgBox "URL‚ªw’è‚³‚ê‚Ä‚¢‚Ü‚¹‚ñi•K{j"
         DebugMsgWithTime "OpenIEwithURL: URL is empty"
         GoTo CloseAndExit
     End If
     'w’è‚Ìƒy[ƒW‚ğŠJ‚­
-    OpenIEwithURL (strargURL)
+    OpenIEwithURL (strargUrl)
 '    ieObject.navigate strargURL
     'eƒy[ƒW“Ç‚İ‚İŠ®—¹‚Ü‚Å‘Ò‹@‚·‚é
     Application.StatusBar = "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹‘Ò‚¿"
-    Do Until IEObject.Busy = False And IEObject.readyState = READYSTATE_COMPLETE
+    Do Until ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
         DoEvents
     Loop
     Application.StatusBar = "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹Bqƒy[ƒW“Ç‚İ‚İ‚É“ü‚è‚Ü‚·"
-    Set topDoc = IEObject.document
+    Set topDoc = ieObject.document
     'HTMLDocument‚Ì“Ç‚İ‚İŠ®—¹‚ğ‘Ò‚Á‚Ä‚©‚çAƒtƒŒ[ƒ€‚Ì—L–³‚É‚Â‚¢‚ÄŠm”F‚µ
     'ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚éê‡‚ÍAƒtƒŒ[ƒ€“à‚Ì“Ç‚İ‚İŠ®—¹‚à‘Ò‹@‚·‚é
     Call IsReadComp(topDoc)
@@ -192,17 +192,17 @@ Public Sub SetHTMLDocbyURL(Optional strargURL As String)
     '”FØƒ`ƒFƒbƒN
     '‚±‚±‚ÅAw’è‚³‚ê‚Ä‚¢‚½URL‚Æieobject‚ÌLocation‚ªˆá‚Á‚Ä‚¢‚½ê‡‚ÍAƒƒOƒCƒ“‰æ–Ê‚ÉƒŠƒ_ƒCƒŒƒNƒg‚³‚ê‚Ä‚é‚Æv‚¤‚Ì‚Å
     'ˆê’UVisible‚ğTrue‚É‚µ‚Ä‚â‚Á‚ÄAƒƒOƒCƒ“ˆ—‚ğ‚µ‚Ä‚à‚ç‚¤
-    If strargURL <> IEObject.LocationURL Then
+    If strargUrl <> ieObject.LocationURL Then
         DebugMsgWithTime "URL•sˆê’vAƒŠƒ_ƒCƒŒƒNƒg‚³‚ê‚½‰Â”\«‚ª‚ ‚è‚Ü‚·"
         '‹­§“I‚ÉVisible‚ğTrue‚É‚·‚é
-        IEObject.Visible = True
+        ieObject.Visible = True
         'ƒƒOƒCƒ“ˆ—Š®—¹‚µ‚½‚çŒ³‚Ìƒy[ƒW‚É–ß‚é‚Í‚¸‚È‚Ì‚ÅAieobject‚ÌLocationURL‚ªw’è‚³‚ê‚½‚à‚Ì‚É‚È‚é‚Ü‚Å‘Ò‹@
         'ƒTƒCƒg‚É‚æ‚Á‚Ä‚Í–³ŒÀƒ‹[ƒv‚Ì‰Â”\«—L‚èEEE
-        Do Until IEObject.LocationURL = strargURL And IEObject.Busy = False And IEObject.readyState = READYSTATE_COMPLETE
+        Do Until ieObject.LocationURL = strargUrl And ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
             DoEvents
         Loop
         'Visible‚Ìó‘Ô‚ğƒvƒƒpƒeƒB‚Åİ’è‚µ‚Ä‚éó‘Ô‚É–ß‚µ‚Ä‚â‚é
-        IEObject.Visible = Me.Visible
+        ieObject.Visible = Me.Visible
     End If
     If topDoc Is Nothing Then
         '‚à‚µ‚±‚Ì“_‚ÅHTMLDoc‚ªNothing‚¾‚Á‚½‚ç‰½‚©‚ ‚Á‚½‚Æv‚¤‚Ì‚ÅAˆÈŒã‚Ìˆ—‚Í’†~‚·‚é
@@ -222,18 +222,18 @@ End Sub
 '''--------------------------------------------------------------------------------------------------------------
 '''Parms
 '''atrHTMLDoc   ‚»‚Ì“_‚Å‚ÌƒtƒŒ[ƒ€‚ÌƒgƒbƒvƒhƒLƒ…ƒƒ“ƒg
-'''strFrameNum  ƒtƒŒ[ƒ€‚ÌŠK‘w•¶š—ñ ƒgƒbƒv‚ÍtiConst’è‹`‚É‚æj‚»‚ÌŒã‚ÍAframes‚ÌƒCƒ“ƒfƒbƒNƒX”Ô†‚ğŠK‘w‚²‚Æ‚É’Ç‰Á‚µ‚Ä‚â‚é
-Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef strFrameNum As String = "")
-    If strFrameNum = "" Then
+'''strTreeChr  ƒtƒŒ[ƒ€‚ÌŠK‘w•¶š—ñ ƒgƒbƒv‚ÍtiConst’è‹`‚É‚æj‚»‚ÌŒã‚ÍAframes‚ÌƒCƒ“ƒfƒbƒNƒX”Ô†‚ğŠK‘w‚²‚Æ‚É’Ç‰Á‚µ‚Ä‚â‚é
+Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef strTreeChr As String = "")
+    If strTreeChr = "" Then
         'ƒtƒŒ[ƒ€ŠK‘w•¶š‚ª‹ó”’‚¾‚Á‚½‚çtopƒhƒLƒ…ƒƒ“ƒg‚Ì‚Í‚¸‚È‚Ì‚Åconst‚Ìƒgƒbƒv‚ÇŠK‘w•¶š—ñ‚ğİ’è‚µ‚Ä‚â‚é
-        strFrameNum = TOP_DOC_CHR
+        strTreeChr = TOP_DOC_CHR
     Else
         'ŠK‘w•¶š‚Éw’è‚ª‚ ‚Á‚½ê‡‚ÍA‚PŠK‘w‰º‚Ìƒgƒbƒv‚È‚Ì‚ÅA0‚ğŒã‚ë‚É•t‰Á‚µ‚Ä‚â‚é
-        strFrameNum = strFrameNum & TOP_DOC_CHR
+        strTreeChr = strTreeChr & TOP_DOC_CHR
     End If
     '‚±‚Ì“_‚ÅƒgƒbƒvƒhƒLƒ…ƒƒ“ƒg‚ğDictionary‚É’Ç‰Á‚µ‚Ä‚â‚é
     If Not argHTMLDoc Is Nothing Then
-        dicReturnHTMLDocs.Add strFrameNum, argHTMLDoc
+        dicReturnHTMLDocs.Add strTreeChr, argHTMLDoc
     End If
     If argHTMLDoc.frames.Length > 0 Then
         'ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚éê‡
@@ -257,7 +257,7 @@ Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef st
                 Call IsReadComp(frameDoc)
                 '‚Ü‚¸‚ÍŠK‘w•¶š‚ÉŒ»İ‚ÌƒtƒŒ[ƒ€ƒJƒEƒ“ƒg‚ğ•t‰Á‚µ‚ÄADictionary‚É’Ç‰Á‚µ‚Ä‚â‚é
                 Dim strlocalFrameNum As String
-                strlocalFrameNum = strFrameNum & CStr(intFrameCount)
+                strlocalFrameNum = strTreeChr & CStr(intFrameCount)
                 If dicReturnHTMLDocs.Exists(strlocalFrameNum) Then
                     '“¯‚¶ƒL[‚ª‘¶İ‚µ‚Ä‚½‚çEEE‚ñ[EEH
                     DebugMsgWithTime "AddResultdicHTML: same FrameNumStr available"
@@ -306,7 +306,7 @@ End Function
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary
 '''HTMLƒhƒLƒ…ƒƒ“ƒg‚ğˆø”‚Æ‚µ‚Ä
-'''w’è‚³‚ê‚½eƒ^ƒO‚Ì’†‚Ì(—áFTable)qƒ^ƒO(th)‚Ì’†g(Text)‚ğæ“¾‚·‚é
+'''w’è‚³‚ê‚½eƒ^ƒO‚Ì’†‚Ì(—áFTable)qƒ^ƒO(th)‚Ì’†g(OuterHTML)‚ğæ“¾‚·‚é
 '''–ß‚è’l‚ÍString”z—ñ
 '''--------------------------------------------------------------------------------------------------------------
 '''Parms
@@ -333,7 +333,7 @@ Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName 
     For Each varElement In parentElement
 '        DebugMsgWithTime varElement.innerText
         '‚±‚±‚Å—v‘f‚ÌText‚ğString”z—ñ‚É’Ç‰Á‚µ‚Ä‚¢‚Á‚Ä‚â‚é—\’è
-        localarrString(longRowCount) = varElement.innerText
+        localarrString(longRowCount) = varElement.outerHTML
         longRowCount = longRowCount + 1
     Next varElement
     'qƒ^ƒO‚Ìˆø”‚Éƒf[ƒ^‚ª“ü‚Á‚Ä‚¢‚ê‚ÎX‚Éqƒ^ƒO‚Ì—v‘f‚àæ“¾‚·‚é
@@ -345,5 +345,48 @@ Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName 
 ErrorCatch:
     DebugMsgWithTime "getTestArrayByTagNae code: " & Err.Number & " Description: " & Err.Description
     getTextArrayByTagName = localarrString
+    Exit Function
+End Function
+'''Author Daisuke_Oota
+'''--------------------------------------------------------------------------------------------------------------
+'''Summary
+'''dicHTMLResut (key: TreeChrAŠK‘w•¶šAvalue:HTML Document)Aƒ^ƒO–¼‚ğˆø”‚Æ‚µ‚ÄA’†‚ÌOuter HTML‚ğDictionary‚Å•Ô‚·
+'''–ß‚è’l‚ÍDictionary( key: TreChr, Value string”z—ñ)
+'''--------------------------------------------------------------------------------------------------------------
+'''Parms
+'''dicHTMLResult        Key:TreeChr Value:HTML Document ‚ÌDictionary
+'''strTagName           ŒŸõ‚·‚éƒ^ƒO–¼
+Public Function GetHTMLdicBydicHTMLDocandTagName(ByRef argdicHTML As Dictionary, ByVal strTagName As String) As Dictionary
+    If argdicHTML Is Nothing Or strTagName = "" Then
+        'ˆø”‚ª‹ó‚¾‚Á‚½‚æ
+        DebugMsgWithTime "GetHTMLstrngbyDicHTMLDocandTagName: dicHTML or TagName empty"
+        Set GetHTMLdicBydicHTMLDocandTagName = New Dictionary
+        Exit Function
+    End If
+    Dim currentDoc As HTMLDocument
+    Dim keyDicHTML As Variant
+    Dim dicResult As Dictionary
+    Set dicResult = New Dictionary
+    On Error GoTo ErrorCatch
+    For Each keyDicHTML In argdicHTML
+        Set currentDoc = argdicHTML(keyDicHTML)
+        If Not currentDoc Is Nothing Then
+            '’†g‚ ‚é‚¾‚¯‘±‚¯‚é
+            Dim arrstrElements() As String
+            arrstrElements() = getTextArrayByTagName(currentDoc, strTagName)
+            If IsRedim(arrstrElements) Then
+                '‰Šú‰»Ï‚İ‚Ì”z—ñ‚ª‹A‚Á‚Ä‚«‚½‚çADictionary ‚Ì Value‚ÉƒZƒbƒg‚µ‚Ä‚â‚é
+                dicResult.Add keyDicHTML, arrstrElements
+            End If
+            'Ÿ‚Ìƒ‹[ƒv‚Ì‚½‚ß‚É”z—ñ‚ğ‰Šú‰»‚·‚é
+            Erase arrstrElements
+        End If
+    Next keyDicHTML
+    Set GetHTMLdicBydicHTMLDocandTagName = dicResult
+    Set dicResult = Nothing
+    Exit Function
+ErrorCatch:
+    DebugMsgWithTime "GetHTMLdicBydicHTMLDocandTagName: " & Err.Number & " Description: " & Err.Description
+    Set GetHTMLdicBydicHTMLDocandTagName = dicResult
     Exit Function
 End Function

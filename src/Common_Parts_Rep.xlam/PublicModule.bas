@@ -180,4 +180,25 @@ Public Sub DebugMsgWithTime(strargDebugMsg As String)
     Debug.Print GetLocalTimeWithMilliSec & " " & strargDebugMsg
     Exit Sub
 End Sub
+'''---------------------------------------------------------------------------------------------------------------------------
+'''Author Daisuke Oota 2021_10_18
+'''配列が初期化済みどうかを判定する関数 UBoundを使っていいかどうかの判断材料になる
+'''戻り値：boot 初期化済みなら True、それ以外はFalseを返す。配列じゃないときもFalse
+'''---------------------------------------------------------------------------------------------------------------------------
+Public Function IsRedim(varargArray As Variant) As Boolean
+    If Not IsArray(varargArray) Then
+        '配列じゃない場合はTrueを返す
+        IsRedim = False
+        Exit Function
+    End If
+    'Uboud関数を実行し、Err.Numberで判定する
+    On Error Resume Next
+    Err.Clear
+    'そもそも要素数があればここで数字が入る
+    '要素数1個の場合は0になり、一旦Falseと判定されるが、次でErr.Number = 0を満たすため、Trueに上書きされる
+    IsRedim = CBool(UBound(varargArray))
+    'UBoundが失敗した時（未初期化）はErr.Numberにたいてい9が入るので、下記条件がFalseになる
+    IsRedim = (Err.Number = 0)
+    Exit Function
+End Function
 '''---------------------------------------------------------------------------------------------------------------------------
