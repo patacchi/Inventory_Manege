@@ -3,6 +3,7 @@ Option Explicit
 Private Const zaikoSerchURL As String = "http://www.freeway.fuchu.toshiba.co.jp/faz/zaikoSearch/"
 Private Const DEBUG_SHOW_IE As Long = &H1                   'IEの画面を表示させるフラグ(1bit)
 Private Const ZAIKO_SERCH_DL_TREE As String = "d1d0"        '在庫検索のダウンロードボタン（検索後のページ）がある階層文字列
+'private const ZAIKO_SERCH_SCRIPT_TREE as String = "d1d0d"
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary
@@ -43,13 +44,14 @@ Public Sub IETest()
         '結果dicにダウンロードボタンの階層文字列がある場合のみ実行
         Set docZaikoDLButton = dicReturnHTMLDoc(ZAIKO_SERCH_DL_TREE)
     End If
-    'confirm偽造
-    'ToDo 今のところ失敗してるっぽいので、ここを何とか・・・
-    docZaikoDLButton.parentWindow.execScript "confirm = function(){return true;}"
     'ダウンロードボタンくりこ
-    docZaikoDLButton.parentWindow.execScript "download()"
-    'confirm偽造するまでSleepで待つことにする
-    Sleep 3000
+    Dim docConfirm As HTMLDocument
+    Set docConfirm = dicReturnHTMLDoc("d1d0d")
+    docConfirm.parentWindow.execScript "chkSetChild( document );"
+    docConfirm.parentWindow.execScript "$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');"
+    docConfirm.parentWindow.execScript "if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"
+'    Stop
+'    Sleep 3000
     '保存ファイル名生成
     Dim strFilePath As String
     Dim fsoLink As Scripting.FileSystemObject
@@ -63,8 +65,8 @@ Public Sub IETest()
     Dim wkbNewBook As Workbook
     Set wkbNewBook = Workbooks.Open(strResultFullPath)
     wkbNewBook.Activate
-    '試しに検索ボタンをクリックしてみる
-    getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
+'    '試しに検索ボタンをクリックしてみる
+'    getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
 '    Dim localHTMLDoc As HTMLDocument
 ''    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
 '    Set localHTMLDoc = dicReturnHTMLDoc("t10")

@@ -461,6 +461,11 @@ ErrorCatch:
     Exit Function
 End Function
 '---------------------------------------------------------------------------------------------------------------
+'''通知バーの[保存]を押す
+'''戻り値 正常取得出来ていればTrue
+'''parms
+'''strFileName              'オプションでファイル名を指定した場合は、最終的にリネームして返す
+'---------------------------------------------------------------------------------------------------------------
 '''通知バーの[別名で保存]を押す
 Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As Boolean
     'uiAutoとIEハンドル両方とも必須なので引数チェックし無かったら抜ける
@@ -469,57 +474,20 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
         PressSaveAsNotificationBar = False
         Exit Function
     End If
-    '通知バーを取得
-    Dim hWndNotification As LongPtr
-    Dim dateStart As Date
-    '処理開始時間を取得
-    dateStart = Now()
-    Application.StatusBar = "通知バー取得中"
-    On Error GoTo ErrorCatch
-    Do
-        DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
-        hWndNotification = FindWindowEx(hIEWnd, 0&, NOTIFICATION_CLASS_NAME, vbNullString)
-        'タイムアウト時間を過ぎていたら強制終了する
-        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
-            MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
-            PressSaveAsNotificationBar = False
-            Exit Function
-        End If
-    Loop Until hWndNotification
-    '通知バーが可視状態になるまで待機（これをやらないと操作に失敗することがある・・・らしい）
-    Application.StatusBar = "通知バー準備中"
-    Do
-        DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
-        'タイムアウト時間を過ぎていたら強制終了する
-        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
-            MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
-            PressSaveAsNotificationBar = False
-            Exit Function
-        End If
-    Loop Until IsWindowVisible(hWndNotification)
-    Debug.Print Second(Now() - dateStart) & " 秒で通知バー取得完了"
-    '[保存]スプリットボタン取得
-'    Application.StatusBar = "保存ボタン取得中"
-    Dim elmNotificationBar As IUIAutomationElement
-    Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
     Dim elmASaveSplitButton As IUIAutomationElement
-    Do
-        DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
-        Set elmASaveSplitButton = GetUIElement(argUIAuto, _
-                                                elmNotificationBar, UIA_NamePropertyId, _
-                                                NOTIFICATION_SAVE_BUTTON_NAME, _
-                                                UIA_SplitButtonControlTypeId)
-    Loop While elmASaveSplitButton Is Nothing
+    Set elmASaveSplitButton = GetSaveSplitButton(argUIAuto, hIEWnd)
+    If elmASaveSplitButton Is Nothing Then
+        '保存ボタン取得失敗
+        PressSaveAsNotificationBar = False
+        Exit Function
+    End If
     '[保存]ボタンのドロップダウン取得
     Dim elmSaveAsDropDownButton As IUIAutomationElement
     Do
         DoEvents
         Sleep (SLEEP_DEFAULT_MILLISEC)
         Set elmSaveAsDropDownButton = GetUIElement(argUIAuto, _
-                                                    elmNotificationBar, _
+                                                    elmASaveSplitButton, _
                                                     UIA_LegacyIAccessibleRolePropertyId, _
                                                     ROLE_SYSTEM_BUTTONDROPDOWN, _
                                                     UIA_SplitButtonControlTypeId)
@@ -551,6 +519,69 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
 ErrorCatch:
     Debug.Print "PressSaveAsNothificationBar code: " & Err.Number & " Description: = " & Err.Description
     PressSaveAsNotificationBar = False
+    Exit Function
+End Function
+'---------------------------------------------------------------------------------------------------------------
+'''[保存]スプリットボタン取得する関数
+Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As IUIAutomationElement
+    If argUIAuto Is Nothing Or hIEWnd = 0 Then
+        '引数はどっちも必須なかったらNothing返して終了
+        DebugMsgWithTime "GetSaveSplitButton: UIAuto or hIE is Empty."
+        Set GetSaveSplitButton = Nothing
+        Exit Function
+    End If
+    '通知バーを取得
+    '通知バーのハンドルを取得
+    Dim hWndNotification As LongPtr
+    Dim dateStart As Date
+    '処理開始時間を取得
+    dateStart = Now()
+    Application.StatusBar = "通知バー取得中"
+    On Error GoTo ErrorCatch
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        hWndNotification = FindWindowEx(hIEWnd, 0&, NOTIFICATION_CLASS_NAME, vbNullString)
+        'タイムアウト時間を過ぎていたら強制終了する
+        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
+            MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
+            Set GetSaveSplitButton = Nothing
+            Exit Function
+        End If
+    Loop Until hWndNotification
+    '通知バーが可視状態になるまで待機（これをやらないと操作に失敗することがある・・・らしい）
+    Application.StatusBar = "通知バー準備中"
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        'タイムアウト時間を過ぎていたら強制終了する
+        If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
+            MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
+            Set GetSaveSplitButton = Nothing
+            Exit Function
+        End If
+    Loop Until IsWindowVisible(hWndNotification)
+    Debug.Print Second(Now() - dateStart) & " 秒で通知バー取得完了"
+'    Application.StatusBar = "保存ボタン取得中"
+    'ハンドルよりNotificationBarのIUIAutomationElementを取得
+    Dim elmNotificationBar As IUIAutomationElement
+    Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
+    '[保存]スプリットボタン取得
+    Dim elmSplitButtonLocal As IUIAutomationElement
+    Do
+        DoEvents
+        Sleep (SLEEP_DEFAULT_MILLISEC)
+        Set elmSplitButtonLocal = GetUIElement(argUIAuto, _
+                                                elmNotificationBar, UIA_NamePropertyId, _
+                                                NOTIFICATION_SAVE_BUTTON_NAME, _
+                                                UIA_SplitButtonControlTypeId)
+    Loop While elmSplitButtonLocal Is Nothing
+    '結果を返して終了
+    Set GetSaveSplitButton = elmSplitButtonLocal
+    Exit Function
+ErrorCatch:
+    DebugMsgWithTime "GetSaveSplitButton code: " & Err.Number & " Description: " & Err.Description
+    Set GetSaveSplitButton = Nothing
     Exit Function
 End Function
 '---------------------------------------------------------------------------------------------------------------
