@@ -1,20 +1,25 @@
 Attribute VB_Name = "mobZaikoSerch"
 Option Explicit
 Private Const zaikoSerchURL As String = "http://www.freeway.fuchu.toshiba.co.jp/faz/zaikoSearch/"
-Private Const DEBUG_SHOW_IE As Long = &H1                   'IEの画面を表示させるフラグ(1bit)
-Private Const ZAIKO_SERCH_DL_TREE As String = "d1d0"        '在庫検索のダウンロードボタン（検索後のページ）がある階層文字列
-'private const ZAIKO_SERCH_SCRIPT_TREE as String = "d1d0d"
+Private Const DEBUG_SHOW_IE As Long = &H1                           'IEの画面を表示させるフラグ(1bit)
+Private Const ZAIKO_SERCH_DL_TREE As String = "d1d0"                '在庫検索のダウンロードボタン（検索後のページ）がある階層文字列
+Private Const ZAIKO_SERCH_SCRIPT_TREE As String = "d1d0d"           '在庫検索のページのスクリプト発動する階層文字列
+Private Const ZAIKO_SERCH_DL_SCRIPT As String = "chkSetChild( document );$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"   '在庫検索のダウンロードボタンのスクリプト
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary
-'''IEから情報をとってきて（シートに書き出す）テストモジュール
+'''手配コードを引数として、在庫検索（のファイルDL）を行うプロシージャ
 '''--------------------------------------------------------------------------------------------------------------
-Public Sub IETest()
+Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
     Dim getIETest As clsGetIE
     Set getIETest = New clsGetIE
+    If strTehaiCode = "" Then
+        '手配コードが指定されていなかったら抜ける
+        MsgBox "ZaikoSerchbyTehaiCode: 手配コードが空でした（必須項目）"
+        Exit Sub
+    End If
     '在庫情報検索ページを設定
     getIETest.URL = zaikoSerchURL
-'    getIETest.URL = "file:///C:/Users/q3005sbe/AppData/Local/Rep/Backup/FrameSampe.htm"
     'Debug用
 '    isCollect = getIETest.OpenIEwithURL
     '指定したURLのHTML DocをDictionaryで受け取るテスト
@@ -26,32 +31,26 @@ Public Sub IETest()
     End If
     On Error Resume Next
     Dim dicReturnHTMLDoc As Dictionary
+    '指定したURLより全フレームのHTMLDocを取得する Dictionary形式
     Set dicReturnHTMLDoc = getIETest.ResultHTMLDoc
     If Err.Number <> 0 Then
         'エラー発生してたらとりあえずここに来てみる
         DebugMsgWithTime "IETest code: " & Err.Number & " Description: " & Err.Description
     End If
-'    SetZaikoSerch_TehaiCode getIETest, InputBox("手配コードを入力して下さい")
-    '検索する手配コードを一時的にshIEData.cells(4,3)に記入することとする
-    SetZaikoSerch_TehaiCode getIETest, CStr(shIEData.Cells(4, 3).Value)
-    Application.Wait 2
-    '全フレームより指定したタグのHTML Documentを取ってくる
-    Dim dicTagElms As Dictionary
-    Set dicTagElms = getIETest.GetHTMLdicBydicHTMLDocandTagName(dicReturnHTMLDoc, "Input")
-    'ダウンロードボタンを押してみる
-    Dim docZaikoDLButton As HTMLDocument
-    If dicReturnHTMLDoc.Exists(ZAIKO_SERCH_DL_TREE) Then
-        '結果dicにダウンロードボタンの階層文字列がある場合のみ実行
-        Set docZaikoDLButton = dicReturnHTMLDoc(ZAIKO_SERCH_DL_TREE)
-    End If
+    On Error GoTo ErrorCatch
+    '検索する手配コードをセットしてやる
+    SetZaikoSerch_TehaiCode getIETest, strTehaiCode
     'ダウンロードボタンくりこ
-    Dim docConfirm As HTMLDocument
-    Set docConfirm = dicReturnHTMLDoc("d1d0d")
-    docConfirm.parentWindow.execScript "chkSetChild( document );"
-    docConfirm.parentWindow.execScript "$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');"
-    docConfirm.parentWindow.execScript "if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"
-'    Stop
-'    Sleep 3000
+    'スクリプト直接実行に切り替え(confirm潰せなかった・・・）
+    If dicReturnHTMLDoc.Exists(ZAIKO_SERCH_SCRIPT_TREE) Then
+        '在庫検索スクリプトページの階層文字列が存在する場合のみ実行する
+        Dim docConfirm As HTMLDocument
+        Set docConfirm = dicReturnHTMLDoc(ZAIKO_SERCH_SCRIPT_TREE)
+        docConfirm.parentWindow.execScript ZAIKO_SERCH_DL_SCRIPT
+'        docConfirm.parentWindow.execScript "chkSetChild( document );"
+'        docConfirm.parentWindow.execScript "$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');"
+'        docConfirm.parentWindow.execScript "if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"
+    End If
     '保存ファイル名生成
     Dim strFilePath As String
     Dim fsoLink As Scripting.FileSystemObject
@@ -75,6 +74,13 @@ Public Sub IETest()
     Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
     'Stop
     Set getIETest = Nothing
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & Err.Number & " Description: " & Err.Description
+    If Not getIETest Is Nothing Then
+        Set getIETest = Nothing
+    End If
+    Exit Sub
 End Sub
 '''Author Daisuke_Oota
 '''GetIEクラスを引数として、在庫検索の手配コードに指定の文字列をセットする

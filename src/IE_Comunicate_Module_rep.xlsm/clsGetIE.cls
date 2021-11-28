@@ -110,6 +110,7 @@ End Property
 '実際の処理内容はメソッドに分離する
 Private Sub Class_Initialize()
     Call Initialize
+    Exit Sub
 End Sub
 'デストラクタ
 Private Sub Class_Terminate()
@@ -125,9 +126,9 @@ End Sub
 Private Sub Initialize()
     longColumn = START_COLUMN_DEFAULT
     longRow = START_ROW_DEFAULT
-'    Set ieObject = New InternetExplorer
+    Set ieObject = New InternetExplorer
     Set dicReturnHTMLDocs = New Dictionary
-    Set ieObject = New InternetExplorerMedium
+'    Set ieObject = New InternetExplorerMedium
     isVisible = False
 End Sub
 '''Author Daisuke_Oota
@@ -165,6 +166,12 @@ Public Function OpenIEwithURL(Optional strargUrl As String) As Boolean
     'isVisibleプロパティの設定値を反映させる
     ieObject.Visible = isVisible
     ieObject.navigate strargUrl
+    '親ページ読み込み完了まで待機する
+    Application.StatusBar = "TOPページ読み込み完了待ち"
+    Do Until ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
+        DoEvents
+    Loop
+    Application.StatusBar = "TOPページ読み込み完了。子ページ読み込みに入ります"
 End Function
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
@@ -191,13 +198,6 @@ Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
     End If
     '指定のページを開く
     OpenIEwithURL (strargUrl)
-'    ieObject.navigate strargURL
-    '親ページ読み込み完了まで待機する
-    Application.StatusBar = "TOPページ読み込み完了待ち"
-    Do Until ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
-        DoEvents
-    Loop
-    Application.StatusBar = "TOPページ読み込み完了。子ページ読み込みに入ります"
     Set topDoc = ieObject.document
     'HTMLDocumentの読み込み完了を待ってから、フレームの有無について確認し
     'フレームが存在する場合は、フレーム内の読み込み完了も待機する
@@ -215,6 +215,7 @@ Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
         'サイトによっては無限ループの可能性有り・・・
         Do Until ieObject.LocationURL = strargUrl And ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
             DoEvents
+            sleep SLEEP_DEFAULT_MILLISEC
         Loop
         'Visibleの状態をプロパティで設定してる状態に戻してやる
         ieObject.Visible = Me.Visible
@@ -474,6 +475,7 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
         PressSaveAsNotificationBar = False
         Exit Function
     End If
+    '[保存]スプリットボタンを取得
     Dim elmASaveSplitButton As IUIAutomationElement
     Set elmASaveSplitButton = GetSaveSplitButton(argUIAuto, hIEWnd)
     If elmASaveSplitButton Is Nothing Then
@@ -485,7 +487,7 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
     Dim elmSaveAsDropDownButton As IUIAutomationElement
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         Set elmSaveAsDropDownButton = GetUIElement(argUIAuto, _
                                                     elmASaveSplitButton, _
                                                     UIA_LegacyIAccessibleRolePropertyId, _
@@ -502,7 +504,7 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
         'ドロップダウンボタン.click()
         iptn.Invoke
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         Set elmSaveMenyu = GetUIElement(argUIAuto, _
                                         argUIAuto.GetRootElement, _
                                         UIA_ClassNamePropertyId, _
@@ -530,9 +532,10 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
         Set GetSaveSplitButton = Nothing
         Exit Function
     End If
-    '通知バーを取得
+    '通知バー・ダウンロードダイアログのいずれかを取得
     '通知バーのハンドルを取得
     Dim hWndNotification As LongPtr
+    Dim hWndDLDialog As LongPtr
     Dim dateStart As Date
     '処理開始時間を取得
     dateStart = Now()
@@ -540,7 +543,14 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
     On Error GoTo ErrorCatch
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
+        'まず最初にダイアログの方から取得を試みる
+        'GetWindow関数は引数にGW_ENABLEPOPUPを指定すると、有効なダイアログがない場合はオーナーのhWndを返す
+        hWndDLDialog = GetWindow(hIEWnd, GW_ENABLEPOPUP)
+        If hWndDLDialog = hIEWnd Then
+            'GetWindowの結果とオーナーhWndが同じだったらダイアログが存在しないので0にしてやる
+            hWndDLDialog = 0
+        End If
         hWndNotification = FindWindowEx(hIEWnd, 0&, NOTIFICATION_CLASS_NAME, vbNullString)
         'タイムアウト時間を過ぎていたら強制終了する
         If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
@@ -548,12 +558,12 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
             Set GetSaveSplitButton = Nothing
             Exit Function
         End If
-    Loop Until hWndNotification
+    Loop Until hWndNotification Or hWndDLDialog
     '通知バーが可視状態になるまで待機（これをやらないと操作に失敗することがある・・・らしい）
     Application.StatusBar = "通知バー準備中"
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         'タイムアウト時間を過ぎていたら強制終了する
         If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
             MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
@@ -570,7 +580,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
     Dim elmSplitButtonLocal As IUIAutomationElement
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         Set elmSplitButtonLocal = GetUIElement(argUIAuto, _
                                                 elmNotificationBar, UIA_NamePropertyId, _
                                                 NOTIFICATION_SAVE_BUTTON_NAME, _
@@ -604,7 +614,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
                                             UIA_NamePropertyId, _
                                             SAVEASDIALOG_NAME, _
                                             UIA_WindowControlTypeId)
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop While elmSaveAsDialog Is Nothing
     'ファイル名エディットボックス（コンボボックス）の取得
     Dim elmFileNameComboBox As IUIAutomationElement
@@ -615,7 +625,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
                                                 SAVEASDIALOG_FILE_NAME, _
                                                 UIA_EditControlTypeId)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop While elmFileNameComboBox Is Nothing
     'ファイルパスの入力
     Dim vptn As IUIAutomationValuePattern
@@ -638,7 +648,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
                                         SAVEASDIALOG_SAVEAS_BUTTON_NAME, _
                                         UIA_ButtonControlTypeId)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop While elmSaveButton Is Nothing
     '[保存]ボタン押下
     Dim iptn As IUIAutomationInvokePattern
@@ -664,7 +674,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
     Do
         hWndNotification = FindWindowEx(hIEWnd, 0, NOTIFICATION_CLASS_NAME, vbNullString)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         'タイムアウト時間を過ぎていたら強制終了する
         If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
             MsgBox "通知バー検索時に" & SAVEASTIMEOUT & "秒のタイムアウト時間を超過しました。処理を中断します"
@@ -676,13 +686,13 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
     '可視状態になるまで待機
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop Until IsWindowVisible(hWndNotification)
     Dim elmNotificationBar As IUIAutomationElement
     Do
         Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop While elmNotificationBar Is Nothing
     '[通知バーのテキスト]取得
     Dim elmNotificationText As IUIAutomationElement
@@ -693,7 +703,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
                                                 NOTIFICATION_TEXT, _
                                                 UIA_TextControlTypeId)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         Application.StatusBar = "ダウンロード完了待ち " & Second(Now() - dateStart) & " 秒経過..."
     Loop While elmNotificationText Is Nothing
     '通知バーのテキストの内容を取得してみる
@@ -701,7 +711,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
     Set vptnNotificationText = elmNotificationText.GetCurrentPattern(UIA_ValuePatternId)
     Do
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
         Application.StatusBar = vptnNotificationText.CurrentValue
     Loop While InStr(vptnNotificationText.CurrentValue, "ダウンロード済み") >= 1
     'テキスト出力してみる
@@ -720,7 +730,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
                                             NOTIFICATION_CLOSE_BUTTON_NAME, _
                                             UIA_ButtonControlTypeId)
         DoEvents
-        Sleep (SLEEP_DEFAULT_MILLISEC)
+        sleep (SLEEP_DEFAULT_MILLISEC)
     Loop While elmCloseButton Is Nothing
     '[閉じる]ボタン押下
     Dim iptnClose As IUIAutomationInvokePattern

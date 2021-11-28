@@ -2,56 +2,73 @@ Attribute VB_Name = "IE_Connect_Test"
 Option Explicit
 Private Const START_COLUMN As Long = 2
 Private Const START_ROW As Long = 4
-Public Function OpenUrlatIE(Optional ByVal strargUrl As String = "") As Boolean
+Public Sub OpenUrlatIE()
 '    Dim ieObject As InternetExplorerMedium
-    Dim ieObject As InternetExplorer
-    Dim returnHTML As HTMLDocument
-'    Dim tableWhole As IHTMLElementCollection
-    Dim tableRow As HTMLTableRow
-    Dim tableHeader As HTMLTableCell
-    Dim tableData As HTMLTableCell
-    Dim longColumnCount As Long
-    Dim longRowCount As Long
-    Set ieObject = New InternetExplorer
-    ieObject.Visible = False
-    If strargUrl = "" Then
-'        '沖縄県市町村一覧ダウンロード_SaveAsテスト
-'        strargUrl = "https://saigai.gsi.go.jp/jusho/download/pref/47.html"
-        'confirm強行突破テスト用
-        strargUrl = "http://needtec.sakura.ne.jp/auto_demo/form1.html"
-    End If
-    ieObject.navigate strargUrl
-    '読み込み完了まで待つ処理
-    Do While ieObject.Busy = True And ieObject.readyState <> READYSTATE_COMPLETE
-        Application.StatusBar = "トップ画面読み込み完了待ち"
-        DoEvents
-    Loop
-    Application.StatusBar = ""
-    'HTMLDobumentオブジェクトとして取得
-    Set returnHTML = ieObject.document
-    '読み込んだドキュメントの読み込み完了を待機
-    Do While returnHTML.readyState <> "complete"
-        Application.StatusBar = "Document読み込み完了待機中..."
-        DoEvents
-    Loop
-    Application.StatusBar = "読み込み完了"
-    ieObject.Visible = True
-    Dim htmlelmName As HTMLDocument
-    Set htmlelmName = returnHTML.getElementsByName("name").Item(, 0)
-    htmlelmName.Value = "ぽにぷに"
-    Dim htmlelmMail As HTMLDocument
-    Set htmlelmMail = returnHTML.getElementsByName("mail").Item(, 0)
-    htmlelmMail.Value = "puni@poni"
-    'confirm偽造
-    returnHTML.parentWindow.execScript "confirm = function(){return true;}"
-    Dim htmlelmSubmitButton As Object
-    Set htmlelmSubmitButton = returnHTML.getElementsByTagName("input")
-    Dim objelm As Object
-    For Each objelm In htmlelmSubmitButton
-        If InStr(objelm.outerHTML, "登録する") >= 1 Then
-            objelm.Click
+'    Dim ieObject As InternetExplorer
+'    Dim returnHTML As HTMLDocument
+''    Dim tableWhole As IHTMLElementCollection
+'    Dim tableRow As HTMLTableRow
+'    Dim tableHeader As HTMLTableCell
+'    Dim tableData As HTMLTableCell
+'    Dim longColumnCount As Long
+'    Dim longRowCount As Long
+'    Set ieObject = New InternetExplorer
+'    ieObject.Visible = False
+    Dim clsIETest As clsGetIE
+    Set clsIETest = New clsGetIE
+    '沖縄県市町村一覧ダウンロード_SaveAsテスト
+    clsIETest.URL = "https://saigai.gsi.go.jp/jusho/download/pref/47.html"
+    clsIETest.Visible = True
+    '結果をdicHTMLdocで受け取る
+    Dim dicResultHTML As Dictionary
+    Set dicResultHTML = clsIETest.ResultHTMLDoc
+    'トップドキュメントをHTMLDocとして受け取る
+    Dim topHTMLdoc As HTMLDocument
+    Set topHTMLdoc = dicResultHTML("d")
+    'トップのLinks(aタグ）の中で糸満市の文字列がある物をクリックする（zipファイル）
+    Dim htmlLink As HTMLHtmlElement
+    For Each htmlLink In topHTMLdoc.Links
+        If InStr(htmlLink.innerHTML, "糸満市") > 0 Then
+            '糸満市が含まれてたらクリックする
+            htmlLink.Click
+            '保存ボタンを押すのをやってみる
+            clsIETest.DownloadNotificationBarSaveAs ("Test20211128")
         End If
-    Next objelm
+    Next htmlLink
+''-----------------------------------------------------------------------------------------------------------------------------
+'    'confirm強行突破テスト用
+'   clsIETest.URL = "http://needtec.sakura.ne.jp/auto_demo/form1.html"
+'    '読み込み完了まで待つ処理
+'    Do While ieObject.Busy = True And ieObject.readyState <> READYSTATE_COMPLETE
+'        Application.StatusBar = "トップ画面読み込み完了待ち"
+'        DoEvents
+'    Loop
+'    Application.StatusBar = ""
+    'HTMLDobumentオブジェクトとして取得
+'    Set returnHTML = ieObject.document
+'    '読み込んだドキュメントの読み込み完了を待機
+'    Do While returnHTML.readyState <> "complete"
+'        Application.StatusBar = "Document読み込み完了待機中..."
+'        DoEvents
+'    Loop
+'    Application.StatusBar = "読み込み完了"
+'    ieObject.Visible = True
+'    Dim htmlelmName As HTMLDocument
+'    Set htmlelmName = returnHTML.getElementsByName("name").Item(, 0)
+'    htmlelmName.Value = "ぽにぷに"
+'    Dim htmlelmMail As HTMLDocument
+'    Set htmlelmMail = returnHTML.getElementsByName("mail").Item(, 0)
+'    htmlelmMail.Value = "puni@poni"
+'    'confirm偽造
+'    returnHTML.parentWindow.execScript "confirm = function(){return true;}"
+'    Dim htmlelmSubmitButton As Object
+'    Set htmlelmSubmitButton = returnHTML.getElementsByTagName("input")
+'    Dim objelm As Object
+'    For Each objelm In htmlelmSubmitButton
+'        If InStr(objelm.outerHTML, "登録する") >= 1 Then
+'            objelm.Click
+'        End If
+'    Next objelm
 ''-----------------------------------------------------------------------------------------------------------------------------
 ''NotificationSaveAs 使用例
 '    糸満市のデータが軽いのでそのリンクを探す
@@ -116,8 +133,7 @@ Public Function OpenUrlatIE(Optional ByVal strargUrl As String = "") As Boolean
 '    Application.StatusBar = "取得完了"
     Application.ScreenUpdating = True
     Stop
-    If Not ieObject Is Nothing Then
-        Call ieObject.Quit
-        Set ieObject = Nothing
+    If Not clsIETest Is Nothing Then
+        Set clsIETest = Nothing
     End If
-End Function
+End Sub

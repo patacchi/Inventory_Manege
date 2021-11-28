@@ -17,8 +17,9 @@ Option Explicit
     Private Declare PtrSafe Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWndparent As Long, ByVal hWndchild As Long, ByVal lpClassName As String, ByVal lpWindowName As String) As Long
 #End If
 Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
-Declare PtrSafe Function IsWindowVisible Lib "user32" (ByVal hwnd As LongPtr) As Long
-Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As Long
+Public Declare PtrSafe Function IsWindowVisible Lib "user32" (ByVal hwnd As LongPtr) As Long
+Public Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As Long
+Public Declare PtrSafe Function GetWindow Lib "user32" (ByVal hwndOwner As LongPtr, ByVal wCmdGW_ As Long) As LongPtr
 '-----------------------------------------------------------------------------------------------------------------------
 'UNC対応のため、Win32API使用
 Public Declare PtrSafe Function SetCurrentDirectoryW Lib "kernel32" (ByVal lpPathName As LongPtr) As LongPtr
@@ -59,6 +60,14 @@ Public Const SW_SHOWNA = 8
 Public Const SW_RESTORE = 9
 Public Const SW_SHOWDEFAULT = 10
 Public Const SW_MAX = 10
+'GetWindows() GW_Cmd
+Public Const GW_HWNDFIRST As Long = 0
+Public Const GW_HWNDLAST As Long = 1
+Public Const GW_HWNDNEXT As Long = 2
+Public Const GW_HWNDPREV As Long = 3
+Public Const GW_OWNER As Long = 4
+Public Const GW_CHILD As Long = 5
+Public Const GW_ENABLEPOPUP As Long = 6
 '-----------------------------------------------------------------------------------------------------------------------
 'プロシージャ定義
 'フォームに最大化・リサイズ機能を追加する。
