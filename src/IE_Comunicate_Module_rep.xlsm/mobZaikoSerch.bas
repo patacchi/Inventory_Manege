@@ -51,19 +51,29 @@ Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
 '        docConfirm.parentWindow.execScript "$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');"
 '        docConfirm.parentWindow.execScript "if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"
     End If
-    '保存ファイル名生成
-    Dim strFilePath As String
-    Dim fsoLink As Scripting.FileSystemObject
-    Set fsoLink = New FileSystemObject
-    strFilePath = fsoLink.BuildPath(fsoLink.GetSpecialFolder(TemporaryFolder), Format(Now(), "yyyymmddhhmmss"))
-    'SaveAs 操作
-    Dim strResultFullPath As String
-    strResultFullPath = getIETest.DownloadNotificationBarSaveAs(strFilePath, getIETest.IEInstance.hwnd)
-    '帰ってきたBookを開いてみる
-    getIETest.IEInstance.Visible = False
-    Dim wkbNewBook As Workbook
-    Set wkbNewBook = Workbooks.Open(strResultFullPath)
-    wkbNewBook.Activate
+    '-----------------------------------------------------------------------------------------------------------
+    'Saveの場合（基本はこっち）
+    '保存ファイル名の生成（ファイル名のみ、ディレクトリはDownloadの場所になるはずなので可変）
+    Dim strFleName As String
+    strFleName = "ZaikoSerch" & (Format(Now(), "yyyymmddhhmmss"))
+    Dim strResultFilePath As String
+    '保存ボタンを押し、結果のファイル名を受け取る
+    strResultFilePath = getIETest.DownloadSave_NotificationBar(strFleName)
+'    '-----------------------------------------------------------------------------------------------------------
+'    'SaveAsの時の使用方法
+'    '保存ファイル名生成
+'    Dim strFilePath As String
+'    Dim fsoLink As Scripting.FileSystemObject
+'    Set fsoLink = New FileSystemObject
+'    strFilePath = fsoLink.BuildPath(fsoLink.GetSpecialFolder(TemporaryFolder), Format(Now(), "yyyymmddhhmmss"))
+'    'SaveAs 操作
+'    Dim strResultFullPath As String
+'    strResultFullPath = getIETest.DownloadNotificationBarSaveAs(strFilePath, getIETest.IEInstance.Hwnd)
+'    '帰ってきたBookを開いてみる
+'    getIETest.IEInstance.Visible = False
+'    Dim wkbNewBook As Workbook
+'    Set wkbNewBook = Workbooks.Open(strResultFullPath)
+'    wkbNewBook.Activate
 '    '試しに検索ボタンをクリックしてみる
 '    getIETest.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
 '    Dim localHTMLDoc As HTMLDocument
@@ -71,7 +81,7 @@ Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
 '    Set localHTMLDoc = dicReturnHTMLDoc("t10")
 '    Dim elementStrArray() As String
 '    elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
-    Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
+'    Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
     'Stop
     Set getIETest = Nothing
     Exit Sub

@@ -21,7 +21,7 @@ Private Const START_ROW_DEFAULT As Long = 6                                 'ƒV
 Private Const START_COLUMN_DEFAULT As Long = 2                              'ƒV[ƒg‘‚«o‚µ‚ÌƒfƒtƒHƒ‹ƒgƒXƒ^[ƒg—ñ
 Private Const TOP_DOC_CHR As String = "d"                                   'Œ‹‰ÊŠi”[—pDictionary‚ÌƒgƒbƒvƒtƒŒ[ƒ€‚Ì•¶š—ñ
 'IEÚ‘±‚ÉŠÖ‚·‚éƒƒ“ƒo•Ï”
-Private ieObject As InternetExplorer                                        'IEƒIƒuƒWƒFƒNƒg
+Private ieObject As InternetExplorerMedium                                  'IEƒIƒuƒWƒFƒNƒg
 Private strURL As String                                                    'IE‚ÅŠJ‚­URL‚ğ•Û‚·‚éƒƒ“ƒo•Ï”
 Private isVisible As Boolean                                                'IE‰æ–Ê‚ğ•\¦‚·‚é‚©‚Ç‚¤‚©ATrue‚Å•\¦
 Private dicReturnHTMLDocs As Dictionary                                     'ŠeƒtƒŒ[ƒ€–ˆ‚ÉHTML Doument‚ğ“ü‚ê‚ékey‚ÍƒtƒŒ[ƒ€”Ô†(t001EEE),value‚ÍHTML Document
@@ -126,9 +126,9 @@ End Sub
 Private Sub Initialize()
     longColumn = START_COLUMN_DEFAULT
     longRow = START_ROW_DEFAULT
-    Set ieObject = New InternetExplorer
+'    Set ieObject = New InternetExplorer
+    Set ieObject = New InternetExplorerMedium
     Set dicReturnHTMLDocs = New Dictionary
-'    Set ieObject = New InternetExplorerMedium
     isVisible = False
 End Sub
 '''Author Daisuke_Oota
@@ -407,6 +407,36 @@ ErrorCatch:
     Exit Function
 End Function
 '---------------------------------------------------------------------------------------------------------------
+'''’Ê’mƒo[‚Ì[•Û‘¶]‚ğ‰Ÿ‚·
+'''–ß‚è’l ³íæ“¾o—ˆ‚Ä‚¢‚ê‚ÎTrue
+'''parms
+'''strFileName              'ƒIƒvƒVƒ‡ƒ“‚Åƒtƒ@ƒCƒ‹–¼‚ğw’è‚µ‚½ê‡‚ÍAÅI“I‚ÉƒŠƒl[ƒ€‚µ‚Ä•Ô‚·
+'''hIE                      'ƒIƒvƒVƒ‡ƒ“‚ÅIE‚Ìƒnƒ“ƒhƒ‹‚ğw’è‚·‚éBw’è‚ª‚È‚¢ê‡‚ÍAƒNƒ‰ƒX‚Ìƒƒ“ƒo‚ÌieObject‚Ìƒnƒ“ƒhƒ‹‚Æ‚·‚é
+'---------------------------------------------------------------------------------------------------------------
+Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As String, Optional ByVal hIE As LongPtr) As String
+    'hIEw’è‚³‚ê‚Ä‚¢‚È‚¯‚ê‚ÎƒNƒ‰ƒX‚Ìƒƒ“ƒo•Ï”‚ÌieObject‚Ìƒnƒ“ƒhƒ‹‚Æ‚·‚é
+    If hIE = 0 And Not ieObject Is Nothing Then
+        hIE = ieObject.Hwnd
+    End If
+    If hIE = 0 Then
+    End If
+    '•Û‘¶ƒ{ƒ^ƒ“‚ğ‰Ÿ‚·
+    Dim uiAuto As CUIAutomation
+    Set uiAuto = New CUIAutomation
+    If Not PressSave_NotificationBar(uiAuto, hIE) Then
+        '¸”s‚µ‚½‚æ‚¤‚Å‚·
+        DownloadSave_NotificationBar = ""
+        Exit Function
+    End If
+    'ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚ğ‘Ò‚Á‚ÄA’Ê’mƒo[‚ğ•Â‚¶A•Û‘¶‚µ‚½ƒtƒ@ƒCƒ‹–¼‚ğó‚¯æ‚é
+    Dim strSavedFileName As String
+    strSavedFileName = ClosingNotificationBar(uiAuto, hIE)
+    '‘±‚«‚Í‚±‚±‚©‚ç
+    'ƒtƒ@ƒCƒ‹–¼‚ªw’è‚³‚ê‚Ä‚¢‚éê‡‚ÍA[•Û‘¶]ƒ{ƒ^ƒ“‰Ÿ‰º‚Ì“®ì‚É‚È‚é‚Ì‚ÅA
+    'ƒfƒBƒŒƒNƒgƒŠ‚ÍAƒŒƒWƒXƒgƒŠ‚æ‚èDownload‚Ìİ’è‚ğ“Ç‚İæ‚èŠÂ‹«•Ï”‚ğ“WŠJ‚µ‚½‚à‚Ì‚Æ‚È‚é
+    'ƒŒƒWƒXƒgƒŠ‚æ‚èDownload‚ÌêŠ‚ğæ“¾iŠÂ‹«•Ï”‚ğ“WŠJ‚·‚éj
+End Function
+'---------------------------------------------------------------------------------------------------------------
 'SaveAs Modules
 '''IE‚Ìƒnƒ“ƒhƒ‹‚Æ•Û‘¶ƒtƒ@ƒCƒ‹–¼‚ğˆø”‚Æ‚µ‚ÄA–¼‘O‚ğ•t‚¯‚Ä•Û‘¶‚Ìƒ{ƒ^ƒ“‘€ì‚ğ‚·‚é
 'Return ÅI“I‚É•Û‘¶‚³‚ê‚½ƒtƒ‹ƒpƒX‚ğString‚Å•Ô‚·
@@ -414,7 +444,7 @@ End Function
 Public Function DownloadNotificationBarSaveAs(ByVal strargSaveFilePath As String, Optional ByRef hIE As LongPtr) As String
     If hIE = 0 Then
         If Not ieObject Is Nothing Then
-            hIE = ieObject.hwnd
+            hIE = ieObject.Hwnd
         End If
     End If
     'ƒnƒ“ƒhƒ‹‚Æ•Û‘¶ƒtƒ@ƒCƒ‹–¼‚Í•K{‚È‚Ì‚ÅA‚Ç‚¿‚ç‚©‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚ç”²‚¯‚é
@@ -465,8 +495,35 @@ End Function
 '''’Ê’mƒo[‚Ì[•Û‘¶]‚ğ‰Ÿ‚·
 '''–ß‚è’l ³íæ“¾o—ˆ‚Ä‚¢‚ê‚ÎTrue
 '''parms
-'''strFileName              'ƒIƒvƒVƒ‡ƒ“‚Åƒtƒ@ƒCƒ‹–¼‚ğw’è‚µ‚½ê‡‚ÍAÅI“I‚ÉƒŠƒl[ƒ€‚µ‚Ä•Ô‚·
+'''uiAuto               '
+'''hIEWnd               '‘€ì‚µ‚½‚¢IE‚Ìƒnƒ“ƒhƒ‹
 '---------------------------------------------------------------------------------------------------------------
+Private Function PressSave_NotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As Boolean
+    'uiAuto‚ÆIEƒnƒ“ƒhƒ‹‚Ç‚¿‚ç‚à•K{‚È‚Ì‚Åƒ`ƒFƒbƒN‚µA–³‚©‚Á‚½‚ç”²‚¯‚é
+    If argUIAuto Is Nothing Or hIEWnd = 0 Then
+        DebugMsgWithTime "PressSave_NotificationBar: uiAuto or hIE is empty"
+        PressSave_NotificationBar = False
+        Exit Function
+    End If
+    '[•Û‘¶]ƒXƒvƒŠƒbƒgƒ{ƒ^ƒ“‚ğæ“¾
+    Dim elmASaveSplitButton As IUIAutomationElement
+    Set elmASaveSplitButton = GetSaveSplitButton(argUIAuto, hIEWnd)
+    If elmASaveSplitButton Is Nothing Then
+        '•Û‘¶ƒ{ƒ^ƒ“æ“¾¸”s
+        PressSave_NotificationBar = False
+        Exit Function
+    End If
+    '•Û‘¶ƒ{ƒ^ƒ“‚ğ‰Ÿ‰º‚µ‚Ä‚İ‚é‚æ
+    Dim iptn As IUIAutomationInvokePattern
+    Set iptn = elmASaveSplitButton.GetCurrentPattern(UIA_InvokePatternId)
+    iptn.Invoke
+    PressSave_NotificationBar = True
+    Exit Function
+ErrorCatch:
+    DebugMsgWithTime "PressSave_NotificaionBar code: " & Err.Number & " Description: " & Err.Description
+    PressSave_NotificationBar = False
+    Exit Function
+End Function
 '''’Ê’mƒo[‚Ì[•Ê–¼‚Å•Û‘¶]‚ğ‰Ÿ‚·
 Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As Boolean
     'uiAuto‚ÆIEƒnƒ“ƒhƒ‹—¼•û‚Æ‚à•K{‚È‚Ì‚Åˆø”ƒ`ƒFƒbƒN‚µ–³‚©‚Á‚½‚ç”²‚¯‚é
