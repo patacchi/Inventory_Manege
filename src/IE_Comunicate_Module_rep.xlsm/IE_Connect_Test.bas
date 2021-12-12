@@ -3,24 +3,13 @@ Option Explicit
 Private Const START_COLUMN As Long = 2
 Private Const START_ROW As Long = 4
 Public Sub OpenUrlatIE()
-'    Dim ieObject As InternetExplorerMedium
-'    Dim ieObject As InternetExplorer
-'    Dim returnHTML As HTMLDocument
-''    Dim tableWhole As IHTMLElementCollection
-'    Dim tableRow As HTMLTableRow
-'    Dim tableHeader As HTMLTableCell
-'    Dim tableData As HTMLTableCell
-'    Dim longColumnCount As Long
-'    Dim longRowCount As Long
-'    Set ieObject = New InternetExplorer
-'    ieObject.Visible = False
     Dim clsIETest As clsGetIE
     Set clsIETest = New clsGetIE
     'InternetMediumだとうまくいかないので、インスタンス差し替え
     Set clsIETest.IEInstance = New InternetExplorer
     '沖縄県市町村一覧ダウンロード_SaveAsテスト
     clsIETest.URL = "https://saigai.gsi.go.jp/jusho/download/pref/47.html"
-    clsIETest.Visible = True
+'    clsIETest.Visible = True
     '結果をdicHTMLdocで受け取る
     Dim dicResultHTML As Dictionary
     Set dicResultHTML = clsIETest.ResultHTMLDoc
@@ -35,9 +24,9 @@ Public Sub OpenUrlatIE()
             htmlLink.Click
             '保存ボタンを押し、保存後のフルパス名を受け取る
             Dim strResultFilePath As String
-'            strResultFilePath = clsIETest.DownloadSave_NotificationBar("Test20211212.zip")
-            strResultFilePath = clsIETest.DownloadSave_NotificationBar("47210")
-            MsgBox strResultFilePath
+            'ファイル名を指定しない場合は本来のファイル名まま受け取るが、指定した場合はリネーム処理をして、拡張子を付けたものが返る
+            'ここで指定したファイルは明示的に削除されるので注意
+            strResultFilePath = clsIETest.DownloadSave_NotificationBar("Test20211212")
         End If
     Next htmlLink
 ''-----------------------------------------------------------------------------------------------------------------------------

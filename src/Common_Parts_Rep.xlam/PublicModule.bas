@@ -210,4 +210,33 @@ Public Function GetDownloadPath() As String
     With CreateObject("Wscript.Shell")
         GetDownloadPath = .ExpandEnvironmentStrings(.RegRead(REG_DOWNLOADPATH))
     End With
-End Function
+End Function
+'''---------------------------------------------------------------------------------------------------------------------------
+'''Author Daisuke Oota 2021_12_12
+'''指定したhWndのウィンドウをアクティブにする
+'''戻り値：
+'''---------------------------------------------------------------------------------------------------------------------------
+Public Sub ForceForeground(ByVal longptrhWnd As LongPtr)
+    'フォアグラウンドウィンドウを作成したスレッドIDの取得
+    Dim longForegroundID As Long
+    Dim longTargetID As Long
+    Dim longProcessID As Long
+    longForegroundID = GetWindowThreadProcessId(GetForegroundWindow(), longProcessID)
+    '目的のウィンドウを作成したスレッドIDを取得
+    longTargetID = GetWindowThreadProcessId(longptrhWnd, longProcessID)
+    'スレッドのインプット状態を結びつける
+    Call AttachThreadInput(longTargetID, longForegroundID, True)
+    Dim longptrTimeout As LongPtr
+    Dim dummy As LongPtr
+    dummy = 0
+    Call SystemParametersInfo(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, longptrTimeout, 0)
+    'ウィンドウ切り替え待機時間を0にする
+    Call SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, dummy, SPIF_SENDCHANGE)
+    'ウィンドウを最前面に持ってくる
+    Call SetForegroundWindow(Application.hwnd)
+'    Call BringWindowToTop(Application.hwnd)
+    'ウィンドウ切り替え時間の設定を戻す
+    Call SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, longptrTimeout, SPIF_SENDCHANGE)
+    'スレッドのインプット状態を切り離す
+    Call AttachThreadInput(longTargetID, longForegroundID, False)
+End Sub

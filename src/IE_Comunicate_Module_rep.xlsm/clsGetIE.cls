@@ -44,7 +44,6 @@ Private Const CONTEXT_MENU_CLASS_NAME As String = "#32768"                  'ƒRƒ
 Private Const SAVEASDIALOG_NAME As String = "–¼‘O‚ð•t‚¯‚Ä•Û‘¶"              '–¼‘O‚ð•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚ÌName
 Private Const SAVEASDIALOG_FILE_NAME As String = "ƒtƒ@ƒCƒ‹–¼:"              'ƒtƒ@ƒCƒ‹–¼ƒRƒ“ƒ{ƒ{ƒbƒNƒX‚ÌName
 Private Const SAVEASDIALOG_SAVEAS_BUTTON_NAME As String = "•Û‘¶(S)"         '•Û‘¶ƒ{ƒ^ƒ“‚ÌName
-Private Const DOWNLOAS_COMP_STRING_AFTER_FILENAME As String = "‚Ìƒ_ƒEƒ“ƒ[ƒh‚ªŠ®—¹‚µ‚Ü‚µ‚½B" '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ÅAƒtƒ@ƒCƒ‹–¼‚ÌŒã‚ë‚É‘±‚­•¶Žš—ñB‚±‚Ì‘O‚Ü‚Å‚Íƒtƒ@ƒCƒ‹–¼‚Æ”»’f
 Private Const SAVEASTIMEOUT As Long = 30                                    'SaveAsƒEƒBƒ“ƒhƒE‚ðŒŸõ‚·‚é‚Æ‚«‚Ìƒ^ƒCƒ€ƒAƒEƒgŽžŠÔ
 'ƒvƒƒpƒeƒBiƒAƒNƒZƒTj
 'URL
@@ -419,6 +418,7 @@ End Function
 '''–ß‚è’l ³íŽæ“¾o—ˆ‚Ä‚¢‚ê‚ÎTrue
 '''parms
 '''strFileName              'ƒIƒvƒVƒ‡ƒ“‚Åƒtƒ@ƒCƒ‹–¼‚ðŽw’è‚µ‚½ê‡‚ÍAÅI“I‚ÉƒŠƒl[ƒ€‚µ‚Ä•Ô‚·
+                            '‚±‚±‚ÅŽw’è‚µ‚½ƒtƒ@ƒCƒ‹–¼‚Æ“¯–¼‚Ìƒtƒ@ƒCƒ‹‚ª‚·‚Å‚É‚ ‚Á‚½ê‡A‹­§“I‚Éíœ‚³‚ê‚é‚Ì‚Å’ˆÓ
 '''hIE                      'ƒIƒvƒVƒ‡ƒ“‚ÅIE‚Ìƒnƒ“ƒhƒ‹‚ðŽw’è‚·‚éBŽw’è‚ª‚È‚¢ê‡‚ÍAƒNƒ‰ƒX‚Ìƒƒ“ƒo‚ÌieObject‚Ìƒnƒ“ƒhƒ‹‚Æ‚·‚é
 '---------------------------------------------------------------------------------------------------------------
 Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As String, Optional ByVal hIE As LongPtr) As String
@@ -434,6 +434,7 @@ Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As Strin
     If Not PressSave_NotificationBar(uiAuto, hIE) Then
         'Ž¸”s‚µ‚½‚æ‚¤‚Å‚·
         DownloadSave_NotificationBar = ""
+        DebugMsgWithTime "DownloadSave_Notification"
         Exit Function
     End If
     'ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚ð‘Ò‚Á‚ÄA’Ê’mƒo[‚ð•Â‚¶A•Û‘¶‚µ‚½ƒtƒ@ƒCƒ‹–¼‚ðŽó‚¯Žæ‚é
@@ -447,6 +448,7 @@ Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As Strin
     If strFileName = "" Or strFileName = fsoSave.GetBaseName(strSavedFileName) Then
         'ƒtƒ@ƒCƒ‹–¼‚ª“Á‚ÉŽw’è‚³‚ê‚Ä‚¢‚È‚¢A–”‚Íƒ_ƒEƒ“ƒ[ƒh‚³‚ê‚½ƒtƒ@ƒCƒ‹–¼‚Æ“¯‚¶‚¾‚Á‚½ê‡‚ÍŽæ“¾‚µ‚½ƒtƒ‹ƒpƒX‚ð‚»‚Ì‚Ü‚Ü•Ô‚·
         DownloadSave_NotificationBar = strSavedFilePath
+        Application.StatusBar = strSavedFilePath & " ‚Æ‚µ‚Äƒtƒ@ƒCƒ‹•Û‘¶Š®—¹‚µ‚Ü‚µ‚½B"
     Else
         'ƒtƒ@ƒCƒ‹–¼‚ªŽw’è‚³‚ê‚Ä‚¢‚éê‡‚ÍAƒŠƒl[ƒ€ˆ—‚ðs‚Á‚½ŒãA‚»‚Ìƒtƒ‹ƒpƒX‚ð•Ô‚·
         Dim strNewFileName As String
@@ -467,6 +469,10 @@ Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As Strin
         fileSaved.Name = strNewFileName
         'ƒŠƒl[ƒ€Œã‚Ìƒtƒ‹ƒpƒX‚ð•Ô‚·
         DownloadSave_NotificationBar = fileSaved.Path
+        Application.StatusBar = fileSaved.Path & " ‚Æ‚µ‚Äƒtƒ@ƒCƒ‹•Û‘¶Š®—¹‚µ‚Ü‚µ‚½B"
+        'ƒtƒH[ƒJƒX‚ðExcel‚É–ß‚µ‚Ä‚â‚é
+        Call ForceForeground(Application.Hwnd)
+        'Œ»Ý‚ÌƒEƒBƒ“ƒhƒEØ‚è‘Ö‚¦ŽžŠÔ‚ÌÝ’è‚ð“Ç‚Ýž‚Þ
     End If
     Set fsoSave = Nothing
     Exit Function
@@ -549,9 +555,12 @@ Private Function PressSave_NotificationBar(ByRef argUIAuto As CUIAutomation, ByV
         Exit Function
     End If
     '•Û‘¶ƒ{ƒ^ƒ“‚ð‰Ÿ‰º‚µ‚Ä‚Ý‚é‚æ
+    '‚±‚±‚ÅWindow•\Ž¦‚³‚¹‚È‚¢‚Æ‚¤‚Ü‚­‚¢‚©‚È‚¢‚Ý‚½‚¢EEE
+    Call ShowWindow(hIEWnd, SW_RESTORE)
     Dim iptn As IUIAutomationInvokePattern
     Set iptn = elmASaveSplitButton.GetCurrentPattern(UIA_InvokePatternId)
     iptn.Invoke
+    Call ShowWindow(hIEWnd, SW_HIDE)
     PressSave_NotificationBar = True
     Exit Function
 ErrorCatch:
@@ -651,6 +660,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
             Exit Function
         End If
     Loop Until hWndNotification Or hWndDLDialog
+    Call ShowWindow(hIEWnd, Common_Parts_Rep.modWinAPI.SW_MINIMIZE)
     '’Ê’mƒo[‚ª‰ÂŽ‹ó‘Ô‚É‚È‚é‚Ü‚Å‘Ò‹@i‚±‚ê‚ð‚â‚ç‚È‚¢‚Æ‘€ì‚ÉŽ¸”s‚·‚é‚±‚Æ‚ª‚ ‚éEEE‚ç‚µ‚¢j
     Application.StatusBar = "’Ê’mƒo[€”õ’†"
     Do
@@ -772,11 +782,13 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
         If Second(Now() - dateStart) >= SAVEASTIMEOUT Then
             MsgBox "’Ê’mƒo[ŒŸõŽž‚É" & SAVEASTIMEOUT & "•b‚Ìƒ^ƒCƒ€ƒAƒEƒgŽžŠÔ‚ð’´‰ß‚µ‚Ü‚µ‚½Bˆ—‚ð’†’f‚µ‚Ü‚·"
             Debug.Print "ClosingNotificationBar: NotificationBar find timeout"
-            ClosingNotificationBar = False
+            ClosingNotificationBar = ""
             Exit Function
         End If
     Loop Until hWndNotification
     '‰ÂŽ‹ó‘Ô‚É‚È‚é‚Ü‚Å‘Ò‹@
+    'ƒEƒBƒ“ƒhƒE‚ðÅ¬•\Ž¦‚É‚µ‚Ä‚â‚ç‚È‚¢‚ÆIsWindowVisible‚ª’Ê‚ç‚È‚¢‚Ý‚½‚¢
+    Call ShowWindow(hIEWnd, SW_MINIMIZE)
     Do
         DoEvents
         sleep (SLEEP_DEFAULT_MILLISEC)
@@ -830,8 +842,9 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
     Dim iptnClose As IUIAutomationInvokePattern
     Set iptnClose = elmCloseButton.GetCurrentPattern(UIA_InvokePatternId)
     iptnClose.Invoke
+    Call ShowWindow(hIEWnd, SW_HIDE)
     If UBound(arrResult) >= 1 Then
-        '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ÌÅ‰‚Ì—v‘fiƒtƒ@ƒCƒ‹–¼‚ª“ü‚Á‚Ä‚é‚Í‚¸j‚ð•Ô‚·
+        '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚Ìƒtƒ@ƒCƒ‹–¼‚ðŽæ“¾
         'ƒtƒ@ƒCƒ‹–¼‚É‹ó”’‚ªŠÜ‚Ü‚ê‚Ä‚¢‚½ê‡‚Ì‘Îô
         '”z—ñ‚Ì—v‘f”‚ð’²‚×‚ÄAÅI—v‘f‚Éƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚Ì•¶Žš—ñ‚ª“ü‚Á‚Ä‚é‚Í‚¸‚È‚Ì‚ÅA‚»‚Ì‘O‚Ü‚Å‹ó”’•¶Žš—ñ‚Æ˜AŒ‹‚µ‚Ä‚â‚é
         Dim longelmCount As Long

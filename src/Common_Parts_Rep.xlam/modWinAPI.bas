@@ -20,6 +20,12 @@ Public Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Public Declare PtrSafe Function IsWindowVisible Lib "user32" (ByVal hwnd As LongPtr) As Long
 Public Declare PtrSafe Function ShowWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal nCmdShow As Long) As Long
 Public Declare PtrSafe Function GetWindow Lib "user32" (ByVal hwndOwner As LongPtr, ByVal wCmdGW_ As Long) As LongPtr
+Public Declare PtrSafe Function SetForegroundWindow Lib "user32" (ByVal hwnd As LongPtr) As Long
+Public Declare PtrSafe Function SystemParametersInfo Lib "user32" Alias "SystemParametersInfoA" (ByVal uAction As Long, ByVal uParam As Long, ByRef lpvParam As Any, ByVal fuWinIni As Long) As Long
+Public Declare PtrSafe Function BringWindowToTop Lib "user32" (ByVal hwnd As LongPtr) As Long
+Public Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
+Public Declare PtrSafe Function GetWindowThreadProcessId Lib "user32" (ByVal hwnd As LongPtr, lpdwProcessId As Long) As Long
+Public Declare PtrSafe Function AttachThreadInput Lib "user32" (ByVal idAttach As Long, ByVal idAttachTo As Long, ByVal fAttach As Long) As Long
 '-----------------------------------------------------------------------------------------------------------------------
 'UNC対応のため、Win32API使用
 Public Declare PtrSafe Function SetCurrentDirectoryW Lib "kernel32" (ByVal lpPathName As LongPtr) As LongPtr
@@ -68,6 +74,10 @@ Public Const GW_HWNDPREV As Long = 3
 Public Const GW_OWNER As Long = 4
 Public Const GW_CHILD As Long = 5
 Public Const GW_ENABLEPOPUP As Long = 6
+'SystemParametersInfo
+Public Const SPI_GETFOREGROUNDLOCKTIMEOUT As Long = &H2000&
+Public Const SPI_SETFOREGROUNDLOCKTIMEOUT As Long = &H2001&
+Public Const SPIF_SENDCHANGE As Long = &H2
 'DownloadPath取得用レジストリキー
 Public Const REG_DOWNLOADPATH As String = "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\{374DE290-123F-4565-9164-39C4925E467B}"
 '-----------------------------------------------------------------------------------------------------------------------

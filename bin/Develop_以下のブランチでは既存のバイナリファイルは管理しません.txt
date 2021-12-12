@@ -1,0 +1,5 @@
+ソースファイルのみを管理するので、commit する前に vbac decombine を
+pull した後にvbac combine を実行してバイナリファイルを更新する
+
+ブランチでの作業が完了した場合は、Devlopブランチに戻り、Develop_ブランチの変更内容をmergeしたあと
+vbac combine でバイナリファイルを更新し、childブランチを消去して作業完了となる
