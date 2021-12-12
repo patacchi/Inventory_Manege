@@ -11,7 +11,7 @@ Option Explicit
 '''ADODBによりDBを操作するクラス
 '2021_10_10 IE連携のために新規作成 Patacchi
 'DB接続関係の定数設定
-Const constDatabasePath             As String = "C:\Users\q3005sbe\AppData\Local\Rep\Inventory_Manege\bin\Inventory_DB"      'データベースディレクトリ
+Const constDatabasePath             As String = "C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB"      'データベースディレクトリ
 Const constDBFILENAME               As String = "CAT_Find.accdb"           'IE情報格納用DBファイル名
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const Field_Initialdate             As String = "InitialInputDate"      '各テーブル共通、初回入力時刻

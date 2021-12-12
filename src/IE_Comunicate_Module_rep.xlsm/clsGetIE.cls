@@ -44,6 +44,7 @@ Private Const CONTEXT_MENU_CLASS_NAME As String = "#32768"                  'ƒRƒ
 Private Const SAVEASDIALOG_NAME As String = "–¼‘O‚ğ•t‚¯‚Ä•Û‘¶"              '–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚ÌName
 Private Const SAVEASDIALOG_FILE_NAME As String = "ƒtƒ@ƒCƒ‹–¼:"              'ƒtƒ@ƒCƒ‹–¼ƒRƒ“ƒ{ƒ{ƒbƒNƒX‚ÌName
 Private Const SAVEASDIALOG_SAVEAS_BUTTON_NAME As String = "•Û‘¶(S)"         '•Û‘¶ƒ{ƒ^ƒ“‚ÌName
+Private Const DOWNLOAS_COMP_STRING_AFTER_FILENAME As String = "‚Ìƒ_ƒEƒ“ƒ[ƒh‚ªŠ®—¹‚µ‚Ü‚µ‚½B" '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ÅAƒtƒ@ƒCƒ‹–¼‚ÌŒã‚ë‚É‘±‚­•¶š—ñB‚±‚Ì‘O‚Ü‚Å‚Íƒtƒ@ƒCƒ‹–¼‚Æ”»’f
 Private Const SAVEASTIMEOUT As Long = 30                                    'SaveAsƒEƒBƒ“ƒhƒE‚ğŒŸõ‚·‚é‚Æ‚«‚Ìƒ^ƒCƒ€ƒAƒEƒgŠÔ
 'ƒvƒƒpƒeƒBiƒAƒNƒZƒTj
 'URL
@@ -88,6 +89,13 @@ End Property
 Property Get IEInstance() As InternetExplorer
     Set IEInstance = ieObject
     Exit Property
+End Property
+Property Set IEInstance(argIE As InternetExplorer)
+    'ƒNƒ‰ƒX‚ÌieObject‚ğ‹­§w’è‚·‚éê‡‚Ég—p‚·‚é
+    'InternetExplorereMedium‚Å‚¤‚Ü‚­“®‚©‚È‚¢ê‡‚Ì‚İ‚Ég—pH
+    If Not argIE Is Nothing Then
+        Set ieObject = argIE
+    End If
 End Property
 'Visible
 Property Get Visible() As Boolean
@@ -431,10 +439,37 @@ Public Function DownloadSave_NotificationBar(Optional ByRef strFileName As Strin
     'ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚ğ‘Ò‚Á‚ÄA’Ê’mƒo[‚ğ•Â‚¶A•Û‘¶‚µ‚½ƒtƒ@ƒCƒ‹–¼‚ğó‚¯æ‚é
     Dim strSavedFileName As String
     strSavedFileName = ClosingNotificationBar(uiAuto, hIE)
-    '‘±‚«‚Í‚±‚±‚©‚ç
-    'ƒtƒ@ƒCƒ‹–¼‚ªw’è‚³‚ê‚Ä‚¢‚éê‡‚ÍA[•Û‘¶]ƒ{ƒ^ƒ“‰Ÿ‰º‚Ì“®ì‚É‚È‚é‚Ì‚ÅA
-    'ƒfƒBƒŒƒNƒgƒŠ‚ÍAƒŒƒWƒXƒgƒŠ‚æ‚èDownload‚Ìİ’è‚ğ“Ç‚İæ‚èŠÂ‹«•Ï”‚ğ“WŠJ‚µ‚½‚à‚Ì‚Æ‚È‚é
-    'ƒŒƒWƒXƒgƒŠ‚æ‚èDownload‚ÌêŠ‚ğæ“¾iŠÂ‹«•Ï”‚ğ“WŠJ‚·‚éj
+    'ƒŒƒWƒXƒgƒŠ‚æ‚èDownloadƒpƒX‚ğæ“¾‚µAƒtƒ@ƒCƒ‹–¼‚ÆŒ‹‡‚µ‚Äƒtƒ‹ƒpƒX‚ğ“¾‚é
+    Dim fsoSave As FileSystemObject
+    Set fsoSave = New FileSystemObject
+    Dim strSavedFilePath As String
+    strSavedFilePath = fsoSave.BuildPath(GetDownloadPath, strSavedFileName)
+    If strFileName = "" Or strFileName = fsoSave.GetBaseName(strSavedFileName) Then
+        'ƒtƒ@ƒCƒ‹–¼‚ª“Á‚Éw’è‚³‚ê‚Ä‚¢‚È‚¢A–”‚Íƒ_ƒEƒ“ƒ[ƒh‚³‚ê‚½ƒtƒ@ƒCƒ‹–¼‚Æ“¯‚¶‚¾‚Á‚½ê‡‚Íæ“¾‚µ‚½ƒtƒ‹ƒpƒX‚ğ‚»‚Ì‚Ü‚Ü•Ô‚·
+        DownloadSave_NotificationBar = strSavedFilePath
+    Else
+        'ƒtƒ@ƒCƒ‹–¼‚ªw’è‚³‚ê‚Ä‚¢‚éê‡‚ÍAƒŠƒl[ƒ€ˆ—‚ğs‚Á‚½ŒãA‚»‚Ìƒtƒ‹ƒpƒX‚ğ•Ô‚·
+        Dim strNewFileName As String
+        'V‚µ‚¢ƒtƒ@ƒCƒ‹–¼‚ğ¶¬
+        strNewFileName = strFileName & "." & fsoSave.GetExtensionName(strSavedFilePath)
+        'V‚µ‚¢ƒtƒ@ƒCƒ‹ƒtƒ‹ƒpƒX‚ğæ“¾
+        Dim strNewFilePath As String
+        strNewFilePath = fsoSave.BuildPath(fsoSave.GetParentFolderName(strSavedFilePath), strNewFileName)
+        '‚à‚µw’è‚³‚ê‚Ä‚¢‚½ƒtƒ@ƒCƒ‹–¼‚ª‘¶İ‚µ‚½ê‡‚ÍÁ‹‚·‚é
+        If fsoSave.FileExists(strNewFilePath) Then
+            fsoSave.DeleteFile strNewFilePath
+            DebugMsgWithTime "DownloadSave_NotificationBar Delete exist temp file cause same name " & strNewFilePath
+        End If
+        '•Û‘¶Œã‚ÌfileƒIƒuƒWƒFƒNƒg‚ğæ“¾
+        Dim fileSaved As File
+        Set fileSaved = fsoSave.GetFile(strSavedFilePath)
+        'ƒŠƒl[ƒ€Às
+        fileSaved.Name = strNewFileName
+        'ƒŠƒl[ƒ€Œã‚Ìƒtƒ‹ƒpƒX‚ğ•Ô‚·
+        DownloadSave_NotificationBar = fileSaved.Path
+    End If
+    Set fsoSave = Nothing
+    Exit Function
 End Function
 '---------------------------------------------------------------------------------------------------------------
 'SaveAs Modules
@@ -720,6 +755,7 @@ ErrorCatch:
 End Function
 '---------------------------------------------------------------------------------------------------------------
 '''ƒ_ƒEƒ“ƒ[ƒhŠ®—¹ŒãA’Ê’mƒo[‚ğ•Â‚¶‚é
+'''–ß‚è’l string ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚µ‚½ƒtƒ@ƒCƒ‹–¼‚Ì‚İ
 Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As String
     On Error GoTo ErrorCatch
     Application.StatusBar = "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿"
@@ -777,6 +813,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
 '    'ƒfƒoƒbƒOo—Í‚·‚é
 '    Debug.Print strResultText
     Dim arrResult() As String
+    '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ğ‹ó”’‚ğ‹æØ‚è‚Æ‚µ‚Ä”z—ñ‚É•ªŠ„‚µ‚Ä‚â‚é
     arrResult = Strings.Split(strResultText, " ")
     '[•Â‚¶‚é]ƒ{ƒ^ƒ“æ“¾
     Dim elmCloseButton As IUIAutomationElement
@@ -794,7 +831,23 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
     Set iptnClose = elmCloseButton.GetCurrentPattern(UIA_InvokePatternId)
     iptnClose.Invoke
     If UBound(arrResult) >= 1 Then
-        ClosingNotificationBar = arrResult(0)
+        '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚ÌÅ‰‚Ì—v‘fiƒtƒ@ƒCƒ‹–¼‚ª“ü‚Á‚Ä‚é‚Í‚¸j‚ğ•Ô‚·
+        'ƒtƒ@ƒCƒ‹–¼‚É‹ó”’‚ªŠÜ‚Ü‚ê‚Ä‚¢‚½ê‡‚Ì‘Îô
+        '”z—ñ‚Ì—v‘f”‚ğ’²‚×‚ÄAÅI—v‘f‚Éƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚Ì•¶š—ñ‚ª“ü‚Á‚Ä‚é‚Í‚¸‚È‚Ì‚ÅA‚»‚Ì‘O‚Ü‚Å‹ó”’•¶š—ñ‚Æ˜AŒ‹‚µ‚Ä‚â‚é
+        Dim longelmCount As Long
+        Dim strResultFileName As String
+        'ÅI—v‘fˆÈŠO‚ğ˜AŒ‹
+        For longelmCount = 0 To UBound(arrResult) - 1
+            If longelmCount = 0 Then
+                'Å‰‚Ì—v‘f‚Ìê‡‚Í‘f’¼‚É”z—ñ‚Ì’l‚ğ“ü‚ê‚Ä‚â‚é
+                strResultFileName = arrResult(longelmCount)
+            Else
+                '2”Ô–ÚˆÈ~‚Ìê‡‚Íæ“ª‚É‹ó”’•¶š‚ğ’Ç‰Á‚µ‚½‚¤‚¦‚Å”z—ñ‚Ì’l‚ğ˜AŒ‹‚·‚é
+                strResultFileName = strResultFileName & " " & arrResult(longelmCount)
+            End If
+        Next longelmCount
+        'Œ‹‰Ê‚ğ•Ô‚·
+        ClosingNotificationBar = strResultFileName
         Exit Function
     Else
         Debug.Print "ClosingNotificationBar: Œ‹‰Ê‚ÌƒeƒLƒXƒgæ“¾¸”s‚µ‚Ä‚é‚Á‚Û‚¢"

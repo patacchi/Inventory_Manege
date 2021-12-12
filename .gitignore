@@ -5,7 +5,10 @@ Sqlite3Demo.bas
 *.laccdb
 *.bak
 ~$*
-#DevelopブランチではxlsmバイナリファイルはGit管理外とする
+#Develop_ 以下のブランチでは、既存のxl?mファイルは管理対象外とし、ソースファイルのみ管理する
+#変更を適用するのに、vbac の combine を使用すること
+bin/Common_Parts_Rep.xlam
+bin/IE_Comunicate_Module_Rep.xlsm
 #bin/*.xl*
 bin/*_Local.xl*
 src/*/*.frx

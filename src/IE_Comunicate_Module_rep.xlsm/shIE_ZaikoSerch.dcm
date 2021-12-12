@@ -2,11 +2,12 @@ VERSION 1.0 CLASS
 BEGIN
   MultiUse = -1  'True
 END
-Attribute VB_Name = "shIEData"
+Attribute VB_Name = "shIE_ZaikoSerch"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
-Private Sub btnSerchZaikoDetailTest_Click()
-    Call ZaikoSerchbyTehaiCode(CStr(shIEData.Cells(4, 3).Value))
+Option Explicit
+Public Sub btnZaikoSerch_Click()
+    Call ZaikoSerchbyTehaiCode(Me.Cells(4, 3).Value)
 End Sub

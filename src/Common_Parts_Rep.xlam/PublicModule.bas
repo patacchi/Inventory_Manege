@@ -183,7 +183,7 @@ End Sub
 '''---------------------------------------------------------------------------------------------------------------------------
 '''Author Daisuke Oota 2021_10_18
 '''配列が初期化済みどうかを判定する関数 UBoundを使っていいかどうかの判断材料になる
-'''戻り値：boot 初期化済みなら True、それ以外はFalseを返す。配列じゃないときもFalse
+'''戻り値：bool 初期化済みなら True、それ以外はFalseを返す。配列じゃないときもFalse
 '''---------------------------------------------------------------------------------------------------------------------------
 Public Function IsRedim(varargArray As Variant) As Boolean
     If Not IsArray(varargArray) Then
@@ -201,4 +201,13 @@ Public Function IsRedim(varargArray As Variant) As Boolean
     IsRedim = (Err.Number = 0)
     Exit Function
 End Function
-'''---------------------------------------------------------------------------------------------------------------------------
+'''---------------------------------------------------------------------------------------------------------------------------
+'''Author Daisuke Oota 2021_12_12
+'''ダウンロードディレクトリのフルパスを返す関数。環境変数も展開して返す
+'''戻り値：string ダウンロードディレクトリのフルパス
+'''---------------------------------------------------------------------------------------------------------------------------
+Public Function GetDownloadPath() As String
+    With CreateObject("Wscript.Shell")
+        GetDownloadPath = .ExpandEnvironmentStrings(.RegRead(REG_DOWNLOADPATH))
+    End With
+End Function

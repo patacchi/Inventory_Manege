@@ -28,18 +28,21 @@ End Sub
 '''Author Daisuke oota 2021_10_29
 ''' 単体でテストしたいプロシージャを記述
 '''
-'''ビットフラグテスト
-'''32ビットまで順番にフラグを立てて、Longでどう表現されるか
 Private Sub btnSingleTest_Click()
-    Dim longFlag As Long
-    Dim intBitCount As Integer
-    Dim logBeki As Double
-    longFlag = 0
-    For intBitCount = 0 To 30
-        longFlag = 0 Or (2 ^ intBitCount)
-        logBeki = Log(longFlag) / Log(2#)
-        DebugMsgWithTime (vbCrLf & intBitCount & "bit" & vbCrLf & longFlag & vbCrLf & logBeki)
-    Next intBitCount
+''''ビットフラグテスト
+''''32ビットまで順番にフラグを立てて、Longでどう表現されるか
+'
+'    Dim longFlag As Long
+'    Dim intBitCount As Integer
+'    Dim logBeki As Double
+'    longFlag = 0
+'    For intBitCount = 0 To 30
+'        longFlag = 0 Or (2 ^ intBitCount)
+'        logBeki = Log(longFlag) / Log(2#)
+'        DebugMsgWithTime (vbCrLf & intBitCount & "bit" & vbCrLf & longFlag & vbCrLf & logBeki)
+'    Next intBitCount
+'ダウンロードパス取得
+    MsgBox GetDownloadPath
 End Sub
 '''Author Daisuke Oota 2021_10_18
 '''パラメータバインドを使用するかどうか

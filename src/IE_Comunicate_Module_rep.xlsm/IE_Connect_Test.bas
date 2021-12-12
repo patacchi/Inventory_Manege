@@ -16,6 +16,8 @@ Public Sub OpenUrlatIE()
 '    ieObject.Visible = False
     Dim clsIETest As clsGetIE
     Set clsIETest = New clsGetIE
+    'InternetMediumだとうまくいかないので、インスタンス差し替え
+    Set clsIETest.IEInstance = New InternetExplorer
     '沖縄県市町村一覧ダウンロード_SaveAsテスト
     clsIETest.URL = "https://saigai.gsi.go.jp/jusho/download/pref/47.html"
     clsIETest.Visible = True
@@ -31,8 +33,11 @@ Public Sub OpenUrlatIE()
         If InStr(htmlLink.innerHTML, "糸満市") > 0 Then
             '糸満市が含まれてたらクリックする
             htmlLink.Click
-            '保存ボタンを押すのをやってみる
-            clsIETest.DownloadNotificationBarSaveAs ("Test20211128")
+            '保存ボタンを押し、保存後のフルパス名を受け取る
+            Dim strResultFilePath As String
+'            strResultFilePath = clsIETest.DownloadSave_NotificationBar("Test20211212.zip")
+            strResultFilePath = clsIETest.DownloadSave_NotificationBar("47210")
+            MsgBox strResultFilePath
         End If
     Next htmlLink
 ''-----------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +137,7 @@ Public Sub OpenUrlatIE()
 '    Next tableRow
 '    Application.StatusBar = "取得完了"
     Application.ScreenUpdating = True
-    Stop
+'    Stop
     If Not clsIETest Is Nothing Then
         Set clsIETest = Nothing
     End If

@@ -68,6 +68,8 @@ Public Const GW_HWNDPREV As Long = 3
 Public Const GW_OWNER As Long = 4
 Public Const GW_CHILD As Long = 5
 Public Const GW_ENABLEPOPUP As Long = 6
+'DownloadPath取得用レジストリキー
+Public Const REG_DOWNLOADPATH As String = "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\{374DE290-123F-4565-9164-39C4925E467B}"
 '-----------------------------------------------------------------------------------------------------------------------
 'プロシージャ定義
 'フォームに最大化・リサイズ機能を追加する。
