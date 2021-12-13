@@ -59,6 +59,9 @@ Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
     Dim strResultFilePath As String
     '保存ボタンを押し、結果のファイル名を受け取る
     strResultFilePath = getIETest.DownloadSave_NotificationBar(strFleName)
+    'これで保存したファイル名がフルパスで取得できているので、あとは利用するのみ
+'    MsgBox strResultFilePath
+'    Call Application.Workbooks.Open(strResultFilePath)
 '    '-----------------------------------------------------------------------------------------------------------
 '    'SaveAsの時の使用方法
 '    '保存ファイル名生成
