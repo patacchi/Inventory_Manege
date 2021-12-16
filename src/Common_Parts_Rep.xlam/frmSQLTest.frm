@@ -100,7 +100,7 @@ Private Sub UserForm_Resize()
     End If
 End Sub
 Private Sub btnBulkDataInput_Click()
-    Dim strSql
+    Dim strSQL
     Randomize
 '    frmBulkInsertTest.Show
     '‚ ‚é”ÍˆÍ‚Ì—”‚Ì”­¶‚Ì‚³‚¹•û

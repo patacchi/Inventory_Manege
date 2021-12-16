@@ -14,6 +14,28 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+Private Sub btnDoUpdate_Click()
+    'フィールド修正適用
+    If lstBoxTable_Name.ListIndex = -1 Or lstBoxField_Name.ListIndex = -1 Then
+        Exit Sub
+    End If
+    Dim adoFieldUpdate As clsADOHandle
+    Set adoFieldUpdate = CreateclsADOHandleInstance
+    '変更対象であるDigit_offsetフィールドが存在するかチェックする
+    Dim isDigitOffset As Boolean
+    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET, _
+                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    'アップデートチェックフィールドが存在するかチェックする
+    Dim isUpdateField As Boolean
+    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE, _
+                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    'Digit_Rowフィールドが存在するかチェックする
+    Dim isDigitRow As Boolean
+    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW, _
+                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    'stop
+    Stop
+End Sub
 Private Sub btnGetTableList_Click()
     Dim dbGetTable As clsADOHandle
     Set dbGetTable = New clsADOHandle
@@ -55,9 +77,9 @@ Private Sub lstBoxTable_Name_Change()
     Set dbFieldList = New clsADOHandle
     dbFieldList.DBPath = txtBoxDB_Directory.Text
     dbFieldList.DBFileName = txtBoxDB_FileName.Text
-    Dim strSql As String
-    strSql = "SELECT TOP 1 * FROM " & lstBoxTable_Name.List(lstBoxTable_Name.ListIndex)
-    dbFieldList.SQL = strSql
+    Dim strSQL As String
+    strSQL = "SELECT TOP 1 * FROM " & lstBoxTable_Name.List(lstBoxTable_Name.ListIndex)
+    dbFieldList.SQL = strSQL
     Dim isCollect As Boolean
     isCollect = dbFieldList.Do_SQL_with_NO_Transaction()
     If Not isCollect Then

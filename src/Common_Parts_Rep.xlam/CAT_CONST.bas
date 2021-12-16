@@ -17,13 +17,13 @@ Public Const F_CAT_SPECIALTABLE As String = "F_CAT_SpecialTable"            '“Á
 '”‹@í‚Å‹¤—L‚·‚é‘O’ñ‚ÅİŒv‚·‚é
 Public Const T_CAT_DESCRIPTION_0kishu As String = "T_CAT_{0}_Description"   'Detailƒe[ƒuƒ‹–¼ {0}‚ÉŠe‹@í‚ğ–„‚ß‚Ş
 Public Const F_CAT_DIGITID As String = "F_CAT_Digit_Row"                    'Œ…”‚Ìƒtƒ‰ƒO‚ğ—§‚Ä‚½Long‚Ì”šBnŒ…–Ú‚ÍA2^(n-1) 3Œ…‚Ì‚Í2^2‚Å4
-Public Const F_CAT_DIGITOFFSET As String = "F_CAT_DigitOffset"              'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgiÅ‰‚Í1‚©‚çn‚Ü‚éj
+Public Const F_CAT_DIGIT_ROW As String = "F_CAT_Digit_Row"                  'Œ…”‚Ìƒrƒbƒg‚Ìƒtƒ‰ƒO‚ğ—§‚Ä‚½Long‚Ì”AnŒ…–Ú‚Í2^(n-1) 3Œ…–Ú‚È‚ç4AŠeƒe[ƒuƒ‹‚É‚Í‚±‚Ì’l‚ğƒZƒbƒg‚·‚é
 Public Const F_CAT_ID_DESCRIPTION As String = "F_CAT_Description_ID"        'Description‚ÌID‚ª“ü‚é
 'iŠe‹@íj_Detail
 'CATƒR[ƒh‚ÌŠeŒ…ˆÊ’u‚É‘Î‚·‚éà–¾‚ğŠi”[‚·‚éiƒƒCƒ“ƒe[ƒuƒ‹j
 'ƒe[ƒuƒ‹–¼‚Í T_CAT_iŠe‹@í–¼j_Detail‚Æ‚·‚é ˆê‚Â‚Ìƒe[ƒuƒ‹‚É•¡”‹@í‚ğŠi”[‚·‚é‰Â”\«‚ª‚ ‚é
 Public Const T_CAT_DETAIL_0kishu As String = "T_CAT_{0}_Detail"             '{0}‚É‹@í–¼‚ğ–„‚ß‚Ş
-'F_CAT_DIGITID‚ÍDescription‚Æ“¯‚¶ƒtƒB[ƒ‹ƒh–¼
+'F_CAT_DIGIT_ROW
 Public Const F_CAT_CHR As String = "F_CAT_Chr"                              '‚»‚ÌŒ…‚É“ü‚é•¶š—ñ
 Public Const F_CAT_ID_DETAIL As String = "F_CAT_Detail_ID"                  'Detail‚ÌID‚ª“ü‚é
 'iŠe‹@íj_Special
@@ -36,20 +36,22 @@ Public Const F_CAT_EXECUTE As String = "F_CAT_Excute"                       '‰ü•
 'ÀÛ‚ÌŠT—v‚Í‚±‚Á‚¿‚É“ü‚éBeƒe[ƒuƒ‹
 Public Const T_CAT_Description_MASTER As String = "T_CAT_M_Description"     'Description‚Ìƒ}ƒXƒ^[
 'F_CAT_DescriptionID
-'F_CAT_DigitID
+'F_CAT_DIGIT_ROW
 '‚ÍŠe‹@í_Descriptionƒe[ƒuƒ‹‚Æ‹¤—p
 Public Const F_DESCRIPTION As String = "F_CAT_Description"                  'ÀÛ‚ÌŠT—v‚Ì“à—e‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Detailƒ}ƒXƒ^[ƒe[ƒuƒ‹
 'Description‚Æ‘å‘Ì“¯‚¶
 'F_CAT_ID_Detail
-'F_CAT_DigitID
+'F_CAT_DIGIT_ROW
 'F_CAT_Chr
 '‚ÍŠe‹@í_Detail‚Æ‹¤—p
 Public Const F_DETAIL As String = "F_CAT_Detail"                            'ÀÛ‚Ìd—lÚ×‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹
 Public Const T_CAT_DIGIT_MASTER As String = "T_CAT_M_Digit"                 'Œ…”‚ÆLong‚Ì”‚Ì‘Î‰ƒe[ƒuƒ‹
-Public Const F_CAT_DIGIT_ROW As String = "F_CAT_Digit_"
-'F_CAT_DIGITID
+Public Const F_CAT_DIGIT_OFFSET As String = "F_CAT_DigitOffset"             'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgiÅ‰‚Í1‚©‚çn‚Ü‚éj
+'F_CAT_DIGIT_ROW
+'Œ…”ƒtƒB[ƒ‹ƒh•ÏŠ·—piŒo‰ß‘[’ujA‘S•”I‚í‚Á‚½‚çíœ‚·‚é
+Public Const F_DIGIT_UPDATE As String = "F_Digit_Update"                    'Œ…”Œ`®•ÏŠ·‚ªŠ®—¹‚µ‚½‚©‚Ç‚¤‚©AŠ®—¹‚µ‚½‚çTrue‚ğƒZƒbƒg‚·‚é
 'SQL’è‹`
 'Šù‘¶‹@í—p‚É‹@í–¼ˆê——‚ğæ‚èo‚·SQL
 Public Const SQL_KISHU_LIST As String = "SELECT " & F_CAT_HEADER & "," & F_CAT_DESCRIPTIONTABLE & "," & F_CAT_DETAILTABLE & "," & F_CAT_SPECIALTABLE & vbCrLf _

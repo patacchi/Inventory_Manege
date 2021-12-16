@@ -12,7 +12,7 @@ Option Explicit
 '2021_10_10 IE連携のために新規作成 Patacchi
 'DB接続関係の定数設定
 Const constDatabasePath             As String = "C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB"      'データベースディレクトリ
-Const constDBFILENAME               As String = "CAT_Find.accdb"           'IE情報格納用DBファイル名
+Const constDBFILENAME               As String = "CAT_Find.accdb"           'CAT情報格納用DBファイル名
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const Field_Initialdate             As String = "InitialInputDate"      '各テーブル共通、初回入力時刻
 Const Field_Update                  As String = "UpdateDate"            '各テーブル共通、最終更新時刻
@@ -23,7 +23,7 @@ Private strDBPath As String
 Private strDBFileName As String
 Private strConnection As String
 Private isConnected As Boolean
-Private strSql As String
+Private strSQL As String
 Private adoConnection As ADODB.Connection
 Private adoCommand As ADODB.Command
 Private adoParameters As ADODB.Parameters
@@ -89,11 +89,11 @@ Property Get Connected() As Boolean
 End Property
 'SQL
 Property Get SQL() As String
-    SQL = strSql
+    SQL = strSQL
 End Property
 Property Let SQL(ByVal strargSQL As String)
     If Not strargSQL = "" Then
-        strSql = strargSQL
+        strSQL = strargSQL
     End If
 End Property
 'RecordSet
@@ -140,7 +140,7 @@ Private Sub Class_Terminate()
 End Sub
 Private Sub Initialize()
     isConnected = False
-    strSql = ""
+    strSQL = ""
 End Sub
 Private Sub Finalize()
         'Connectionの後始末
@@ -435,7 +435,7 @@ ErrorCatch:
 End Function
 Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     Dim isCollect As Boolean
-    Dim strSql  As String
+    Dim strSQL  As String
     On Error GoTo ErrorCatch
     'ディレクトリ移動は大元でやるので、個別には行わない
 '    'DBディレクトリへ移動
@@ -495,5 +495,43 @@ ErrorCatch:
     If Err.Number <> 0 Then
         MsgBox Err.Number & vbCrLf & Err.Description
     End If
+    Exit Function
+End Function
+'''Authour Daisuke Oota 2021_12_16
+'''指定されたデータベースパス、データベースファイル名、テーブル名の中で指定されたフィールドが存在するかチェックする
+'''戻り値 Boolean 存在してたらTrue それ以外はFalse
+Public Function IsFieldExists(strargTableName As String, strargFieldName As String, _
+                            Optional strargDBFileName As String = constDBFILENAME, Optional strargDBPath As String = constDatabasePath) As Boolean
+    'テーブル名とフィールド名どちらかが指定されていなかったら抜ける
+    If strargTableName = "" Or strargFieldName = "" Then
+        DebugMsgWithTime "IsFieldExists: TableName or FieldName is empty"
+        IsFieldExists = False
+        Exit Function
+    End If
+    Dim isCollect As Boolean
+    Dim strSQL As String
+    '一件のみSELECTするSQL
+    strSQL = "SELECT TOP 1 * FROM " & strargTableName
+    'SQL実行し、成否を受け取る
+    isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    If Not isCollect Then
+        '実行中に何かあったらしい
+        DebugMsgWithTime "IsFieldExists: Do_SQL Error"
+        IsFieldExists = False
+        Exit Function
+    End If
+    If Not (rsMyRecord.BOF = rsMyRecord.EOF) Then
+        'データがある場合のみ(EOFとBOFが違う）続行
+        Dim longFieldCount As Long
+        For longFieldCount = 0 To rsMyRecord.Fields.Count - 1
+            If rsMyRecord.Fields(longFieldCount).Name = strargFieldName Then
+                'フィールド名と一致する物があったらTrueを返して終了してやる
+                IsFieldExists = True
+                Exit Function
+            End If
+        Next longFieldCount
+    End If
+    'Trueにならずに抜けてきたらFalseを返して終了してやる
+    IsFieldExists = False
     Exit Function
 End Function
