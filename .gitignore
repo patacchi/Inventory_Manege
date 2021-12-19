@@ -11,10 +11,9 @@ bin/Common_Parts_Rep.xlam
 bin/IE_Comunicate_Module_Rep.xlsm
 #_Localファイルを無視する
 bin/*_Local*
+*_Local*
 #説明ファイルは除外設定の例外としてステージング対象とする
 !bin/_Localファイルはgit管理されません.txt
-*_Local*
 src/*/*.frx
-*_Local.xl*/
 TempDB/
 #/x64/
