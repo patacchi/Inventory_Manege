@@ -30,10 +30,9 @@ Private Sub Initial_Valueset()
     dicAccdbDataType.Add ACCDB_Data_Type.INTEGER, "INTEGER"
     dicAccdbDataType.Add ACCDB_Data_Type.BIT, "BIT"
     dicAccdbDataType.Add ACCDB_Data_Type.COUNTER, "COUNTER"
-    dicAccdbDataType.Add ACCDB_Data_Type.AUTOINCREMENT, "AUTOINCREMENT"
     dicAccdbDataType.Add ACCDB_Data_Type.Decimal, "DECIMAL"
 End Sub
 Property Get AccdbDataType(accdbType As ACCDB_Data_Type) As String
     AccdbDataType = dicAccdbDataType(accdbType)
     Exit Property
-End Property
+End Property
