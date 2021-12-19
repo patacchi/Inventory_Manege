@@ -3,16 +3,18 @@ SMTL4.csr
 PrivateKey.key
 Sqlite3Demo.bas
 *.laccdb
-*.bak
+*.bak*
 ~$*
 #Develop_ 以下のブランチでは、既存のxl?mファイルは管理対象外とし、ソースファイルのみ管理する
 #変更を適用するのに、vbac の combine を使用すること
 bin/Common_Parts_Rep.xlam
 bin/IE_Comunicate_Module_Rep.xlsm
-#bin/*.xl*
-bin/*_Local.xl*
+#_Localファイルを無視する
+bin/*_Local*
+#説明ファイルは除外設定の例外としてステージング対象とする
+!bin/_Localファイルはgit管理されません.txt
+*_Local*
 src/*/*.frx
-src/Common_Parts_Rep.xlam/*.frx
 *_Local.xl*/
 TempDB/
 #/x64/

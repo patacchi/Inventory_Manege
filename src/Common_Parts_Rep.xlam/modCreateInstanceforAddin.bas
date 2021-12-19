@@ -20,6 +20,14 @@ Public Function CreateclsSQLStringBuilder() As clsSQLStringBuilder
     Set T = Nothing
     Exit Function
 End Function
+'clsEnum
+Public Function CreateclsEnum() As clsEnum
+    Dim T As clsEnum
+    Set T = New clsEnum
+    Set CreateclsEnum = T
+    Set T = Nothing
+    Exit Function
+End Function
 '''SQLテストフォームを表示する
 Public Sub ShowfrmSQLTest()
     frmSQLTest.Show

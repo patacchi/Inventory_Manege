@@ -55,4 +55,18 @@ Public Const F_DIGIT_UPDATE As String = "F_Digit_Update"                    'Œ…
 'SQL’è‹`
 'Šù‘¶‹@í—p‚É‹@í–¼ˆê——‚ğæ‚èo‚·SQL
 Public Const SQL_KISHU_LIST As String = "SELECT " & F_CAT_HEADER & "," & F_CAT_DESCRIPTIONTABLE & "," & F_CAT_DETAILTABLE & "," & F_CAT_SPECIALTABLE & vbCrLf _
-                                        & " FROM " & T_CAT_HEADER
+                                        & " FROM " & T_CAT_HEADER
+'ƒtƒB[ƒ‹ƒh’Ç‰ÁSQL
+Public Const SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType As String = "ALTER TABLE {0} ADD COLUMN {1} {2}"      '{0}‚ÉTableName‚ğ{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ {2}‚ÉƒtƒB[ƒ‹ƒhƒ^ƒCƒv‚ğ“ü‚ê‚é
+'ƒtƒB[ƒ‹ƒhƒf[ƒ^Œ^Enum
+Public Enum ACCDB_Data_Type
+    [Text] = 1
+    [INTEGER] = 2
+    [BIT] = 3
+    [Boolean] = 3
+    [COUNTER] = 4
+    [AUTOINCREMENT] = 4
+    [Decimal] = 5
+End Enum
+'ƒtƒB[ƒ‹ƒhíœSQL
+Public Const SQL_DELETE_FIELD_0Tablename_1Fieldname As String = "ALTER TABLE {0} DROP COLUMN {1}"                   '{0}‚ÉTableName‚ğA{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ“ü‚ê‚é

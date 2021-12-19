@@ -40,12 +40,30 @@ Property Get DBPath() As String
     DBPath = strDBPath
 End Property
 Property Let DBPath(ByVal strargDBPath As String)
-    '既に接続済みの場合は変更させない
-    If isConnected Then
+    If strargDBPath = "" Then
+        '引数が空白なら抜ける
         Exit Property
     End If
-    If strargDBPath <> "" Then
-        strDBPath = strargDBPath
+    '既存のパスと違っていた場合既に接続済みの場合はいったん接続を切断する
+    If strargDBPath <> strDBPath Then
+        '既存のパスと違っていた場合
+        '接続状態により処理を分岐
+        If Me.Connected Then
+            '接続されていた場合
+            '一旦接続を切断する
+            '再接続はここではやらない
+            Call CloseClassConnection
+            'パスをメンバ変数に設定してやる
+            strDBPath = strargDBPath
+            Exit Property
+        Else
+            '接続されていなかった場合
+            strDBPath = strargDBPath
+            Exit Property
+        End If
+    Else
+        '既存のパスと同じだったら何もしない
+        Exit Property
     End If
 End Property
 'DBFileName
@@ -57,21 +75,45 @@ Property Get DBFileName() As String
     DBFileName = strDBFileName
 End Property
 Property Let DBFileName(ByVal strargDBFileName As String)
-    '既に接続済みの場合は変更させない
-    If isConnected Then
+    If strargDBFileName = "" Then
+        '引数が空だったら抜ける
         Exit Property
     End If
-    If strargDBFileName <> "" Then
-        strDBFileName = strargDBFileName
+    '既存のファイル名と違っていて、かつ接続済みの場合は一旦接続を切断する
+    If strargDBFileName <> strDBFileName Then
+        '既存のファイル名と違っていた場合
+        '接続状態により処理を分岐
+        If Me.Connected Then
+            '接続済みだった場合
+            '一旦接続を切断する
+            Call CloseClassConnection
+            'メンバ変数にセットしてやる
+            strDBFileName = strargDBFileName
+            Exit Property
+        Else
+            '未接続だった場合
+            'そのままメンバ変数にセットしてやる
+            strDBFileName = strargDBFileName
+            Exit Property
+        End If
+    Else
+        '既存のファイル名と同じだったら何もしない
+        Exit Property
     End If
 End Property
 'ConnectionString
 Property Get ConnectionString() As String
-    If strConnection = "" Then
-        '未定義ならDBPathとDBFilenameより初期値を返す
+    '接続状態により処理を分岐
+    If Me.Connected Then
+        '接続済みなら既存の接続文字列を返してやる
+        ConnectionString = strConnection
+        Exit Property
+    Else
+        '未接続ならプロパティのDBPathとDBFilenameから接続文字列を生成してやる
         strConnection = CreateConnectionString(Me.DBPath, Me.DBFileName)
+        ConnectionString = strConnection
+        Exit Property
     End If
-    ConnectionString = strConnection
 End Property
 Property Let ConnectionString(ByVal strargConnection As String)
     '既に接続済みの場合は変更させない
@@ -85,6 +127,21 @@ End Property
 'isConnected
 '読み取り専用
 Property Get Connected() As Boolean
+    '接続の有無の確認方法を変更、外部で接続を閉じられた時の対応のため 2021_12_19 Patacchi
+    If Not adoConnection Is Nothing Then
+        'ConnectionオブジェクトがNothingではなく
+        If adoConnection.State And adStateOpen Then
+            'かつOpenフラグが立ってたら接続済みとする
+            'adStateConnectingは接続の真っ最中なので違う
+            isConnected = True
+        Else
+            isConnected = False
+        End If
+        Connected = isConnected
+        Exit Property
+    End If
+    'ここまで抜けてきたら未接続とする
+    isConnected = False
     Connected = isConnected
 End Property
 'SQL
@@ -293,6 +350,10 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
     'DBファイルの存在有無を確認し、無ければ新規作成する
     isCollect = False
     isCollect = IsDBFileExist(strargDBFileName)
+    If Not isCollect Then
+        MsgBox "DBファイルが見つからないようなので新規作成します"
+        InitialDBCreate (strargDBFileName)
+    End If
     'DBへ接続する
     isCollect = OpenConnection(Me.ConnectionString)
     If Not isCollect Then
@@ -332,8 +393,9 @@ Private Function OpenConnection(strargConnection As String) As Boolean
         OpenConnection = False
         Exit Function
     End If
-    If Connected Then
-        '既に接続済みなら何もしないで抜ける（でもTrueよ）
+    '接続の有無の確認方法を変更 外部で接続を閉じられても対応できるように 2021_12_19 Patacchi
+    'プロパティのアクセサ側で対応
+    If Me.Connected Then
         DebugMsgWithTime "OpenConnection already conected"
         OpenConnection = True
         Exit Function
@@ -368,36 +430,15 @@ ErrorCatch:
     OpenConnection = False
     Exit Function
 End Function
-'DBファイルの存在有無を確認し、なければ初期テーブル作成を行う
-Private Function IsDBFileExist(Optional strargDBFileName As String) As Boolean
-    'DBファイルの有無を確認する
-    Dim isCurrendDbDir As Boolean
-    'ディレクトリは個別指定する可能性があるので、ここでは移動しない
-'    isCurrendDbDir = ChCurrentToDBDirectory
-'    If Not isCurrendDbDir Then
-'        'DBディレクトリが存在しない（しかもmkdir処理をしているはず）なので、ネットワークがダメ
-'        MsgBox "ネットワーク接続の問題により、処理を中止します。"
-'        IsDBFileExist = False
-'        Exit Function
-'    End If
-    Dim fsoObj As FileSystemObject
-    Set fsoObj = New FileSystemObject
-    Dim strlocalDBFileName As String
-    If strargDBFileName <> "" Then
-        '引数でDBファイル名が指定されていたらそちらをセットしてやる
-        strlocalDBFileName = strargDBFileName
-    Else
-        '指定されていなければ定数をセットしてやる
-        strlocalDBFileName = constDBFILENAME
+'''Author Patacchi 2021_12_29
+'''クラスのメンバのConnectionの接続を閉じる
+Private Sub CloseClassConnection()
+    If Me.Connected Then
+        '接続されていたら閉じる
+        adoConnection.Close
+        isConnected = False
     End If
-    If Not fsoObj.FileExists(strlocalDBFileName) Then
-        MsgBox "DBファイルが見つからないようなので新規作成します"
-        InitialDBCreate (strlocalDBFileName)
-        IsDBFileExist = True
-    End If
-    '正常終了
-    IsDBFileExist = True
-End Function
+End Sub
 '''DBディレクトリにカレントディレクトリを移動させる
 '''ディレクトリが存在しなければ作成する
 Private Function ChCurrentToDBDirectory(Optional strargDBPath As String = "") As Boolean
@@ -497,41 +538,277 @@ ErrorCatch:
     End If
     Exit Function
 End Function
+'''Authour Daisuke Oota 2021_12_19
+'''指定されたテーブル (データベースパス、データベースファイル名)に指定されたフィールドを追加する。既に存在していたら中断する
+'''戻り値 Boolean 成功しているか、既に存在していたらTrue それ以外はFalse
+Public Function AppendField(strargTableName As String, strargFieldName As String, argaccdbType As ACCDB_Data_Type, _
+                            Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
+    'TablenameかFieldNameどちらかが空白だったら抜ける
+    If strargTableName = "" Or strargFieldName = "" Then
+        DebugMsgWithTime "AppendField: Tablename or Filename is empty"
+        AppendField = False
+        Exit Function
+    End If
+    '引数でDBpathおよびDBFilenameが指定されていなかったらプロパティから引っ張ってみる
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    'プロパティから引っ張っても空白だったら抜ける
+    If strargDBPath = "" Or strargDBFileName = "" Then
+        DebugMsgWithTime "AppenField: DBPath or DBFilename is empty"
+        AppendField = False
+        Exit Function
+    End If
+    '指定されたテーブルが存在するかチェックする
+    Dim boolDBFileExists As Boolean
+    boolDBFileExists = IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not boolDBFileExists Then
+        'DBFileが存在しなかったら抜ける
+        DebugMsgWithTime "AppendField: File or Path not exists"
+        MsgBox "AppenField Path: " & strargDBPath & vbCrLf & " Filename: " & strargTableName & " is not exists"
+        AppendField = False
+        Exit Function
+    End If
+    '指定されたフィールド名が既に存在するかチェックする
+    Dim IsFieldExists As Boolean
+    IsFieldExists = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+    If IsFieldExists Then
+        '既に指定のテーブルに指定のフィールドが存在していたら作業せずTrueを返して終了
+        DebugMsgWithTime "AppendField:Table: " & strargTableName & " Field: " & strargFieldName & " is already exists."
+        AppendField = True
+        Exit Function
+    End If
+    Dim strSQL As String
+    Dim sqlBc As clsSQLStringBuilder
+    Set sqlBc = CreateclsSQLStringBuilder
+    Dim dicAppendField As Dictionary
+    Set dicAppendField = New Dictionary
+    Dim clsEnumvalue As clsEnum
+    Set clsEnumvalue = CreateclsEnum
+    dicAppendField.Add 0, strargTableName
+    dicAppendField.Add 1, strargTableName
+    dicAppendField.Add 2, clsEnumvalue.AccdbDataType(argaccdbType)
+    strSQL = sqlBc.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
+End Function
+'DBファイルの存在有無を確認する。初期テーブル作成は別プロシージャにて行う
+Public Function IsDBFileExist(Optional strargDBFileName As String, Optional strargDBPath As String = "") As Boolean
+    'DBFilenameおよびDBPathが指定されていなければプロパティから引っ張る（初期値を設定するはず）
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    'プロパティから引っ張ってもDBFilenameかDBPathが空白の場合は抜ける
+    If strargDBFileName = "" Or strargDBPath = "" Then
+        IsDBFileExist = False
+        Exit Function
+    End If
+    'DBファイルの有無を確認する
+    Dim fsoObj As FileSystemObject
+    Set fsoObj = New FileSystemObject
+    If Not fsoObj.FileExists(fsoObj.BuildPath(strargDBPath, strargDBFileName)) Then
+        'PathとFilenameでフルパスを組み立て、ファイルの存在有無確認→無かった
+        DebugMsgWithTime "IsDBFileExist: FullPath: " & fsoObj.BuildPath(strargDBPath, strargDBFileName) & " is not found"
+        IsDBFileExist = False
+        Exit Function
+    End If
+    '正常終了
+    IsDBFileExist = True
+End Function
+'''Authour Daisuke Oota 2021_12_19
+'''指定されたデータベースパス、データベースファイル名で指定されたテーブルが存在するか確認する
+'''戻り値 Boolean 存在してたらTrue それ以外はFalse
+Public Function IsTableExists(strargTableName As String, Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
+    'TableNameが空白だったら抜ける
+    If strargTableName = "" Then
+        DebugMsgWithTime "IsTalbeExists: TableName is empty"
+        IsTableExists = False
+        Exit Function
+    End If
+    'DBPathかDBFilenameが空白だったらプロパティから引っ張ってみる
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    'プロパティから引っ張ってもDBPath、DBFilenameが空白だったら抜ける
+    If strargDBFileName = "" Or strargDBPath = "" Then
+        DebugMsgWithTime "IsTableExists: Filename or Path is empty"
+        IsTableExists = False
+        Exit Function
+    End If
+    'DBFileの存在有無確認
+    Dim isDBFileExists As Boolean
+    isDBFileExists = Me.IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not isDBFileExists Then
+        'ファイルが存在しなかったら抜ける
+        DebugMsgWithTime "IsTableExists Path:  " & strargDBPath & vbCrLf & " Filename: " & strargDBFileName & " is not exists"
+        IsTableExists = False
+        Exit Function
+    End If
+    'テーブル一覧を取得
+    'Connectionオブジェクトの作成、接続
+    '接続文字列がクラスのプロパティと引数で与えられたのが一緒で、かつConnectedがTrueになってたら接続を再利用する
+    Dim conTableExists As ADODB.Connection
+    If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
+        '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
+        If Me.Connected Then
+            '接続済みなら既存の接続を再利用してやる
+            Set conTableExists = adoConnection
+        Else
+            '未接続ならクラスの接続メソッドを利用して接続する
+            Dim isCollecte As Boolean
+            isCollecte = DBReady()
+            If Not isCollecte Then
+                '接続失敗したっぽい
+                GoTo ErrorCatch
+            End If
+            Set conTableExists = adoConnection
+        End If
+    Else
+        '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
+        Set conTableExists = New ADODB.Connection
+        conTableExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
+        conTableExists.CursorLocation = adUseClient
+        conTableExists.Open
+    End If
+    'OpenSchemaでスキーマ情報をRecordsetとして受け取る
+    'adSchemaTables
+    '制約列(条件にArrayで与える)
+    'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,TABLE_TYPE
+    'Array(Empty,Empty,TableName,"TABLE")
+    Dim rsTableExists As ADODB.Recordset
+    Set rsTableExists = conTableExists.OpenSchema(adSchemaTables, Array(Empty, Empty, strargTableName, "TABLE"))
+    If rsTableExists.RecordCount <= 0 Then
+        'Recordcountが0以下ならないのが確定
+        IsTableExists = False
+        GoTo CloseandExit
+    Else
+        '1以上なら存在するぽい
+        IsTableExists = True
+        GoTo CloseandExit
+    End If
+CloseandExit:
+    Set rsTableExists = Nothing
+    If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
+        '接続文字列がクラスのものと一致しない場合は一時利用なので接続を明示的に閉じてやる
+        conTableExists.Close
+    End If
+    Set conTableExists = Nothing
+    Exit Function
+ErrorCatch:
+    Set rsTableExists = Nothing
+    If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
+        '接続文字列がクラスのものと一致しない場合は一時利用なので接続を明示的に閉じてやる
+        conTableExists.Close
+    End If
+    Set conTableExists = Nothing
+    IsTableExists = False
+    DebugMsgWithTime "IsTableExists code: " & Err.Number & " Description: " & Err.Description
+    Exit Function
+End Function
 '''Authour Daisuke Oota 2021_12_16
 '''指定されたデータベースパス、データベースファイル名、テーブル名の中で指定されたフィールドが存在するかチェックする
 '''戻り値 Boolean 存在してたらTrue それ以外はFalse
 Public Function IsFieldExists(strargTableName As String, strargFieldName As String, _
-                            Optional strargDBFileName As String = constDBFILENAME, Optional strargDBPath As String = constDatabasePath) As Boolean
+                            Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
+    '引数でDBPathとDBFilenameが指定されていなかったらプロパティから引っ張ってみる
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    'プロパティから引っ張ってもDBFilenameかDBPathどちらかが空白だったら抜ける
+    If strargDBFileName = "" Or strargDBPath = "" Then
+        DebugMsgWithTime "IsFieldExists: DBPath or DBFilename is empty"
+        IsFieldExists = False
+        Exit Function
+    End If
     'テーブル名とフィールド名どちらかが指定されていなかったら抜ける
     If strargTableName = "" Or strargFieldName = "" Then
         DebugMsgWithTime "IsFieldExists: TableName or FieldName is empty"
         IsFieldExists = False
         Exit Function
     End If
-    Dim isCollect As Boolean
-    Dim strSQL As String
-    '一件のみSELECTするSQL
-    strSQL = "SELECT TOP 1 * FROM " & strargTableName
-    'SQL実行し、成否を受け取る
-    isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
-    If Not isCollect Then
-        '実行中に何かあったらしい
-        DebugMsgWithTime "IsFieldExists: Do_SQL Error"
+    '指定されたDBFile（Path込み）が存在するかチェックする
+    Dim isDBFileExists As Boolean
+    isDBFileExists = IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not isDBFileExists Then
+        'ファイルが存在しなかったら抜ける
+        MsgBox "指定されたDBPath: " & strargDBPath & vbCrLf & " DBFilename: " & strargDBFileName & " は存在しないようです。"
         IsFieldExists = False
         Exit Function
     End If
-    If Not (rsMyRecord.BOF = rsMyRecord.EOF) Then
-        'データがある場合のみ(EOFとBOFが違う）続行
-        Dim longFieldCount As Long
-        For longFieldCount = 0 To rsMyRecord.Fields.Count - 1
-            If rsMyRecord.Fields(longFieldCount).Name = strargFieldName Then
-                'フィールド名と一致する物があったらTrueを返して終了してやる
-                IsFieldExists = True
-                Exit Function
-            End If
-        Next longFieldCount
+    '指定されたテーブルが存在するかチェックする
+    Dim isTableExist As Boolean
+    isTableExist = Me.IsTableExists(strargTableName, strargDBFileName, strargDBPath)
+    If Not isTableExist Then
+        DebugMsgWithTime "IsFieldExists: Table not found: " & strargTableName
+        IsFieldExists = False
+        Exit Function
     End If
-    'Trueにならずに抜けてきたらFalseを返して終了してやる
+    'Connectionオブジェクトのopwnschemaメソッドでスキーマ情報を取得し、フィールドの有無をチェックする
+    'Connecvtionオブジェクトの作成と接続を行う
+    Dim conFieldExists As ADODB.Connection
+    If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
+        '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
+        If Me.Connected Then
+            '接続済みなら既存の接続を再利用してやる
+            Set conFieldExists = adoConnection
+        Else
+            '未接続ならクラスの接続メソッドを利用して接続する
+            Dim isCollecte As Boolean
+            isCollecte = DBReady()
+            If Not isCollecte Then
+                '接続失敗したっぽい
+                GoTo ErrorCatch
+            End If
+            Set conFieldExists = adoConnection
+        End If
+    Else
+        '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
+        Set conFieldExists = New ADODB.Connection
+        conFieldExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
+        conFieldExists.CursorLocation = adUseClient
+        conFieldExists.Open
+    End If
+    'ConnectionオブジェクトのOpenSchemaメソッドを実行し、結果をレコードセットに受け取る
+    'adSchemaColumns
+    'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME
+    'array(empty,empty,strargTableName,strargFieldName)
+    Dim rsFieldExists As ADODB.Recordset
+    Set rsFieldExists = conFieldExists.OpenSchema(adSchemaColumns, Array(Empty, Empty, strargTableName, strargFieldName))
+    If rsFieldExists.RecordCount <= 0 Then
+        'RecordCountが0以下なら指定のフィールドはない
+        IsFieldExists = False
+        GoTo CloseandExit
+    Else
+        '1以上ならある
+        IsFieldExists = True
+        GoTo CloseandExit
+    End If
+CloseandExit:
+    Set rsFieldExists = Nothing
+    '接続文字列がクラスのプロパティと一致しない場合は一時利用なので明示的に接続を閉じる
+    If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
+        conFieldExists.Close
+    End If
+    Set conFieldExists = Nothing
+    Exit Function
+ErrorCatch:
+    Set rsFieldExists = Nothing
+    '接続文字列がクラスのプロパティと一致しない場合は一時利用なので明示的に接続を閉じる
+    If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
+        conFieldExists.Close
+    End If
+    Set conFieldExists = Nothing
     IsFieldExists = False
+    DebugMsgWithTime "IsFielsExists code: " & Err.Number & " Description: " & Err.Description
     Exit Function
 End Function

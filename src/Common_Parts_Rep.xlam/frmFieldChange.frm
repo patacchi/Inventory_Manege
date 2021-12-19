@@ -21,18 +21,26 @@ Private Sub btnDoUpdate_Click()
     End If
     Dim adoFieldUpdate As clsADOHandle
     Set adoFieldUpdate = CreateclsADOHandleInstance
+    'プロパティを使用しないで接続するテスト
+    Dim notClassPropetyUse As Boolean
+    notClassPropetyUse = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.Text, F_CAT_DIGIT_OFFSET, _
+                        txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    'DBファイル名とディレクトリ名テキストボックスの内容をクラスインスタンスのプロパティにセットしてやる
+    adoFieldUpdate.DBPath = txtBoxDB_Directory.Text
+    adoFieldUpdate.DBFileName = txtBoxDB_FileName.Text
     '変更対象であるDigit_offsetフィールドが存在するかチェックする
     Dim isDigitOffset As Boolean
-    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET, _
-                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET)
     'アップデートチェックフィールドが存在するかチェックする
     Dim isUpdateField As Boolean
-    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE, _
-                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE)
+    If Not isUpdateField Then
+        'updateフィールドがなければ作成する
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE, [Boolean])
+    End If
     'Digit_Rowフィールドが存在するかチェックする
     Dim isDigitRow As Boolean
-    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW, _
-                                                    txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
+    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW)
     'stop
     Stop
 End Sub
@@ -41,6 +49,17 @@ Private Sub btnGetTableList_Click()
     Set dbGetTable = New clsADOHandle
     dbGetTable.DBPath = txtBoxDB_Directory.Text
     dbGetTable.DBFileName = txtBoxDB_FileName.Text
+    'DBPathとDBFilenameテキストボックスが削除されている場合は標準設定を引っ張ってるはずなので、クラスのプロパティの内容をテキストボックスに反映してやる
+    txtBoxDB_Directory.Text = dbGetTable.DBPath
+    txtBoxDB_FileName.Text = dbGetTable.DBFileName
+    'DBFileの存在有無確認
+    Dim isDBFileExists As Boolean
+    isDBFileExists = dbGetTable.IsDBFileExist(dbGetTable.DBFileName, dbGetTable.DBPath)
+    If Not isDBFileExists Then
+        'ファイルが存在しなかったら抜ける
+        MsgBox "btnGetTableList_Click Path:  " & dbGetTable.DBPath & vbCrLf & " Filename: " & dbGetTable.DBFileName & " is not exists"
+        Exit Sub
+    End If
     'テーブル一覧を取得
     Dim adoxcatChange As adox.Catalog
     Set adoxcatChange = New adox.Catalog
@@ -85,9 +104,15 @@ Private Sub lstBoxTable_Name_Change()
     If Not isCollect Then
         Exit Sub
     End If
+    '一旦フィールドリストを有効にする
+    lstBoxField_Name.Enabled = True
     If dbFieldList.RS.RecordCount <= 0 Then
         lstBoxField_Name.ListIndex = -1
         lstBoxField_Name.Clear
+        lstBoxField_Name.AddItem ("レコード件数が0件以下でした。")
+        'レコードなしの場合はフィールドリストボックスを無効にする
+        btnDoUpdate.Enabled = False
+        lstBoxField_Name.Enabled = False
         Exit Sub
     End If
     Dim strarrFieldList() As String
@@ -103,6 +128,26 @@ Private Sub lstBoxTable_Name_Change()
     'フィールド名を選択するまでUpdateボタンを無効に
     btnDoUpdate.Enabled = False
     Set dbFieldList = Nothing
+End Sub
+Private Sub txtBoxDB_Directory_Change()
+    'ディレクトリ名が変化したとき
+    'リストボックスを初期化する
+    Call ClearTableandFieldList
+End Sub
+Private Sub txtBoxDB_FileName_Change()
+    'ファイル名が変化したとき
+    'リストボックスを初期化する
+    Call ClearTableandFieldList
+End Sub
+'''Author Disuke Oota 2021_12_19
+'''初期化用、テーブルリストとフィールドリストを消し去る
+Private Sub ClearTableandFieldList()
+    'テーブルリストの選択状態を解除し、リストを消去する
+    lstBoxTable_Name.ListIndex = -1
+    lstBoxTable_Name.Clear
+    'フィールドリストの選択状態を解除し、リストを消去する
+    lstBoxField_Name.ListIndex = -1
+    lstBoxField_Name.Clear
 End Sub
 Private Sub UserForm_Initialize()
     '初期値を投入
