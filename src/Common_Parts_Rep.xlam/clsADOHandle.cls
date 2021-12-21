@@ -251,6 +251,23 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
         Set rsMyRecord = New ADODB.Recordset
     End If
     Set rsMyRecord = adoCommand.Execute(longAffected)
+    If rsMyRecord.State = adStateClosed Then
+        'Recordsetが閉じていた場合
+        'DROP TABLE , SELECT INTO ... 等が該当？
+        If Err.Number = 0 Then
+            '正常終了？
+            Do_SQL_with_NO_Transaction = True
+            ReDim varMyArray(1, 0)
+            varMyArray(0, 0) = "正常終了"
+            varMyArray(1, 0) = "結果を返さないSQLです。正常終了しているようです"
+        Else
+            ReDim varMyArray(1, 0)
+            varMyArray(0, 0) = "異常終了"
+            varMyArray(1, 0) = "結果を返さないSQLです。異常終了しているようです"
+            Do_SQL_with_NO_Transaction = False
+        End If
+        Exit Function
+    End If
     'rsMyRecordのEOFとBOFが違っていたら中身があるので、配列に格納する
     If Not (rsMyRecord.BOF And rsMyRecord.EOF) Then
         '配列書き出し開始

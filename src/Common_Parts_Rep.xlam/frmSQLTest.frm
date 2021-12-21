@@ -87,6 +87,9 @@ Private Sub UserForm_Initialize()
     Set dbDefault = New clsADOHandle
     txtBoxDefaultDBDirectory.Text = dbDefault.DBPath
     txtBoxDefaultDBFile.Text = dbDefault.DBFileName
+    '途中で簡単にディレクトリとファイルを切り替えれるようになったのでテキストボックスのEnableをTrueにセットしてやる
+    txtBoxDefaultDBDirectory.Enabled = True
+    txtBoxDefaultDBFile.Enabled = True
 End Sub
 Private Sub UserForm_Resize()
     'フォームリサイズ時に、中のリストボックスもサイズ変更してやる
@@ -115,16 +118,19 @@ Private Sub btnSQLGo_Click()
     End If
     Dim varRetValue As Variant
     Dim strWidths As String
-    Dim isDBFile As Boolean
-''    isDBFile = IsDBFileExist
-'    If Not isDBFile Then
-'        'DBファイル作成・確認時に何かあったんだね・・
-'        DebugMsgWithTime "DBファイル作成・確認時に何かあった"
-'        Exit Sub
-'    End If
     Dim isCollect As Boolean
     Dim dbTest As clsADOHandle
     Set dbTest = New clsADOHandle
+    'DBディレクトリ・DBファイル名テキストボックス名で指定されたファイルがあるかチェックする
+    Dim IsDBFileExist As Boolean
+    IsDBFileExist = dbTest.IsDBFileExist(txtBoxDefaultDBFile.Text, txtBoxDefaultDBDirectory.Text)
+    If Not IsDBFileExist Then
+        MsgBox "DB directory: " & txtBoxDefaultDBDirectory.Text & " Filename: " & txtBoxDefaultDBFile.Text & " が見つかりませんでした。"
+        Exit Sub
+    End If
+    'テキストボックスで指定したディレクトリ名とファイル名をクラスのプロパティにセットしてやる
+    dbTest.DBPath = txtBoxDefaultDBDirectory.Text
+    dbTest.DBFileName = txtBoxDefaultDBFile.Text
     If chkBoxUseParm.Value Then
         'パラメータバインド有りの場合
         Dim sqlBc As clsSQLStringBuilder

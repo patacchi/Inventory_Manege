@@ -35,4 +35,4 @@ End Sub
 Property Get AccdbDataType(accdbType As ACCDB_Data_Type) As String
     AccdbDataType = dicAccdbDataType(accdbType)
     Exit Property
-End Property
+End Property
