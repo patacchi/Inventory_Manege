@@ -259,7 +259,7 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
             Do_SQL_with_NO_Transaction = True
             ReDim varMyArray(1, 0)
             varMyArray(0, 0) = "正常終了"
-            varMyArray(1, 0) = "結果を返さないSQLです。正常終了しているようです"
+            varMyArray(1, 0) = "結果を返さないSQLです。" & longAffected & "件のデータに影響がありました。 正常終了しているようです"
         Else
             ReDim varMyArray(1, 0)
             varMyArray(0, 0) = "異常終了"
@@ -603,11 +603,11 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     Set sqlBc = CreateclsSQLStringBuilder
     Dim dicAppendField As Dictionary
     Set dicAppendField = New Dictionary
-    Dim clsEnumvalue As clsEnum
-    Set clsEnumvalue = CreateclsEnum
+    Dim clsEnumValue As clsEnum
+    Set clsEnumValue = CreateclsEnum
     dicAppendField.Add 0, strargTableName
     dicAppendField.Add 1, strargTableName
-    dicAppendField.Add 2, clsEnumvalue.AccdbDataType(argaccdbType)
+    dicAppendField.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
     strSQL = sqlBc.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
 End Function
 'DBファイルの存在有無を確認する。初期テーブル作成は別プロシージャにて行う

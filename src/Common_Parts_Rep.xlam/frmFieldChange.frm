@@ -21,26 +21,27 @@ Private Sub btnDoUpdate_Click()
     End If
     Dim adoFieldUpdate As clsADOHandle
     Set adoFieldUpdate = CreateclsADOHandleInstance
-    'プロパティを使用しないで接続するテスト
-    Dim notClassPropetyUse As Boolean
-    notClassPropetyUse = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.Text, F_CAT_DIGIT_OFFSET, _
-                        txtBoxDB_FileName.Text, txtBoxDB_Directory.Text)
     'DBファイル名とディレクトリ名テキストボックスの内容をクラスインスタンスのプロパティにセットしてやる
     adoFieldUpdate.DBPath = txtBoxDB_Directory.Text
     adoFieldUpdate.DBFileName = txtBoxDB_FileName.Text
     '変更対象であるDigit_offsetフィールドが存在するかチェックする
     Dim isDigitOffset As Boolean
-    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET)
+    'Enumクラスのインスタンスを利用してConstの数値を引っ張る
+    Dim clsEnumValue As clsEnum
+    Set clsEnumValue = New clsEnum
+'    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET)
+    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDetailField(F_Digit_Row))
     'アップデートチェックフィールドが存在するかチェックする
     Dim isUpdateField As Boolean
-    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE)
+    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), CAT_CONST.F_DIGIT_UPDATE)
     If Not isUpdateField Then
         'updateフィールドがなければ作成する
         Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE, [Boolean])
     End If
     'Digit_Rowフィールドが存在するかチェックする
     Dim isDigitRow As Boolean
-    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW)
+'    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW)
+    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_DigitM_Row))
     'stop
     Stop
 End Sub
