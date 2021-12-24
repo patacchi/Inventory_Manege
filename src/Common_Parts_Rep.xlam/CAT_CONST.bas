@@ -107,7 +107,7 @@ Public Const SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType As String = "ALTER
 'フィールドデータ型Enum
 Public Enum ACCDB_Data_Type
     [Text] = 1
-    [INTEGER] = 2
+    [Integer] = 2
     [BIT] = 3
     [Boolean] = 3
     [COUNTER] = 4

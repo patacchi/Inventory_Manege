@@ -37,7 +37,7 @@ Private Sub Initial_Valueset()
         Set dicAccdbDataType = New Dictionary
     End If
     dicAccdbDataType.Add ACCDB_Data_Type.Text, "TEXT"
-    dicAccdbDataType.Add ACCDB_Data_Type.INTEGER, "INTEGER"
+    dicAccdbDataType.Add ACCDB_Data_Type.Integer, "INTEGER"
     dicAccdbDataType.Add ACCDB_Data_Type.BIT, "BIT"
     dicAccdbDataType.Add ACCDB_Data_Type.COUNTER, "COUNTER"
     dicAccdbDataType.Add ACCDB_Data_Type.Decimal, "DECIMAL"
