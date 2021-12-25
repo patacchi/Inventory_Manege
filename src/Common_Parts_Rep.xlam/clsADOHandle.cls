@@ -605,10 +605,36 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     Set dicAppendField = New Dictionary
     Dim clsEnumValue As clsEnum
     Set clsEnumValue = CreateclsEnum
+    'テーブル名にaddquoteすると失敗するみたい
+'    dicAppendField.Add 0, sqlBc.addQuote(strargTableName)
     dicAppendField.Add 0, strargTableName
-    dicAppendField.Add 1, strargTableName
+    'フィールド名にaddquoteすると・・・・""込みのフィールド名になるのでNG！
+'    dicAppendField.Add 1, sqlBc.addQuote(strargFieldName)
+    dicAppendField.Add 1, strargFieldName
     dicAppendField.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
     strSQL = sqlBc.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
+    Dim isCollect As Boolean
+    isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    If Not isCollect Then
+        'DoSqlで失敗してるようだったら抜ける
+        DebugMsgWithTime "AppendField: fail when Do SQL"
+        AppendField = False
+        Exit Function
+    End If
+    '追加したフィールドが存在するかチェックする
+    Dim isNewFieldExist As Boolean
+        isNewFieldExist = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+        If isNewFieldExist Then
+            '新しいフィールドが見つかった場合→成功
+            DebugMsgWithTime "AppendField: " & strargFieldName & " on Table: " & strargTableName & " is success"
+            AppendField = True
+            Exit Function
+        Else
+            '新しいフィールドが見つからなかった場合→なぜ・・・？
+            DebugMsgWithTime "AppendField: Fail AppendField: " & strargFieldName
+            AppendField = False
+            Exit Function
+        End If
 End Function
 'DBファイルの存在有無を確認する。初期テーブル作成は別プロシージャにて行う
 Public Function IsDBFileExist(Optional strargDBFileName As String, Optional strargDBPath As String = "") As Boolean

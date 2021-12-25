@@ -12,13 +12,17 @@ Public Const F_CAT_DESCRIPTIONTABLE As String = "F_CAT_DescriptionTable"    'Des
 Public Const F_CAT_DETAILTABLE As String = "F_CAT_DetailTable"              'Ú×id—ljƒe[ƒuƒ‹–¼‚ÌƒtƒB[ƒ‹ƒh–¼
 Public Const F_CAT_SPECIALTABLE As String = "F_CAT_SpecialTable"            '“ÁêğŒ‚ğ‹LÚ‚µ‚½ƒe[ƒuƒ‹–¼‚ÌƒtƒB[ƒ‹ƒh–¼
 'CAT‚Ìƒwƒbƒ_ƒe[ƒuƒ‹’è‹`‚ÌEnumAÀÛ‚Ì’l‚ÍclsEnum‚Å’è‹`‚·‚é
+'ƒƒ“ƒo[–¼d•¡–h~‚·‚é‚Æ“ª‚ÉEnum¯•Ê–¼‚ğ‚Â‚¯‚È‚¢‚ÆƒRƒ“ƒpƒCƒ‹ƒGƒ‰[‚É‚È‚é‚½‚ßAƒƒ“ƒo[–¼‚Íd•¡‚µ‚È‚¢‚æ‚¤‚É‚·‚é
+'d•¡‚·‚é‚Æ –¼‘O‚ª“KØ‚Å‚Í‚ ‚è‚Ü‚¹‚ñ ‚ÌƒGƒ‰[‚ª”­¶‚·‚é
+'d•¡–h~‚Ì‚½‚ßAƒTƒtƒBƒbƒNƒX‚Æ‚µ‚ÄŒ´‘¥A_??? ‚ğ•t‰Á‚·‚é
+'ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌƒTƒtƒBƒbƒNƒX‚Í_?m?? ‚Æ‚·‚é
 Public Enum CAT_Header_Field
-    T_Name = 0              'Header Table‚»‚Ì‚à‚Ì‚Ì–¼‘O
-    F_Header = 1            'ŠeCATƒR[ƒh‚Ìƒwƒbƒ_•”•ª
-    F_DescriptionTable = 2  'Description’è‹`‚Ìƒe[ƒuƒ‹–¼
-    F_DetailTable = 3       'Detail‚Ìƒe[ƒuƒ‹–¼
-    F_SpecialTable = 4      'Special‚Ìƒe[ƒuƒ‹–¼
-    F_InputDate = 5         '“ü—Í“ú
+    T_Name_chd = 0              'Header Table‚»‚Ì‚à‚Ì‚Ì–¼‘O
+    F_Header_chd = 1            'ŠeCATƒR[ƒh‚Ìƒwƒbƒ_•”•ª
+    F_DescriptionTable_chd = 2  'Description’è‹`‚Ìƒe[ƒuƒ‹–¼
+    F_DetailTable_chd = 3       'Detail‚Ìƒe[ƒuƒ‹–¼
+    F_SpecialTable_chd = 4      'Special‚Ìƒe[ƒuƒ‹–¼
+    F_InputDate_chd = 5         '“ü—Í“ú
 End Enum
 'iŠe‹@íj_Description
 'ŠeŒ…‚ÌŠT—vií—Şj‚ğŠi”[‚·‚é ƒe[ƒuƒ‹–¼‚Í T_CAT_iŠe‹@í–¼j_Description ‚Æ‚·‚é
@@ -29,10 +33,10 @@ Public Const F_CAT_DIGIT_ROW As String = "F_CAT_Digit_Row"                  'Œ…
 Public Const F_CAT_DESCRIPTION_ID As String = "F_CAT_Description_ID"        'Description‚ÌID‚ª“ü‚é
 'Descriptionƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_Description_Field
-    T_Name_0_Kishu = 0          'ƒCƒ“ƒfƒbƒNƒX0i‹@í–¼‚É’uŠ·‚ª•K—vjDescriptionƒe[ƒuƒ‹–¼
-    F_Digit_Row = 1             'ƒtƒ‰ƒO—§‚Ä‚½Long‚Ì”
-    F_Descriptoin_ID = 2        'Description‚ÌIDAÀ‘Ô‚Íƒ}ƒXƒ^[ƒe[ƒuƒ‹QÆ
-    F_InputDate = 3             '“ü—Í“ú
+    T_Name_0_Kishu_cdc = 0          'ƒCƒ“ƒfƒbƒNƒX0i‹@í–¼‚É’uŠ·‚ª•K—vjDescriptionƒe[ƒuƒ‹–¼
+    F_Digit_Row_cdc = 1             'ƒtƒ‰ƒO—§‚Ä‚½Long‚Ì”
+    F_Descriptoin_ID_cdc = 2        'Description‚ÌIDAÀ‘Ô‚Íƒ}ƒXƒ^[ƒe[ƒuƒ‹QÆ
+    F_InputDate_cdc = 3             '“ü—Í“ú
 End Enum
 'iŠe‹@íj_Detail
 'CATƒR[ƒh‚ÌŠeŒ…ˆÊ’u‚É‘Î‚·‚éà–¾‚ğŠi”[‚·‚éiƒƒCƒ“ƒe[ƒuƒ‹j
@@ -42,11 +46,11 @@ Public Const F_CAT_CHR As String = "F_CAT_Chr"                              '‚»‚
 Public Const F_CAT_DETAIL_ID As String = "F_CAT_Detail_ID"                  'Detail‚ÌID‚ª“ü‚é
 'Detailƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_Detail_Field
-    T_Name_0_Kishu = 0          'Detaiƒe[ƒuƒ‹–¼ 0 i‹@í–¼’uŠ·j‚ª•K—v
-    F_Digit_Row = 1             'Œ…”ƒtƒ‰ƒO‚ÌLong
-    F_Chr = 2                   'Œ…‚É“ü‚é•¶š
-    F_Detail_ID = 3             'Detail‚ÌID
-    F_InputDate = 4             '“ü—Í“ú
+    T_Name_0_Kishu_cdt = 0          'Detaiƒe[ƒuƒ‹–¼ 0 i‹@í–¼’uŠ·j‚ª•K—v
+    F_Digit_Row_cdt = 1             'Œ…”ƒtƒ‰ƒO‚ÌLong
+    F_Chr_cdt = 2                   'Œ…‚É“ü‚é•¶š
+    F_Detail_ID_cdt = 3             'Detail‚ÌID
+    F_InputDate_cdt = 4             '“ü—Í“ú
 End Enum
 'iŠe‹@íj_Special
 '“Áê‚È‘g‚İ‡‚í‚¹‚Å•\Œ»‚ª•Ï‚í‚é‚à‚Ì‚ğW‚ß‚½ƒe[ƒuƒ‹
@@ -56,10 +60,10 @@ Public Const F_CAT_CONDITION As String = "F_CAT_Condition"                  'ğŒ
 Public Const F_CAT_EXECUTE As String = "F_CAT_Excute"                       '‰ü•Ï‚·‚é“à—e‚ğJSON‚ÅŠi”[
 'Specialƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_Special_Field
-    T_Name_0_Kishu = 0          'Special‚Ìƒe[ƒuƒ‹–¼A{0}‚ğ‹@í–¼’uŠ·•K—v
-    F_Condition = 1             'ğŒƒtƒB[ƒ‹ƒh
-    F_Execute = 2               '‰ü•Ï“à—eƒtƒB[ƒ‹ƒh
-    F_InputDate = 3             '“ü—Í“ú
+    T_Name_0_Kishu_csp = 0          'Special‚Ìƒe[ƒuƒ‹–¼A{0}‚ğ‹@í–¼’uŠ·•K—v
+    F_Condition_csp = 1             'ğŒƒtƒB[ƒ‹ƒh
+    F_Execute_csp = 2               '‰ü•Ï“à—eƒtƒB[ƒ‹ƒh
+    F_InputDate_csp = 3             '“ü—Í“ú
 End Enum
 'Descriptionƒ}ƒXƒ^[ƒe[ƒuƒ‹
 'ÀÛ‚ÌŠT—v‚Í‚±‚Á‚¿‚É“ü‚éBeƒe[ƒuƒ‹
@@ -67,36 +71,39 @@ Public Const T_CAT_Description_MASTER As String = "T_CAT_M_Description"     'Des
 Public Const F_CAT_DESCRIPTION_TEXT As String = "F_CAT_Description"         'ÀÛ‚ÌŠT—v‚Ì“à—e‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Descriptionƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_M_Description_Field
-    T_Name = 0                  'Descriptionƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
-    F_Description_ID = 1        'Descriptionƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
-    F_Digit_Row = 2             'Descriptionƒe[ƒuƒ‹‚Æ‹¤—p
-    F_Description_Text = 3      'Description‚Ì–{‘Ì
-    F_InputDate = 4             '“ü—Í“ú
+    T_Name_cmdc = 0                  'Descriptionƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
+    F_Description_ID_cmdc = 1        'Descriptionƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
+    F_Digit_Row_cmdc = 2             'Descriptionƒe[ƒuƒ‹‚Æ‹¤—p
+    F_Description_Text_cmdc = 3      'Description‚Ì–{‘Ì
+    F_InputDate_cmdc = 4             '“ü—Í“ú
 End Enum
 'Detailƒ}ƒXƒ^[ƒe[ƒuƒ‹
 Public Const T_CAT_DETAIL_MASTER As String = "T_CAT_M_Detail"               'Detailƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
 Public Const F_CAT_DETAIL_TEXT As String = "F_CAT_Detail"                   'ÀÛ‚Ìd—lÚ×‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Detailƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_M_Detail_Field
-    T_Name = 0                  'Detailƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
-    F_Detail_ID = 1             'Detailƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
-    F_Digit_Row = 2             'Detailƒe[ƒuƒ‹‚Æ‹¤—p
-    F_Chr = 3                   'Detailƒe[ƒuƒ‹‚Æ‹¤—p
-    F_Detail_Text = 4           'Detail‚Ì–{‘Ì
-    F_InputDate = 5             '“ü—Í“ú
+    T_Name_cmdt = 0                  'Detailƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
+    F_Detail_ID_cmdt = 1             'Detailƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
+    F_Digit_Row_cmdt = 2             'Detailƒe[ƒuƒ‹‚Æ‹¤—p
+    F_Chr_cmdt = 3                   'Detailƒe[ƒuƒ‹‚Æ‹¤—p
+    F_Detail_Text_cmdt = 4           'Detail‚Ì–{‘Ì
+    F_InputDate_cmdt = 5             '“ü—Í“ú
 End Enum
 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹
 Public Const T_CAT_DIGIT_MASTER As String = "T_CAT_M_Digit"                 'Œ…”‚ÆLong‚Ì”‚Ì‘Î‰ƒe[ƒuƒ‹
 Public Const F_CAT_DIGIT_OFFSET As String = "F_CAT_DigitOffset"             'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgA«—ˆJSON(String”z—ñj‚ÅŠi”[‚·‚é‚©‚àH
 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
 Public Enum CAT_M_Digit_Field
-    DigitT_Name = 0                  'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚Ì–¼‘O
-    F_Digit_Offset = 1          'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgi1•¶š–Ú‚Í1‚©‚çn‚Ü‚éj
-    F_DigitM_Row = 2             '‘¼‚Ìƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚¿‚ç‚ªe
+    T_Name_cmdg = 0                 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚Ì–¼‘O
+    F_Digit_Offset_cmdg = 1         'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgi1•¶š–Ú‚Í1‚©‚çn‚Ü‚éj
+    F_Digit_Row_cmdg = 2            '‘¼‚Ìƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚¿‚ç‚ªe
 End Enum
-'F_CAT_DIGIT_ROW
 'Œ…”ƒtƒB[ƒ‹ƒh•ÏŠ·—piŒo‰ß‘[’ujA‘S•”I‚í‚Á‚½‚çíœ‚·‚é
 Public Const F_DIGIT_UPDATE As String = "F_Digit_Update"                    'Œ…”Œ`®•ÏŠ·‚ªŠ®—¹‚µ‚½‚©‚Ç‚¤‚©AŠ®—¹‚µ‚½‚çTrue‚ğƒZƒbƒg‚·‚é
+'ˆê—˜—pƒtƒB[ƒ‹ƒhEnum
+Public Enum CAT_Tmp
+    F_Digit_Update_ctm = 0
+End Enum
 '--------------------------------------------------------------------------------------------------------------------------------------------------------------
 'SQL’è‹`
 'Šù‘¶‹@í—p‚É‹@í–¼ˆê——‚ğæ‚èo‚·SQL
@@ -106,13 +113,15 @@ Public Const SQL_KISHU_LIST As String = "SELECT " & F_CAT_HEADER & "," & F_CAT_D
 Public Const SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType As String = "ALTER TABLE {0} ADD COLUMN {1} {2}"      '{0}‚ÉTableName‚ğ{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ {2}‚ÉƒtƒB[ƒ‹ƒhƒ^ƒCƒv‚ğ“ü‚ê‚é
 'ƒtƒB[ƒ‹ƒhƒf[ƒ^Œ^Enum
 Public Enum ACCDB_Data_Type
-    [Text] = 1
-    [Integer] = 2
-    [BIT] = 3
-    [Boolean] = 3
-    [COUNTER] = 4
-    [AUTOINCREMENT] = 4
-    [Decimal] = 5
+    Text_typ = 1
+    Integer_typ = 2
+    BIT_typ = 3
+    Boolean_typ = 3
+    COUNTER_typ = 4
+    AUTOINCREMENT_typ = 4
+    Decimal_typ = 5
+    Single_typ = 6
+    Double_Typ = 7
 End Enum
 'ƒtƒB[ƒ‹ƒhíœSQL
 Public Const SQL_DELETE_FIELD_0Tablename_1Fieldname As String = "ALTER TABLE {0} DROP COLUMN {1}"                   '{0}‚ÉTableName‚ğA{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ“ü‚ê‚é

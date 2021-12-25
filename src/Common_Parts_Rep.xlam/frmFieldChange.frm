@@ -4,7 +4,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmFieldChange
    ClientHeight    =   6255
    ClientLeft      =   45
    ClientTop       =   390
-   ClientWidth     =   10095
+   ClientWidth     =   12660
    OleObjectBlob   =   "frmFieldChange.frx":0000
    StartUpPosition =   1  'オーナー フォームの中央
 End
@@ -28,20 +28,33 @@ Private Sub btnDoUpdate_Click()
     Dim isDigitOffset As Boolean
     'Enumクラスのインスタンスを利用してConstの数値を引っ張る
     Dim clsEnumValue As clsEnum
-    Set clsEnumValue = New clsEnum
-'    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_OFFSET)
-    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDetailField(F_Digit_Row))
+    Set clsEnumValue = CreateclsEnum
+    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_Digit_Offset_cmdg))
+    If Not isDigitOffset Then
+        'そもそもDigitOffsetフィールドが無い場合
+        'アップデート対象のフィールドがないためその場で抜ける
+        DebugMsgWithTime "btnDoUpdate: DigitOffset field not found."
+        Exit Sub
+    End If
     'アップデートチェックフィールドが存在するかチェックする
     Dim isUpdateField As Boolean
-    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), CAT_CONST.F_DIGIT_UPDATE)
+    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm))
     If Not isUpdateField Then
         'updateフィールドがなければ作成する
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_DIGIT_UPDATE, [Boolean])
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm), Boolean_typ)
+        '以下テスト accdbType
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_TEXT", Text_typ)
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Integer", Integer_typ)
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Decimal", Decimal_typ)
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Single", Single_typ)
+        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Double", Double_Typ)
+        'オートナンバー型のフィールドはテーブルに一つのみ
+'        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Counter", AUTOINCREMENT_typ)
     End If
     'Digit_Rowフィールドが存在するかチェックする
     Dim isDigitRow As Boolean
 '    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW)
-    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_DigitM_Row))
+    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_Digit_Row_cmdg))
     'stop
     Stop
 End Sub
@@ -79,6 +92,29 @@ Private Sub btnGetTableList_Click()
     lstBoxTable_Name.List = strarrTableName
     Set adoxcatChange = Nothing
     Set dbGetTable = Nothing
+End Sub
+Private Sub IEbrowser_BeforeNavigate2(ByVal pDisp As Object, URL As Variant, Flags As Variant, TargetFrameName As Variant, PostData As Variant, Headers As Variant, Cancel As Boolean)
+    '本来はWebページを表示するコントロールだが、ドラッグアンドドロップされるとURLにファイル名がそのまま入るため、これを利用する
+    '複数ファイルの選択は不可
+    '実際にNavigateを実行しないようにCancelにTrueにセットする
+    Cancel = True
+    Dim fsoFileNameGet As FileSystemObject
+    Set fsoFileNameGet = New FileSystemObject
+    If Not fsoFileNameGet.FileExists(URL) Then
+        'URLのファイル名が存在しなかった→ファイル以外がドロップされた可能性があるので即抜ける
+        DebugMsgWithTime "IEBrowser_BeforeNavigate: file?: " & URL & " not found"
+        Exit Sub
+    End If
+    Dim EnumValue As clsEnum
+    Set EnumValue = CreateclsEnum
+    If Not LCase(fsoFileNameGet.GetExtensionName(URL)) = LCase(EnumValue.DBFileExetension(accdb_dext)) Then
+        'ファイルの拡張子がDBFileExtentionと一致しない場合は処理を中断する
+        DebugMsgWithTime "IEBrowser_BeforeNavigate: Exetention is not accdb"
+        Exit Sub
+    End If
+    'DBファイル名とディレクトリに設定してやる
+    txtBoxDB_Directory.Text = fsoFileNameGet.GetParentFolderName(URL)
+    txtBoxDB_FileName.Text = fsoFileNameGet.GetFileName(URL)
 End Sub
 Private Sub lstBOxField_Name_Change()
     'テーブル名とフィールド名どちらも選択されていたらUpdateボタンを有効にする
