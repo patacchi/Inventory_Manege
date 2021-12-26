@@ -14,49 +14,132 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+Private Const SQL_DigitOffset_Update_Check_0_Tablename_1UpdateField As String = "SELECT * FROM {0} WHERE {1} = FALSE"
 Private Sub btnDoUpdate_Click()
     'フィールド修正適用
-    If lstBoxTable_Name.ListIndex = -1 Or lstBoxField_Name.ListIndex = -1 Then
-        Exit Sub
-    End If
+    '全テーブルモードかどうかで処理を分岐する
+    Select Case chkBoxAllTable.Value
+    Case True
+        '全テーブル一括モードの時
+        'テーブル名リストボックスのテーブルをFor Eachで回す
+        Dim varKey As Variant
+        For Each varKey In lstBoxTable_Name.List
+            Call DoUpdateTable(CStr(varKey))
+        Next varKey
+    Case False
+        '通常モードの場合はテーブル名の選択は必須
+        If lstBoxTable_Name.ListIndex = -1 Or lstBoxField_Name.ListIndex = -1 Then
+            Exit Sub
+        End If
+        Call DoUpdateTable(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex))
+    End Select
+End Sub
+'''Author Patacchi 2021_12_26
+'''テーブル名を引数として、テーブルの修正作業を行う
+Private Sub DoUpdateTable(strargTableName As String)
     Dim adoFieldUpdate As clsADOHandle
     Set adoFieldUpdate = CreateclsADOHandleInstance
     'DBファイル名とディレクトリ名テキストボックスの内容をクラスインスタンスのプロパティにセットしてやる
     adoFieldUpdate.DBPath = txtBoxDB_Directory.Text
     adoFieldUpdate.DBFileName = txtBoxDB_FileName.Text
-    '変更対象であるDigit_offsetフィールドが存在するかチェックする
-    Dim isDigitOffset As Boolean
     'Enumクラスのインスタンスを利用してConstの数値を引っ張る
     Dim clsEnumValue As clsEnum
     Set clsEnumValue = CreateclsEnum
-    isDigitOffset = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_Digit_Offset_cmdg))
-    If Not isDigitOffset Then
+    'StringBuilderクラスのインスタンス
+    Dim strBC As clsSQLStringBuilder
+    Set strBC = CreateclsSQLStringBuilder
+    'フィールド内容修正作業
+    'DigitOffset
+    '変更対象であるDigit_offsetフィールドが存在するかチェックする
+    Dim isDigitOffset As Boolean
+    isDigitOffset = adoFieldUpdate.IsFieldExists(strargTableName, clsEnumValue.CATDigitField(F_Digit_Offset_cmdg))
+    If Not isDigitOffset Or strargTableName = clsEnumValue.CATDigitField(T_Name_cmdg) Then
         'そもそもDigitOffsetフィールドが無い場合
-        'アップデート対象のフィールドがないためその場で抜ける
+        'もしくはテーブル名がDigitMasterテーブルであった場合
+        'アップデート対象のフィールドがないためDigitOffset関連の修正はしない
         DebugMsgWithTime "btnDoUpdate: DigitOffset field not found."
-        Exit Sub
+    Else
+        'DigitOffset修正対象なので、修正続行
+        'アップデートチェックフィールドが存在するかチェックする
+        Dim isUpdateField As Boolean
+        isUpdateField = adoFieldUpdate.IsFieldExists(strargTableName, clsEnumValue.CATTempField(F_Digit_Update_ctm))
+        If Not isUpdateField Then
+            'updateフィールドがなければ作成する
+            Call adoFieldUpdate.AppendField(strargTableName, clsEnumValue.CATTempField(F_Digit_Update_ctm), Boolean_typ)
+        End If
+        'Digit_Rowフィールドが存在するかチェックする
+        Dim isDigitRow As Boolean
+        isDigitRow = adoFieldUpdate.IsFieldExists(strargTableName, clsEnumValue.CATDigitField(F_Digit_Row_cmdg))
+        If Not isDigitRow Then
+            'DigitRowフィールドがなければ作成する
+            Call adoFieldUpdate.AppendField(strargTableName, clsEnumValue.CATDigitField(F_Digit_Row_cmdg), Integer_typ)
+        End If
+        'DigitOffsetフィールドデータ型をTextに
+        Dim isCollect As Boolean
+        isCollect = adoFieldUpdate.ChangeDataType(strargTableName, clsEnumValue.CATDigitField(F_Digit_Offset_cmdg), Text_typ, "(31)")
+        If Not isCollect Then
+            'データ型変更失敗
+            DebugMsgWithTime "DoUpdateTable: fail change DataType"
+            Exit Sub
+        End If
+        'DigitOffsetフィールド修正
+'        CAT_CONST.SQL_FIX_DIGITOFFSET_0_TableName_1_DigitOffset_2_DigitRow_3_DigitUpdate
+        'DigitOffset修正用パラメータDictionary設定
+        Dim dicFixDigitOffset As Dictionary
+        Set dicFixDigitOffset = New Dictionary
+        '0_TableName_1_DigitOffset_2_DigitRow_3_DigitUpdate
+        dicFixDigitOffset.Add 0, strargTableName
+        dicFixDigitOffset.Add 1, clsEnumValue.CATDigitField(F_Digit_Offset_cmdg)
+        dicFixDigitOffset.Add 2, clsEnumValue.CATDigitField(F_Digit_Row_cmdg)
+        dicFixDigitOffset.Add 3, clsEnumValue.CATTempField(F_Digit_Update_ctm)
+        'SQL作成
+        Dim strSQL_FixDigitOffset As String
+        strSQL_FixDigitOffset = strBC.ReplaceParm(CAT_CONST.SQL_FIX_DIGITOFFSET_0_TableName_1_DigitOffset_2_DigitRow_3_DigitUpdate, dicFixDigitOffset)
+        'SQL実行
+        isCollect = adoFieldUpdate.Do_SQL_with_NO_Transaction(strSQL_FixDigitOffset)
+        If Not isCollect Then
+            'DigitRow設定時に失敗したっぽい
+            DebugMsgWithTime "DoUpdateTable: fail Fix DigitRow"
+            Exit Sub
+        End If
+        '修正完了確認
+        'UpdatedでFalseが残ってないかどうか
+        '置換パラメータ用Dictionary初期化
+        dicFixDigitOffset.RemoveAll
+        '0_Tablename 1_UpdateFieldName
+        '置換用Dictionary作成
+        dicFixDigitOffset.Add 0, strargTableName
+        dicFixDigitOffset.Add 1, clsEnumValue.CATTempField(F_Digit_Update_ctm)
+        strSQL_FixDigitOffset = strBC.ReplaceParm(SQL_DigitOffset_Update_Check_0_Tablename_1UpdateField, dicFixDigitOffset)
+        Call adoFieldUpdate.Do_SQL_with_NO_Transaction(strSQL_FixDigitOffset)
+        If adoFieldUpdate.RecordCount >= 1 Then
+            'UpdateでFalseがまだ残ってる
+            'メッセージボックス出して処理を中断
+            DebugMsgWithTime "DoUpdateTable Table: " & strargTableName & " Update update NOT complete.check master table"
+            MsgBox strargTableName & " テーブルでアップデート完了していないフィールドが残っているようです。マスターファイルを確認して下さい。"
+        Else
+            '全てアップデート完了した
+            'DigitOffsetフィールド消去
+            Call adoFieldUpdate.DeleteField(strargTableName, clsEnumValue.CATDigitField(F_Digit_Offset_cmdg))
+        End If
     End If
-    'アップデートチェックフィールドが存在するかチェックする
-    Dim isUpdateField As Boolean
-    isUpdateField = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm))
-    If Not isUpdateField Then
-        'updateフィールドがなければ作成する
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm), Boolean_typ)
-        '以下テスト accdbType
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_TEXT", Text_typ)
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Integer", Integer_typ)
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Decimal", Decimal_typ)
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Single", Single_typ)
-        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Double", Double_Typ)
-        'オートナンバー型のフィールドはテーブルに一つのみ
-'        Call adoFieldUpdate.AppendField(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATTempField(F_Digit_Update_ctm) & "_Counter", AUTOINCREMENT_typ)
+    'InputDateフィールドがあるかチェックする
+    Dim isInputDate As Boolean
+    isInputDate = adoFieldUpdate.IsFieldExists(strargTableName, clsEnumValue.CATMasterDetailField(F_InputDate_cmdt))
+    If isInputDate Then
+        '修正対象のInputDateフィールドがある場合のみ修正作業を続行する
+        '置換パラメータ用のDictionary作成
+        Dim dicFixInputDate As Dictionary
+        Set dicFixInputDate = New Dictionary
+        dicFixInputDate.Add 0, strargTableName
+        Dim strSQL_FixInputDate As String
+        strSQL_FixInputDate = strBC.ReplaceParm(CAT_CONST.SQL_FIX_INPUTDATE_0_TableName, dicFixInputDate)
+        '修正実行
+        Call adoFieldUpdate.Do_SQL_with_NO_Transaction(strSQL_FixInputDate)
     End If
-    'Digit_Rowフィールドが存在するかチェックする
-    Dim isDigitRow As Boolean
-'    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), F_CAT_DIGIT_ROW)
-    isDigitRow = adoFieldUpdate.IsFieldExists(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex), clsEnumValue.CATDigitField(F_Digit_Row_cmdg))
-    'stop
-    Stop
+    Set clsEnumValue = Nothing
+    Set adoFieldUpdate = Nothing
+    Set strBC = Nothing
 End Sub
 Private Sub btnGetTableList_Click()
     Dim dbGetTable As clsADOHandle
@@ -90,8 +173,39 @@ Private Sub btnGetTableList_Click()
         End If
     Next adoxTable
     lstBoxTable_Name.List = strarrTableName
+    If lstBoxTable_Name.ListCount >= 1 Then
+        'テーブル名リストボックスにデータがあった場合、全テーブルボタンのVisibleをTrueにしてやる
+        chkBoxAllTable.Visible = True
+    Else
+        'テーブルが見つからなかった場合は、全テーブルボタンのVisibleをFalseにしてやる
+        chkBoxAllTable.Visible = False
+    End If
     Set adoxcatChange = Nothing
     Set dbGetTable = Nothing
+End Sub
+Private Sub chkBoxAllTable_Change()
+    '全テーブル適用チェックボタンの状態が変化した場合に実行
+    Select Case chkBoxAllTable.Value
+    Case True
+        '全テーブルモードの場合
+        'テーブル選択リストボックスとフィールド選択リストボックスのEnableをFalseにし、未選択状態にする
+        lstBoxTable_Name.Enabled = False
+        lstBoxTable_Name.ListIndex = -1
+        lstBoxField_Name.Enabled = False
+        lstBoxField_Name.ListIndex = -1
+        'アップデートボタンを有効に
+        btnDoUpdate.Enabled = True
+    Case False
+        '通常モード
+        'リストボックスを有効にしてやる
+        lstBoxTable_Name.Enabled = True
+        lstBoxField_Name.Enabled = True
+        'テーブル名リストボックスが未選択状態ならアップデートボタンを無効にしてやる
+        If lstBoxTable_Name.ListIndex = -1 Then
+            'テーブル名が未選択状態
+            btnDoUpdate.Enabled = False
+        End If
+    End Select
 End Sub
 Private Sub IEbrowser_BeforeNavigate2(ByVal pDisp As Object, URL As Variant, Flags As Variant, TargetFrameName As Variant, PostData As Variant, Headers As Variant, Cancel As Boolean)
     '本来はWebページを表示するコントロールだが、ドラッグアンドドロップされるとURLにファイル名がそのまま入るため、これを利用する
@@ -185,6 +299,8 @@ Private Sub ClearTableandFieldList()
     'フィールドリストの選択状態を解除し、リストを消去する
     lstBoxField_Name.ListIndex = -1
     lstBoxField_Name.Clear
+    '全テーブルボタンのVisibleをFalseにしてやる
+    chkBoxAllTable.Visible = False
 End Sub
 Private Sub UserForm_Initialize()
     '初期値を投入

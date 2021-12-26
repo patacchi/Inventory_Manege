@@ -148,7 +148,7 @@ Public Function ParseJson(ByVal JsonString As String) As Object
     Dim json_Index As Long
     json_Index = 1
     ' Remove vbCr, vbLf, and vbTab from json_String
-    JsonString = VBA.Replace(VBA.Replace(VBA.Replace(JsonString, VBA.vbCr, ""), VBA.vbLf, ""), VBA.vbTab, "")
+    JsonString = VBA.REPLACE(VBA.REPLACE(VBA.REPLACE(JsonString, VBA.vbCr, ""), VBA.vbLf, ""), VBA.vbTab, "")
     json_SkipSpaces JsonString, json_Index
     Select Case VBA.Mid$(JsonString, json_Index, 1)
     Case "{"
@@ -376,7 +376,7 @@ Public Function ConvertToJson(ByVal JsonValue As Variant, Optional ByVal Whitesp
         ConvertToJson = json_BufferToString(json_Buffer, json_BufferPosition)
     Case VBA.vbInteger, VBA.vbLong, VBA.vbSingle, VBA.vbDouble, VBA.vbCurrency, VBA.vbDecimal
         ' Number (use decimals for numbers)
-        ConvertToJson = VBA.Replace(JsonValue, ",", ".")
+        ConvertToJson = VBA.REPLACE(JsonValue, ",", ".")
     Case Else
         ' vbEmpty, vbError, vbDataObject, vbByte, vbUserDefinedType
         ' Use VBA's built-in to-string
@@ -831,7 +831,7 @@ Public Function ParseIso(utc_IsoString As String) As Date
     ParseIso = VBA.DateSerial(VBA.CInt(utc_DateParts(0)), VBA.CInt(utc_DateParts(1)), VBA.CInt(utc_DateParts(2)))
     If UBound(utc_Parts) > 0 Then
         If VBA.InStr(utc_Parts(1), "Z") Then
-            utc_TimeParts = VBA.Split(VBA.Replace(utc_Parts(1), "Z", ""), ":")
+            utc_TimeParts = VBA.Split(VBA.REPLACE(utc_Parts(1), "Z", ""), ":")
         Else
             utc_OffsetIndex = VBA.InStr(1, utc_Parts(1), "+")
             If utc_OffsetIndex = 0 Then

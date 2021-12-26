@@ -122,7 +122,7 @@ End Function
 Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal strargFilePath As String, Optional ByVal strargFileEncoding As String = "UTF-8")
     '二次元配列をCSVに吐き出す
     Dim byteDimentions As Byte
-    Dim objFileStream As ADODB.Stream
+    Dim objFileStream As adodb.Stream
     Dim longRowCounter As Long
     Dim longFieldCounter As Long
     Dim strarrField() As String
@@ -134,7 +134,7 @@ Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal s
         DebugMsgWithTime "OutputArrayToCSV : Not 2 Dimension Array"
         Exit Sub
     End If
-    Set objFileStream = New ADODB.Stream
+    Set objFileStream = New adodb.Stream
     With objFileStream
         'エンコード指定
         .Charset = strargFileEncoding

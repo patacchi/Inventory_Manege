@@ -16,7 +16,7 @@ Public Const F_CAT_SPECIALTABLE As String = "F_CAT_SpecialTable"            '“Á
 'd•¡‚·‚é‚Æ –¼‘O‚ª“KØ‚Å‚Í‚ ‚è‚Ü‚¹‚ñ ‚ÌƒGƒ‰[‚ª”­¶‚·‚é
 'd•¡–h~‚Ì‚½‚ßAƒTƒtƒBƒbƒNƒX‚Æ‚µ‚ÄŒ´‘¥A_??? ‚ğ•t‰Á‚·‚é
 'ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌƒTƒtƒBƒbƒNƒX‚Í_?m?? ‚Æ‚·‚é
-Public Enum CAT_Header_Field
+Public Enum Enum_CAT_Header
     T_Name_chd = 0              'Header Table‚»‚Ì‚à‚Ì‚Ì–¼‘O
     F_Header_chd = 1            'ŠeCATƒR[ƒh‚Ìƒwƒbƒ_•”•ª
     F_DescriptionTable_chd = 2  'Description’è‹`‚Ìƒe[ƒuƒ‹–¼
@@ -32,7 +32,7 @@ Public Const T_CAT_DESCRIPTION_0kishu As String = "T_CAT_{0}_Description"   'Det
 Public Const F_CAT_DIGIT_ROW As String = "F_CAT_Digit_Row"                  'Œ…”‚Ìƒrƒbƒg‚Ìƒtƒ‰ƒO‚ğ—§‚Ä‚½Long‚Ì”AnŒ…–Ú‚Í2^(n-1) 3Œ…–Ú‚È‚ç4AŠeƒe[ƒuƒ‹‚É‚Í‚±‚Ì’l‚ğƒZƒbƒg‚·‚é
 Public Const F_CAT_DESCRIPTION_ID As String = "F_CAT_Description_ID"        'Description‚ÌID‚ª“ü‚é
 'Descriptionƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_Description_Field
+Public Enum Enum_CAT_Description
     T_Name_0_Kishu_cdc = 0          'ƒCƒ“ƒfƒbƒNƒX0i‹@í–¼‚É’uŠ·‚ª•K—vjDescriptionƒe[ƒuƒ‹–¼
     F_Digit_Row_cdc = 1             'ƒtƒ‰ƒO—§‚Ä‚½Long‚Ì”
     F_Descriptoin_ID_cdc = 2        'Description‚ÌIDAÀ‘Ô‚Íƒ}ƒXƒ^[ƒe[ƒuƒ‹QÆ
@@ -45,7 +45,7 @@ Public Const T_CAT_DETAIL_0kishu As String = "T_CAT_{0}_Detail"             '{0}
 Public Const F_CAT_CHR As String = "F_CAT_Chr"                              '‚»‚ÌŒ…‚É“ü‚é•¶š—ñ
 Public Const F_CAT_DETAIL_ID As String = "F_CAT_Detail_ID"                  'Detail‚ÌID‚ª“ü‚é
 'Detailƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_Detail_Field
+Public Enum Enum_CAT_Detail
     T_Name_0_Kishu_cdt = 0          'Detaiƒe[ƒuƒ‹–¼ 0 i‹@í–¼’uŠ·j‚ª•K—v
     F_Digit_Row_cdt = 1             'Œ…”ƒtƒ‰ƒO‚ÌLong
     F_Chr_cdt = 2                   'Œ…‚É“ü‚é•¶š
@@ -59,7 +59,7 @@ Public Const T_CAT_SPECIAL_0kishu As String = "T_CAT_{0}_Special"           '{0}
 Public Const F_CAT_CONDITION As String = "F_CAT_Condition"                  'ğŒ‚ğJSON‚ÅŠi”[
 Public Const F_CAT_EXECUTE As String = "F_CAT_Excute"                       '‰ü•Ï‚·‚é“à—e‚ğJSON‚ÅŠi”[
 'Specialƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_Special_Field
+Public Enum Enum_CAT_Special
     T_Name_0_Kishu_csp = 0          'Special‚Ìƒe[ƒuƒ‹–¼A{0}‚ğ‹@í–¼’uŠ·•K—v
     F_Condition_csp = 1             'ğŒƒtƒB[ƒ‹ƒh
     F_Execute_csp = 2               '‰ü•Ï“à—eƒtƒB[ƒ‹ƒh
@@ -70,7 +70,7 @@ End Enum
 Public Const T_CAT_Description_MASTER As String = "T_CAT_M_Description"     'Description‚Ìƒ}ƒXƒ^[
 Public Const F_CAT_DESCRIPTION_TEXT As String = "F_CAT_Description"         'ÀÛ‚ÌŠT—v‚Ì“à—e‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Descriptionƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_M_Description_Field
+Public Enum Enum_CAT_M_Description
     T_Name_cmdc = 0                  'Descriptionƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
     F_Description_ID_cmdc = 1        'Descriptionƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
     F_Digit_Row_cmdc = 2             'Descriptionƒe[ƒuƒ‹‚Æ‹¤—p
@@ -81,7 +81,7 @@ End Enum
 Public Const T_CAT_DETAIL_MASTER As String = "T_CAT_M_Detail"               'Detailƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
 Public Const F_CAT_DETAIL_TEXT As String = "F_CAT_Detail"                   'ÀÛ‚Ìd—lÚ×‚ª“ü‚éƒtƒB[ƒ‹ƒh
 'Detailƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_M_Detail_Field
+Public Enum Enum_CAT_M_Detail
     T_Name_cmdt = 0                  'Detailƒ}ƒXƒ^[‚Ìƒe[ƒuƒ‹–¼
     F_Detail_ID_cmdt = 1             'Detailƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚Á‚¿‚ªe
     F_Digit_Row_cmdt = 2             'Detailƒe[ƒuƒ‹‚Æ‹¤—p
@@ -90,10 +90,10 @@ Public Enum CAT_M_Detail_Field
     F_InputDate_cmdt = 5             '“ü—Í“ú
 End Enum
 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹
-Public Const T_CAT_DIGIT_MASTER As String = "T_CAT_M_Digit"                 'Œ…”‚ÆLong‚Ì”‚Ì‘Î‰ƒe[ƒuƒ‹
+Public Const T_CAT_DIGIT_MASTER As String = "T_M_Digit"                 'Œ…”‚ÆLong‚Ì”‚Ì‘Î‰ƒe[ƒuƒ‹
 Public Const F_CAT_DIGIT_OFFSET As String = "F_CAT_DigitOffset"             'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgA«—ˆJSON(String”z—ñj‚ÅŠi”[‚·‚é‚©‚àH
 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚ÌEnum
-Public Enum CAT_M_Digit_Field
+Public Enum Enum_CAT_M_Digit
     T_Name_cmdg = 0                 'Œ…”ƒ}ƒXƒ^[ƒe[ƒuƒ‹‚Ì–¼‘O
     F_Digit_Offset_cmdg = 1         'ƒwƒbƒ_‚Ì•¶š‚ÌÅŒã‚ğ0‚Æ‚µ‚½•¶šˆÊ’u‚ÌƒIƒtƒZƒbƒgi1•¶š–Ú‚Í1‚©‚çn‚Ü‚éj
     F_Digit_Row_cmdg = 2            '‘¼‚Ìƒe[ƒuƒ‹‚Æ‹¤—pA‚±‚¿‚ç‚ªe
@@ -113,15 +113,48 @@ Public Const SQL_KISHU_LIST As String = "SELECT " & F_CAT_HEADER & "," & F_CAT_D
 Public Const SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType As String = "ALTER TABLE {0} ADD COLUMN {1} {2}"      '{0}‚ÉTableName‚ğ{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ {2}‚ÉƒtƒB[ƒ‹ƒhƒ^ƒCƒv‚ğ“ü‚ê‚é
 'ƒtƒB[ƒ‹ƒhƒf[ƒ^Œ^Enum
 Public Enum ACCDB_Data_Type
+    'LongText
+    'ƒf[ƒ^ƒTƒCƒY‚ğw’è(255ˆÈ‰º)‚·‚é‚ÆShortText‚É‚È‚é
+    'ƒf[ƒ^ƒTƒCƒY‚ğw’è‚µ‚È‚¢LongText‚¾‚ÆFX§ŒÀ‚ª‚ ‚é‚Ì‚Å”ñ„§
     Text_typ = 1
-    Integer_typ = 2
-    BIT_typ = 3
-    Boolean_typ = 3
-    COUNTER_typ = 4
-    AUTOINCREMENT_typ = 4
-    Decimal_typ = 5
-    Single_typ = 6
-    Double_Typ = 7
+    'ShortText
+    '‚ ‚Ü‚èg‚í‚È‚¢‚Ù‚¤‚ª‚¢‚¢‚©‚à
+    Char_ShortText_typ = 2
+    Integer_typ = 3
+    BIT_typ = 4
+    Boolean_typ = 4
+    COUNTER_typ = 5
+    AUTOINCREMENT_typ = 5
+    Decimal_typ = 6
+    Single_typ = 7
+    Double_Typ = 8
 End Enum
 'ƒtƒB[ƒ‹ƒhíœSQL
-Public Const SQL_DELETE_FIELD_0Tablename_1Fieldname As String = "ALTER TABLE {0} DROP COLUMN {1}"                   '{0}‚ÉTableName‚ğA{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ“ü‚ê‚é
+Public Const SQL_DELETE_FIELD_0Tablename_1Fieldname As String = "ALTER TABLE {0} DROP COLUMN {1}"                   '{0}‚ÉTableName‚ğA{1}‚ÉƒtƒB[ƒ‹ƒh–¼‚ğ“ü‚ê‚é
+'ƒtƒB[ƒ‹ƒhƒf[ƒ^Œ^•ÏXSQL
+Public Const SQL_CHANGE_DATATYPE_0Tablename_1Fieldname_2DataType As String = "ALTER TABLE {0} ALTER COLUMN {1} {2}" '0‚ÉTablenameA1‚ÉFieldNameA2‚ÉDataType‚ğ“ü‚ê‚é
+'InputDate .fffC³SQL UPDATE ‚Åƒe[ƒuƒ‹‚É INNER JOIN ‚ğg—p
+'{0}‚ÉTableName‚ğ“ü‚ê‚é
+Public Const SQL_FIX_INPUTDATE_0_TableName As String = "UPDATE " & vbCrLf & _
+    "{0} AS Torigin" & vbCrLf & _
+    "   INNER JOIN" & vbCrLf & _
+    "       (" & vbCrLf & _
+    "       SELECT InputDate," & vbCrLf & _
+    "       REPLACE(InputDate, ""fff"", ""000"") As InputDate_Replace" & vbCrLf & _
+    "       FROM {0}" & vbCrLf & _
+    "       ) AS T1" & vbCrLf & _
+    "   ON Torigin.InputDate = T1.InputDate" & vbCrLf & _
+    "SET Torigin.InputDate = T1.InputDate_Replace" & vbCrLf & _
+    "WHERE Torigin.InputDate <> T1.InputDate_Replace"
+'DigitOffset ¨ DigitRow
+'{0}‚ÉTableNameA{1}‚ÉDigitOffset {2}‚ÉDigitRow {3} ‚ÉDigitUpdate‚ª“ü‚é
+Public Const SQL_FIX_DIGITOFFSET_0_TableName_1_DigitOffset_2_DigitRow_3_DigitUpdate As String = "UPDATE" & vbCrLf & _
+"   {0} As Torigin" & vbCrLf & _
+"   INNER JOIN T_M_Digit as T1" & vbCrLf & _
+"   ON Torigin.{1} = T1.{1}" & vbCrLf & _
+"SET" & vbCrLf & _
+"   Torigin.{2} = T1.{2} ," & vbCrLf & _
+"   Torigin.{3} = True" & vbCrLf & _
+"WHERE" & vbCrLf & _
+"   Torigin.{2} <> T1.{2}" & vbCrLf & _
+"   OR Torigin.{2} IS NULL"

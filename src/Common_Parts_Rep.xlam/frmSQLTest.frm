@@ -14,6 +14,29 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+Private Sub Browser_GetFileName_BeforeNavigate2(ByVal pDisp As Object, URL As Variant, Flags As Variant, TargetFrameName As Variant, PostData As Variant, Headers As Variant, Cancel As Boolean)
+    '本来はWebページを表示するコントロールだが、ドラッグアンドドロップされるとURLにファイル名がそのまま入るため、これを利用する
+    '複数ファイルの選択は不可
+    '実際にNavigateを実行しないようにCancelにTrueにセットする
+    Cancel = True
+    Dim fsoFileNameGet As FileSystemObject
+    Set fsoFileNameGet = New FileSystemObject
+    If Not fsoFileNameGet.FileExists(URL) Then
+        'URLのファイル名が存在しなかった→ファイル以外がドロップされた可能性があるので即抜ける
+        DebugMsgWithTime "IEBrowser_BeforeNavigate: file?: " & URL & " not found"
+        Exit Sub
+    End If
+    Dim EnumValue As clsEnum
+    Set EnumValue = CreateclsEnum
+    If Not LCase(fsoFileNameGet.GetExtensionName(URL)) = LCase(EnumValue.DBFileExetension(accdb_dext)) Then
+        'ファイルの拡張子がDBFileExtentionと一致しない場合は処理を中断する
+        DebugMsgWithTime "IEBrowser_BeforeNavigate: Exetention is not accdb"
+        Exit Sub
+    End If
+    'DBファイル名とディレクトリに設定してやる
+    txtBoxDefaultDBDirectory.Text = fsoFileNameGet.GetParentFolderName(URL)
+    txtBoxDefaultDBFile.Text = fsoFileNameGet.GetFileName(URL)
+End Sub
 Private Sub btnExportCSV_Click()
     'CSV出力
     Dim strFilePath As String

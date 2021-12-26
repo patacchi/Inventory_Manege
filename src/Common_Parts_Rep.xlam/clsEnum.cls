@@ -49,6 +49,7 @@ Private Sub Initial_Valueset()
         Set dicAccdbDataType = New Dictionary
     End If
     dicAccdbDataType.Add ACCDB_Data_Type.Text_typ, "TEXT"
+    dicAccdbDataType.Add ACCDB_Data_Type.Char_ShortText_typ, "CHAR"
     dicAccdbDataType.Add ACCDB_Data_Type.Integer_typ, "INTEGER"
     dicAccdbDataType.Add ACCDB_Data_Type.BIT_typ, "BIT"
     dicAccdbDataType.Add ACCDB_Data_Type.COUNTER_typ, "COUNTER"
@@ -62,7 +63,7 @@ End Sub
 '''---------------------------------------------------------------------------------------------------------------------------------------------
 Private Sub CAT_Enum_Initialset()
 'CATのヘッダテーブル定義のEnum、実際の値はclsEnumで定義する
-'Public Enum CAT_Header_Field
+'Public Enum Enum_CAT_Header
 '    T_Name = 0              'Header Tableそのものの名前
 '    F_Header = 1            '各CATコードのヘッダ部分
 '    F_DescriptionTable = 2  'Description定義のテーブル名
@@ -73,14 +74,14 @@ Private Sub CAT_Enum_Initialset()
     If dicCATHeaderField Is Nothing Then
         Set dicCATHeaderField = New Dictionary
     End If
-    dicCATHeaderField.Add CAT_Header_Field.T_Name_chd, CAT_CONST.T_CAT_HEADER
-    dicCATHeaderField.Add CAT_Header_Field.F_Header_chd, CAT_CONST.F_CAT_HEADER
-    dicCATHeaderField.Add CAT_Header_Field.F_DescriptionTable_chd, CAT_CONST.F_CAT_DESCRIPTIONTABLE
-    dicCATHeaderField.Add CAT_Header_Field.F_DetailTable_chd, CAT_CONST.F_CAT_DETAILTABLE
-    dicCATHeaderField.Add CAT_Header_Field.F_SpecialTable_chd, CAT_CONST.F_CAT_SPECIALTABLE
-    dicCATHeaderField.Add CAT_Header_Field.F_InputDate_chd, CAT_CONST.INPUT_DATE
+    dicCATHeaderField.Add Enum_CAT_Header.T_Name_chd, CAT_CONST.T_CAT_HEADER
+    dicCATHeaderField.Add Enum_CAT_Header.F_Header_chd, CAT_CONST.F_CAT_HEADER
+    dicCATHeaderField.Add Enum_CAT_Header.F_DescriptionTable_chd, CAT_CONST.F_CAT_DESCRIPTIONTABLE
+    dicCATHeaderField.Add Enum_CAT_Header.F_DetailTable_chd, CAT_CONST.F_CAT_DETAILTABLE
+    dicCATHeaderField.Add Enum_CAT_Header.F_SpecialTable_chd, CAT_CONST.F_CAT_SPECIALTABLE
+    dicCATHeaderField.Add Enum_CAT_Header.F_InputDate_chd, CAT_CONST.INPUT_DATE
 ''DescriptionテーブルのEnum
-'Public Enum CAT_Description_Field
+'Public Enum Enum_CAT_Description
 '    T_Name_0_Kishu = 0          'インデックス0（機種名に置換が必要）Descriptionテーブル名
 '    F_Digit_Row = 1             'フラグ立てたLongの数
 '    F_Descriptoin_ID = 2        'DescriptionのID、実態はマスターテーブル参照
@@ -89,12 +90,12 @@ Private Sub CAT_Enum_Initialset()
     If dicCATDescriptionField Is Nothing Then
         Set dicCATDescriptionField = New Dictionary
     End If
-    dicCATDescriptionField.Add CAT_Description_Field.T_Name_0_Kishu_cdc, CAT_CONST.T_CAT_DESCRIPTION_0kishu
-    dicCATDescriptionField.Add CAT_Description_Field.F_Digit_Row_cdc, CAT_CONST.F_CAT_DIGIT_ROW
-    dicCATDescriptionField.Add CAT_Description_Field.F_Descriptoin_ID_cdc, CAT_CONST.F_CAT_DESCRIPTION_ID
-    dicCATDescriptionField.Add CAT_Description_Field.F_InputDate_cdc, CAT_CONST.INPUT_DATE
+    dicCATDescriptionField.Add Enum_CAT_Description.T_Name_0_Kishu_cdc, CAT_CONST.T_CAT_DESCRIPTION_0kishu
+    dicCATDescriptionField.Add Enum_CAT_Description.F_Digit_Row_cdc, CAT_CONST.F_CAT_DIGIT_ROW
+    dicCATDescriptionField.Add Enum_CAT_Description.F_Descriptoin_ID_cdc, CAT_CONST.F_CAT_DESCRIPTION_ID
+    dicCATDescriptionField.Add Enum_CAT_Description.F_InputDate_cdc, CAT_CONST.INPUT_DATE
 ''DetailテーブルのEnum
-'Public Enum CAT_Detail_Field
+'Public Enum Enum_CAT_Detail
 '    T_Name_0_Kishu = 0          'Detaiテーブル名 0 （機種名置換）が必要
 '    F_Digit_Row = 1             '桁数フラグのLong
 '    F_Chr = 2                   '桁に入る文字
@@ -104,13 +105,13 @@ Private Sub CAT_Enum_Initialset()
     If dicCATDetailField Is Nothing Then
         Set dicCATDetailField = New Dictionary
     End If
-    dicCATDetailField.Add CAT_Detail_Field.T_Name_0_Kishu_cdt, CAT_CONST.T_CAT_DETAIL_0kishu
-    dicCATDetailField.Add CAT_Detail_Field.F_Digit_Row_cdt, CAT_CONST.F_CAT_DIGIT_ROW
-    dicCATDetailField.Add CAT_Detail_Field.F_Chr_cdt, CAT_CONST.F_CAT_CHR
-    dicCATDetailField.Add CAT_Detail_Field.F_Detail_ID_cdt, CAT_CONST.F_CAT_DETAIL_ID
-    dicCATDetailField.Add CAT_Detail_Field.F_InputDate_cdt, CAT_CONST.INPUT_DATE
+    dicCATDetailField.Add Enum_CAT_Detail.T_Name_0_Kishu_cdt, CAT_CONST.T_CAT_DETAIL_0kishu
+    dicCATDetailField.Add Enum_CAT_Detail.F_Digit_Row_cdt, CAT_CONST.F_CAT_DIGIT_ROW
+    dicCATDetailField.Add Enum_CAT_Detail.F_Chr_cdt, CAT_CONST.F_CAT_CHR
+    dicCATDetailField.Add Enum_CAT_Detail.F_Detail_ID_cdt, CAT_CONST.F_CAT_DETAIL_ID
+    dicCATDetailField.Add Enum_CAT_Detail.F_InputDate_cdt, CAT_CONST.INPUT_DATE
 ''SpecialテーブルのEnum
-'Public Enum CAT_Special_Field
+'Public Enum Enum_CAT_Special
 '    T_Name_0_Kishu = 0          'Specialのテーブル名、{0}を機種名置換必要
 '    F_Condition = 1             '条件フィールド
 '    F_Execute = 2               '改変内容フィールド
@@ -119,12 +120,12 @@ Private Sub CAT_Enum_Initialset()
     If dicCATSpecialField Is Nothing Then
         Set dicCATSpecialField = New Dictionary
     End If
-    dicCATSpecialField.Add CAT_Special_Field.T_Name_0_Kishu_csp, CAT_CONST.T_CAT_SPECIAL_0kishu
-    dicCATSpecialField.Add CAT_Special_Field.F_Condition_csp, CAT_CONST.F_CAT_CONDITION
-    dicCATSpecialField.Add CAT_Special_Field.F_Execute_csp, CAT_CONST.F_CAT_EXECUTE
-    dicCATSpecialField.Add CAT_Special_Field.F_InputDate_csp, CAT_CONST.INPUT_DATE
+    dicCATSpecialField.Add Enum_CAT_Special.T_Name_0_Kishu_csp, CAT_CONST.T_CAT_SPECIAL_0kishu
+    dicCATSpecialField.Add Enum_CAT_Special.F_Condition_csp, CAT_CONST.F_CAT_CONDITION
+    dicCATSpecialField.Add Enum_CAT_Special.F_Execute_csp, CAT_CONST.F_CAT_EXECUTE
+    dicCATSpecialField.Add Enum_CAT_Special.F_InputDate_csp, CAT_CONST.INPUT_DATE
 ''DescriptionマスターテーブルのEnum
-'Public Enum CAT_M_Description_Field
+'Public Enum Enum_CAT_M_Description
 '    T_Name = 0                  'Descriptionマスターのテーブル名
 '    F_Description_ID = 1        'Descriptionテーブルと共用、こっちが親
 '    F_Digit_Row = 2             'Descriptionテーブルと共用
@@ -134,13 +135,13 @@ Private Sub CAT_Enum_Initialset()
     If dicCATMasterDescriptionField Is Nothing Then
         Set dicCATMasterDescriptionField = New Dictionary
     End If
-    dicCATMasterDescriptionField.Add CAT_M_Description_Field.T_Name_cmdc, CAT_CONST.T_CAT_Description_MASTER
-    dicCATMasterDescriptionField.Add CAT_M_Description_Field.F_Description_ID_cmdc, CAT_CONST.F_CAT_DESCRIPTION_ID
-    dicCATMasterDescriptionField.Add CAT_M_Description_Field.F_Digit_Row_cmdc, CAT_CONST.F_CAT_DIGIT_ROW
-    dicCATMasterDescriptionField.Add CAT_M_Description_Field.F_Description_Text_cmdc, CAT_CONST.F_CAT_DESCRIPTION_TEXT
-    dicCATMasterDescriptionField.Add CAT_M_Description_Field.F_InputDate_cmdc, CAT_CONST.INPUT_DATE
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.T_Name_cmdc, CAT_CONST.T_CAT_Description_MASTER
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_ID_cmdc, CAT_CONST.F_CAT_DESCRIPTION_ID
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Digit_Row_cmdc, CAT_CONST.F_CAT_DIGIT_ROW
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_Text_cmdc, CAT_CONST.F_CAT_DESCRIPTION_TEXT
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_InputDate_cmdc, CAT_CONST.INPUT_DATE
 ''DetailマスターテーブルのEnum
-'Public Enum CAT_M_Detail_Field
+'Public Enum Enum_CAT_M_Detail
 '    T_Name = 0                  'Detailマスターのテーブル名
 '    F_Detail_ID = 1             'Detailテーブルと共用、こっちが親
 '    F_Digit_Row = 2             'Detailテーブルと共用
@@ -151,14 +152,14 @@ Private Sub CAT_Enum_Initialset()
     If dicCATMasterDetailField Is Nothing Then
         Set dicCATMasterDetailField = New Dictionary
     End If
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.T_Name_cmdt, CAT_CONST.T_CAT_DETAIL_MASTER
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.F_Detail_ID_cmdt, CAT_CONST.F_CAT_DETAIL_ID
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.F_Digit_Row_cmdt, CAT_CONST.F_CAT_DIGIT_ROW
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.F_Chr_cmdt, CAT_CONST.F_CAT_CHR
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.F_Detail_Text_cmdt, CAT_CONST.F_CAT_DETAIL_TEXT
-    dicCATMasterDetailField.Add CAT_M_Detail_Field.F_InputDate_cmdt, CAT_CONST.INPUT_DATE
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.T_Name_cmdt, CAT_CONST.T_CAT_DETAIL_MASTER
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Detail_ID_cmdt, CAT_CONST.F_CAT_DETAIL_ID
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Digit_Row_cmdt, CAT_CONST.F_CAT_DIGIT_ROW
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Chr_cmdt, CAT_CONST.F_CAT_CHR
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Detail_Text_cmdt, CAT_CONST.F_CAT_DETAIL_TEXT
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_InputDate_cmdt, CAT_CONST.INPUT_DATE
 ''桁数マスターテーブルのEnum
-'Public Enum CAT_M_Digit_Field
+'Public Enum Enum_CAT_M_Digit
 '    T_Name = 0                  '桁数マスターテーブルの名前
 '    F_Digit_Offset = 1          'ヘッダの文字の最後を0とした文字位置のオフセット（1文字目は1から始まる）
 '    F_Digit_Row = 2             '他のテーブルと共用、こちらが親
@@ -166,9 +167,9 @@ Private Sub CAT_Enum_Initialset()
     If dicMasterDigitField Is Nothing Then
         Set dicMasterDigitField = New Dictionary
     End If
-    dicMasterDigitField.Add CAT_M_Digit_Field.T_Name_cmdg, CAT_CONST.T_CAT_DIGIT_MASTER
-    dicMasterDigitField.Add CAT_M_Digit_Field.F_Digit_Offset_cmdg, CAT_CONST.F_CAT_DIGIT_OFFSET
-    dicMasterDigitField.Add CAT_M_Digit_Field.F_Digit_Row_cmdg, CAT_CONST.F_CAT_DIGIT_ROW
+    dicMasterDigitField.Add Enum_CAT_M_Digit.T_Name_cmdg, CAT_CONST.T_CAT_DIGIT_MASTER
+    dicMasterDigitField.Add Enum_CAT_M_Digit.F_Digit_Offset_cmdg, CAT_CONST.F_CAT_DIGIT_OFFSET
+    dicMasterDigitField.Add Enum_CAT_M_Digit.F_Digit_Row_cmdg, CAT_CONST.F_CAT_DIGIT_ROW
 ''一時利用フィールドEnum
 'Public Enum CAT_Tmp
 '    F_Digit_Update_ctm = 0
@@ -188,37 +189,37 @@ Property Get AccdbDataType(accdbType As ACCDB_Data_Type) As String
     Exit Property
 End Property
 'CATHeaderField
-Property Get CATHeaderField(HeaderField As CAT_Header_Field) As String
+Property Get CATHeaderField(HeaderField As Enum_CAT_Header) As String
     CATHeaderField = dicCATHeaderField(HeaderField)
     Exit Property
 End Property
 'CATDescriptionField
-Property Get CATDescriptionField(DescriptionField As CAT_Description_Field) As String
+Property Get CATDescriptionField(DescriptionField As Enum_CAT_Description) As String
     CATDescriptionField = dicCATDescriptionField(DescriptionField)
     Exit Property
 End Property
 'CATDetailField
-Property Get CATDetailField(DetailField As CAT_Detail_Field) As String
+Property Get CATDetailField(DetailField As Enum_CAT_Detail) As String
     CATDetailField = dicCATDetailField(DetailField)
     Exit Property
 End Property
 'CATSpecialField
-Property Get CATSpecialField(SpecialField As CAT_Special_Field) As String
+Property Get CATSpecialField(SpecialField As Enum_CAT_Special) As String
     CATSpecialField = dicCATSpecialField(SpecialField)
     Exit Property
 End Property
 'MasterDescription
-Property Get CATMasterDescriptionField(MasterDescriptionField As CAT_M_Description_Field) As String
+Property Get CATMasterDescriptionField(MasterDescriptionField As Enum_CAT_M_Description) As String
     CATMasterDescriptionField = dicCATMasterDescriptionField(MasterDescriptionField)
     Exit Property
 End Property
 'MasterDetail
-Property Get CATMasterDetailField(MasterDetailField As CAT_M_Detail_Field) As String
+Property Get CATMasterDetailField(MasterDetailField As Enum_CAT_M_Detail) As String
     CATMasterDetailField = dicCATMasterDetailField(MasterDetailField)
     Exit Property
 End Property
 'Digit
-Property Get CATDigitField(DigitField As CAT_M_Digit_Field) As String
+Property Get CATDigitField(DigitField As Enum_CAT_M_Digit) As String
     CATDigitField = dicMasterDigitField(DigitField)
     Exit Property
 End Property

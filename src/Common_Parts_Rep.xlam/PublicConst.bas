@@ -7,41 +7,7 @@ Public Const DB_FILE_EXETENSION1 As String = "accdb"            'DBƒtƒ@ƒCƒ‹‚ÌŠg’
 Public Enum DB_file_exetension
     accdb_dext = 0
 End Enum
-''-------ƒŠƒXƒg•\¦‚Ì‚½‚ß‚Ì’è”’è‹`
-''MS ƒSƒVƒbƒNi“™•j•¶šƒTƒCƒY9pt‚Ìê‡
-'Public Const sglChrLengthToPoint = 4.1
-'Public Const longMINIMULPOINT = 50
-''ƒtƒB[ƒ‹ƒh’Ç‰Á—pSQL’èŒ^•¶
-'Public Const strOLDAddField1_NextTableName     As String = "ALTER TABLE """        '’Ç‰Á‚ÌÅ‰A‚±‚ÌŸ‚Éƒe[ƒuƒ‹–¼‚ª“ü‚é
-'Public Const strOLDAddField2_NextFieldName     As String = """ ADD COLUMN """      '“ñ”Ô–ÚA‚±‚ÌŸ‚ÉƒtƒB[ƒ‹ƒh–¼‚ª“ü‚é
-'Public Const strOLDAddField3_Text_Last         As String = """ TEXT;"              'ÅŒãA‚½‚¾‚µTEXTŒ^‚Ìê‡
-'Public Const strOLDAddField3_Numeric_Last      As String = """ NUMERIC;"           '”’l‚Ìê‡‚ÌÅŒã
-'Public Const strOLDAddField3_JSON_Last         As String = """ JSON;"              'JSONƒ‰ƒXƒg
-''ƒCƒ“ƒfƒbƒNƒX’Ç‰Á—pSQL’èŒ^•¶
-'Public Const strOLDIndex1_NextTable            As String = "CREATE INDEX IF NOT EXISTS ""ixJob_"
-'Public Const strOLDIndex2_NextTable            As String = """ ON """
-'Public Const strOLDIndex3_Field1               As String = """ ("""
-'Public Const strOLDIndex4_FieldNext            As String = """ ASC ,"""            '•¡”ƒtƒB[ƒ‹ƒh‚É‘Î‚µ‚ÄÀs‚·‚éê‡‚ÍAˆÈŒã‚±‚ê‚ÌŒJ‚è•Ô‚µ
-'Public Const strOLDIndex5_Last                 As String = """ ASC);"
-''ƒe[ƒuƒ‹’Ç‰Á—pSQL’èŒ^•¶
-'Public Const strTable1_NextTable                As String = "CREATE TABLE IF NOT EXISTS " 'CRLF•t‰ÁA‚¨‚æ‚ÑƒtƒB[ƒ‹ƒh§–ñ’Ç‰Á‘Î‰ƒeƒ“ƒvƒŒ
-'Public Const strTable2_Next1stField             As String = " (" & vbCrLf           'CRLF‘Î‰ì¬ƒeƒ“ƒvƒŒA‚±‚¿‚ç‚ğg‚¤ê‡‚ÍAddQuote‚ğg‚Á‚ÄƒGƒXƒP[ƒvˆ—‚·‚é‚±‚Æ
-''ƒtƒB[ƒ‹ƒh’è‹`AƒtƒB[ƒ‹ƒh–¼iƒNƒI[ƒgj¨3(Œ^–¼)¨[Append](Šeí§–ñA‚ ‚ê‚Î)¨(EndRow)¨iŸ‚ÌƒtƒB[ƒ‹ƒh‚ª‚ ‚ê‚ÎjƒtƒB[ƒ‹ƒh–¼iƒNƒI[ƒgj¨Œ^–¼EEE‚Ì—¬‚ê
-''1 ƒe[ƒuƒ‹–¼ 2 Å‰‚ÌƒtƒB[ƒ‹ƒh 3iŒ^–¼) iŸ‚ª‚ ‚é‚È‚çj4 ƒtƒB[ƒ‹ƒh–¼EEE@iÅŒã‚È‚çj5
-'Public Const strTable3_TEXT                     As String = " TEXT "                '‘O‚ªTEXT
-'Public Const strTable3_NUMERIC                  As String = " NUMERIC "             '‘O‚ªNUMERIC
-'Public Const strTable3_JSON                     As String = " JSON "                '‘O‚ªJSON
-'Public Const strTable_NotNull                   As String = " NOT NULL "            'NOT NULL§–ñ’Ç‰Á
-'Public Const strTable_Unique                    As String = " UNIQUE "              'UNIQUE§–ñ’Ç‰Á
-'Public Const strTable_Default                   As String = " DEFAULT "             'DEFAULT’Ç‰ÁA‚±‚ÌŒã‚ÉƒfƒtƒHƒ‹ƒg’l‚ğƒNƒI[ƒgˆ—‚µ‚Ä’Ç‰Á‚·‚é‚±‚Æ
-'Public Const strTable4_EndRow                   As String = "," & vbCrLf            's‚ÌI‚í‚èA‚Ü‚¾‘±‚«‚ª‚ ‚éê‡
-'Public Const strTable4_5_PrimaryKey             As String = "PRIMARY KEY("          'PrimaryKey‚Ìw’è‚ğ‚±‚ÌŒã‚É‘±‚¯‚é
-'Public Const strTable4_6_EndPrimary             As String = ")" & vbCrLf            'PrimaryKey“™‚ÌƒJƒbƒR•Â‚¶
-'Public Const strTable5_EndSQL                   As String = ");" & vbCrLf           'SQL•¶‚ÌI‚í‚è
-'Public Const strOLDAddTable1_NextTable          As String = "CREATE TABLE IF NOT EXISTS """ 'ƒe[ƒuƒ‹’Ç‰Á—p’èŒ^•¶‚±‚±‚©‚ç
-'Public Const strOLDAddTable2_Field1_Next_Field  As String = """ ("""                'ƒtƒB[ƒ‹ƒh‚ÌÅ‰‚¾‚¯‚±‚¢‚Â‚ğg‚¤AŸ‚ÉÅ‰‚ÌƒtƒB[ƒ‹ƒh–¼
-'Public Const strOLDAddTable_TEXT_Next_Field     As String = """ TEXT,"""            '•´‚ç‚í‚µ‚¢‚¯‚ÇAu‘Ov‚ªTextŒ^‚Ìê‡‚±‚Á‚¿‚ğg‚¤AŸ‚ÉƒtƒB[ƒ‹ƒh–¼‚ª‘±‚­
-'Public Const strOLDAddTable_TEXT_UNIQUE_Next_Field As String = """ TEXT UNIQUE,"""  '‘O‚ªTEXT ‚©‚Â UNIQUE‚Ìê‡
-'Public Const strOLDAddTable_NUMELIC_Next_Field  As String = """ NUMERIC,"""         'u‘Ov‚ªNumeric‚Ìê‡‚Í‚±‚Á‚¿
-'Public Const strOLDAddTable_Text_Last           As String = """ TEXT);"             'ƒƒ“ƒhƒE‚È‚Ì‚ÅAÅŒã‚ÍText‚ÅI‚í‚ç‚¹‚ÄEEE
-'Public Const strOLDAddTable_Numeric_Last        As String = """ NUMERIC);"          'ˆê‰”’lŒ^‚ÅI‚í‚é‚â‚Â‚à
+'-------ƒŠƒXƒg•\¦‚Ì‚½‚ß‚Ì’è”’è‹`
+'MS ƒSƒVƒbƒNi“™•j•¶šƒTƒCƒY9pt‚Ìê‡
+Public Const sglChrLengthToPoint = 4.1
+Public Const longMINIMULPOINT = 50

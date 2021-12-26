@@ -24,10 +24,10 @@ Private strDBFileName As String
 Private strConnection As String
 Private isConnected As Boolean
 Private strSQL As String
-Private adoConnection As ADODB.Connection
-Private adoCommand As ADODB.Command
-Private adoParameters As ADODB.Parameters
-Private rsMyRecord As ADODB.Recordset
+Private adoConnection As adodb.Connection
+Private adoCommand As adodb.Command
+Private adoParameters As adodb.Parameters
+Private rsMyRecord As adodb.Recordset
 Private varMyArray As Variant
 Private longAffected As Long                                            '影響を受けた行数を格納する（UpdateとかInsertとか）
 'プロパティ
@@ -155,7 +155,7 @@ Property Let SQL(ByVal strargSQL As String)
 End Property
 'RecordSet
 '読み取り専用？
-Property Get RS() As ADODB.Recordset
+Property Get RS() As adodb.Recordset
     Set RS = rsMyRecord
 End Property
 'RA_Array
@@ -242,13 +242,13 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     On Error GoTo ErrorCatch
     If adoCommand Is Nothing Then
         'Commandが初期化されてなかったらここで行う
-        Set adoCommand = New ADODB.Command
+        Set adoCommand = New adodb.Command
     End If
     adoCommand.CommandText = strargSQL
     adoCommand.ActiveConnection = adoConnection
     If rsMyRecord Is Nothing Then
         '結果格納用Recordsetの初期化
-        Set rsMyRecord = New ADODB.Recordset
+        Set rsMyRecord = New adodb.Recordset
     End If
     Set rsMyRecord = adoCommand.Execute(longAffected)
     If rsMyRecord.State = adStateClosed Then
@@ -285,7 +285,7 @@ End Function
 '''RecordSetを二次元配列に書き出す
 '''結果はVariant型の配列として書き出す
 '''1行目（インデックス0）はタイトル列（もしくはエラーメッセージ？）とする
-Private Function RecordSet_to_2DArray(ByRef argRS As ADODB.Recordset) As Boolean
+Private Function RecordSet_to_2DArray(ByRef argRS As adodb.Recordset) As Boolean
     If Me.RecordCount < 0 And Me.Affected < 0 Then
         'RecordCountとAffectedが0未満の時は何かしらのエラーがあった時なのでエラーがありましたメッセージを返す
         ReDim varMyArray(0, 0)
@@ -420,7 +420,7 @@ Private Function OpenConnection(strargConnection As String) As Boolean
     On Error GoTo ErrorCatch
     If adoConnection Is Nothing Then
         'クラスのメンバ変数が初期化されてなかったら初期化する
-       Set adoConnection = New ADODB.Connection
+       Set adoConnection = New adodb.Connection
     End If
     adoConnection.ConnectionString = Me.ConnectionString
     'ConnectionのCursorLocationをCliantにする。これをやらないと、RecorCountとかが取れなかったりする
@@ -495,21 +495,6 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     Dim isCollect As Boolean
     Dim strSQL  As String
     On Error GoTo ErrorCatch
-    'ディレクトリ移動は大元でやるので、個別には行わない
-'    'DBディレクトリへ移動
-'    Dim isDBDir As Boolean
-'    isDBDir = ChCurrentToDBDirectory(Me.DBPath)
-'    If Not isDBDir Then
-'        MsgBox "DBディレクトリ作成失敗（ネットワークが原因かも）処理を中断します。"
-'        InitialDBCreate = False
-'        Exit Function
-'    End If
-'    If Me.DBFileName = "" Or Me.DBPath = "" Then
-'        '接続文字列かディレクトリかどちらかが空白なら抜ける（失敗）
-'        DebugMsgWithTime "InitialDBCreate: DB File or Directory not found"
-'        InitialDBCreate = False
-'        Exit Function
-'    End If
     If strargDBFileName = "" Then
         'DBファイル名が引数で指定されていなかったらプロパティから引っ張る
         strargDBFileName = Me.DBFileName
@@ -526,27 +511,6 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     '接続文字列作成
     Call adoxCat.Create(Me.ConnectionString)
     Set adoxCat = Nothing
-'    '初期テーブル作成用SQL文作成(T_Kishu)
-'    strSQL = ""
-'    strSQL = "CREATE TABLE IF NOT EXISTS """ & Table_Kishu & """ (" & vbCrLf & """"
-'    strSQL = strSQL & Kishu_Header & """ TEXT NOT NULL UNIQUE," & vbCrLf & """"
-'    strSQL = strSQL & Kishu_KishuName & """ TEXT NOT NULL UNIQUE," & vbCrLf & """"
-'    strSQL = strSQL & Kishu_KishuNickname & """ TEXT NOT NULL UNIQUE," & vbCrLf & """"
-'    strSQL = strSQL & Kishu_TotalKeta & """ NUMERIC NOT NULL," & vbCrLf & """"
-'    strSQL = strSQL & Kishu_RenbanKetasuu & """ NUMERIC NOT NULL," & vbCrLf & """"
-'    strSQL = strSQL & Field_Initialdate & """ TEXT DEFAULT CURRENT_TIMESTAMP," & vbCrLf & """"
-'    strSQL = strSQL & Field_Update & """ TEXT)"
-'    isCollect = dbSQLite3.DoSQL_No_Transaction(strSQL)
-'
-'    'エイリアステーブル作成
-'    Call CreateAliasTable
-'    Set dbSQLite3 = Nothing
-''    'テスト実装_SQL作成テスト
-''    isCollect = CreateTable_by_KishuName("Test15")
-''    If Not isCollect Then
-''        InitialDBCreate = False
-''    End If
-'    '正常終了
     InitialDBCreate = True
     Exit Function
 ErrorCatch:
@@ -558,7 +522,8 @@ End Function
 '''Authour Daisuke Oota 2021_12_19
 '''指定されたテーブル (データベースパス、データベースファイル名)に指定されたフィールドを追加する。既に存在していたら中断する
 '''戻り値 Boolean 成功しているか、既に存在していたらTrue それ以外はFalse
-Public Function AppendField(strargTableName As String, strargFieldName As String, argaccdbType As ACCDB_Data_Type, _
+'''オプションのstrargDataSizeはTEXT型かCHR型か
+Public Function AppendField(strargTableName As String, strargFieldName As String, argaccdbType As ACCDB_Data_Type, Optional strargDataSize As String, _
                             Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
     'TablenameかFieldNameどちらかが空白だったら抜ける
     If strargTableName = "" Or strargFieldName = "" Then
@@ -601,17 +566,19 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     Dim strSQL As String
     Dim sqlBc As clsSQLStringBuilder
     Set sqlBc = CreateclsSQLStringBuilder
-    Dim dicAppendField As Dictionary
-    Set dicAppendField = New Dictionary
-    Dim clsEnumValue As clsEnum
-    Set clsEnumValue = CreateclsEnum
+'    Set dicAppendField = New Dictionary
+'    Dim clsEnumValue As clsEnum
+'    Set clsEnumValue = CreateclsEnum
     'テーブル名にaddquoteすると失敗するみたい
 '    dicAppendField.Add 0, sqlBc.addQuote(strargTableName)
-    dicAppendField.Add 0, strargTableName
+'    dicAppendField.Add 0, strargTableName
     'フィールド名にaddquoteすると・・・・""込みのフィールド名になるのでNG！
 '    dicAppendField.Add 1, sqlBc.addQuote(strargFieldName)
-    dicAppendField.Add 1, strargFieldName
-    dicAppendField.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
+'    dicAppendField.Add 1, strargFieldName
+'    dicAppendField.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
+    '置換パラメータ用Dictionary取得
+    Dim dicAppendField As Dictionary
+    Set dicAppendField = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
     strSQL = sqlBc.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
@@ -623,18 +590,190 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     End If
     '追加したフィールドが存在するかチェックする
     Dim isNewFieldExist As Boolean
-        isNewFieldExist = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
-        If isNewFieldExist Then
-            '新しいフィールドが見つかった場合→成功
-            DebugMsgWithTime "AppendField: " & strargFieldName & " on Table: " & strargTableName & " is success"
-            AppendField = True
-            Exit Function
+    isNewFieldExist = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+    If isNewFieldExist Then
+        '新しいフィールドが見つかった場合→成功
+        DebugMsgWithTime "AppendField: " & strargFieldName & " on Table: " & strargTableName & " is success"
+        AppendField = True
+        Exit Function
+    Else
+        '新しいフィールドが見つからなかった場合→なぜ・・・？
+        DebugMsgWithTime "AppendField: Fail AppendField: " & strargFieldName
+        AppendField = False
+        Exit Function
+    End If
+End Function
+'''Author Patacchi 2021_12_26
+'''テーブル名とフィールド名を引数として指定されたフィールドを削除する
+'''戻り値 Boolean 削除成功したらTrue それ以外はFalseを返す
+Public Function DeleteField(strargTableName As String, strargFieldName As String, _
+                            Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
+    'TablenameかFieldNameどちらかが空白だったら抜ける
+    If strargTableName = "" Or strargFieldName = "" Then
+        DebugMsgWithTime "DeleteField: Tablename or Filename is empty"
+        DeleteField = False
+        Exit Function
+    End If
+    '引数でDBpathおよびDBFilenameが指定されていなかったらプロパティから引っ張ってみる
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    'プロパティから引っ張っても空白だったら抜ける
+    If strargDBPath = "" Or strargDBFileName = "" Then
+        DebugMsgWithTime "DeleteField: DBPath or DBFilename is empty"
+        DeleteField = False
+        Exit Function
+    End If
+    '指定されたテーブルが存在するかチェックする
+    Dim boolDBFileExists As Boolean
+    boolDBFileExists = IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not boolDBFileExists Then
+        'DBFileが存在しなかったら抜ける
+        DebugMsgWithTime "DeleteField: File or Path not exists"
+        MsgBox "AppenField Path: " & strargDBPath & vbCrLf & " Filename: " & strargTableName & " is not exists"
+        DeleteField = False
+        Exit Function
+    End If
+    '指定されたフィールド名が既に存在するかチェックする
+    Dim IsFieldExists As Boolean
+    IsFieldExists = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+    If Not IsFieldExists Then
+        '既に指定のテーブルに指定のフィールドが存在していなかったら作業せずに終了
+        DebugMsgWithTime "DeleteField:Table: " & strargTableName & " Field: " & strargFieldName & " is already NOT exists."
+        DeleteField = False
+        Exit Function
+    End If
+    Dim strSQL As String
+    Dim sqlBc As clsSQLStringBuilder
+    Set sqlBc = CreateclsSQLStringBuilder
+    Dim dicDeleteField As Dictionary
+'    Set dicDeleteField = New Dictionary
+'    dicDeleteField.Add 0, strargTableName
+'    dicDeleteField.Add 1, strargFieldName
+    Set dicDeleteField = GetReplaceParmDic(strargTableName, strargFieldName)
+    strSQL = sqlBc.ReplaceParm(SQL_DELETE_FIELD_0Tablename_1Fieldname, dicDeleteField)
+    Dim isCollect As Boolean
+    isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    If Not isCollect Then
+        'DoSqlで失敗してるようだったら抜ける
+        DebugMsgWithTime "DeleteField: fail when Do SQL"
+        DeleteField = False
+        Exit Function
+    End If
+    '追加したフィールドが存在するかチェックする
+    Dim isNewFieldExist As Boolean
+    isNewFieldExist = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+    If Not isNewFieldExist Then
+        '新しいフィールドが見つからなかった場合→成功
+        DebugMsgWithTime "DeleteField: " & strargFieldName & " on Table: " & strargTableName & " is success"
+        DeleteField = True
+        Exit Function
+    Else
+        '新しいフィールドが見つかった場合→なぜ・・・？
+        DebugMsgWithTime "DeleteField: Fail DeleteField: " & strargFieldName
+        DeleteField = False
+        Exit Function
+    End If
+End Function
+'''Author Patacchi 2021_12_26
+'''テーブル名とフィールド名、データ型を引数にとり、フィールドのデータ型を変更する
+'''戻り値 Boolean 成功したらTrue それ以外はFalse
+Public Function ChangeDataType(strargTableName As String, strargFieldName As String, argaccdbType As ACCDB_Data_Type, Optional strargDataSize As String, _
+                            Optional strargDBFileName As String = "", Optional strargDBPath As String = "") As Boolean
+    'TablenameかFieldNameどちらかが空白だったら抜ける
+    If strargTableName = "" Or strargFieldName = "" Then
+        DebugMsgWithTime "ChangeDataType: Tablename or Filename is empty"
+        ChangeDataType = False
+        Exit Function
+    End If
+    '引数でDBpathおよびDBFilenameが指定されていなかったらプロパティから引っ張ってみる
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    'プロパティから引っ張っても空白だったら抜ける
+    If strargDBPath = "" Or strargDBFileName = "" Then
+        DebugMsgWithTime "ChangeDataType: DBPath or DBFilename is empty"
+        ChangeDataType = False
+        Exit Function
+    End If
+    '指定されたテーブルが存在するかチェックする
+    Dim boolDBFileExists As Boolean
+    boolDBFileExists = IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not boolDBFileExists Then
+        'DBFileが存在しなかったら抜ける
+        DebugMsgWithTime "ChangeDataType: File or Path not exists"
+        MsgBox "AppenField Path: " & strargDBPath & vbCrLf & " Filename: " & strargTableName & " is not exists"
+        ChangeDataType = False
+        Exit Function
+    End If
+    '指定されたフィールド名が存在するかチェックする
+    Dim IsFieldExists As Boolean
+    IsFieldExists = Me.IsFieldExists(strargTableName, strargFieldName, strargDBFileName, strargDBPath)
+    If Not IsFieldExists Then
+        '指定のテーブルに指定のフィールドが存在ていなかったら作業せずFalseを返して終了
+        DebugMsgWithTime "ChangeDataType:Table: " & strargTableName & " Field: " & strargFieldName & " not found."
+        ChangeDataType = False
+        Exit Function
+    End If
+    Dim strSQL As String
+    Dim sqlBc As clsSQLStringBuilder
+    Set sqlBc = CreateclsSQLStringBuilder
+    Dim dicChangeDataType As Dictionary
+'    Set dicChangeDataType = New Dictionary
+'    Dim clsEnumValue As clsEnum
+'    Set clsEnumValue = CreateclsEnum
+'    dicChangeDataType.Add 0, strargTableName
+'    dicChangeDataType.Add 1, strargFieldName
+'    dicChangeDataType.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
+    '置換用のパラメータのDictionaryを取得する
+    Set dicChangeDataType = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
+    strSQL = sqlBc.ReplaceParm(SQL_CHANGE_DATATYPE_0Tablename_1Fieldname_2DataType, dicChangeDataType)
+    Dim isCollect As Boolean
+    isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    If Not isCollect Then
+        'DoSqlで失敗してるようだったら抜ける
+        DebugMsgWithTime "ChangeDataType: fail when Do SQL"
+        ChangeDataType = False
+    Else
+        ChangeDataType = True
+    End If
+    Set sqlBc = Nothing
+End Function
+'''Author Patacchi 2021_12_26
+'''テーブル名、フィールド名、(データ型(サイズ))を引数に取り、置換パラメータ用のDictionaryを返す
+'''戻り値 Dictionary 置換パラメータ用、Keyはインデックス番号
+'''パラメータ並び順は、0_Tablename 1_FieldName 2_データタイプ（オプション込み）となる
+'''strargDataSizeは、TEXT型、DECIMAL型 CHAR型、BINARY型のみで有効になる
+'''DECIMAL型は、(全体の桁数(,少数以下の桁数))という指定になる
+Private Function GetReplaceParmDic(strargTableName As String, strargFieldName As String, Optional argaccdbType As ACCDB_Data_Type = -1, Optional strargDataSize As String) As Dictionary
+    If strargTableName = "" Or strargFieldName = "" Then
+        'テーブル名とフィールド名は必須項目なので、なければ抜ける
+        DebugMsgWithTime "GetReplaceParmDic: TableName or FieldName is empty"
+        Exit Function
+    End If
+    Dim dicLocalParm As Dictionary
+    Set dicLocalParm = New Dictionary
+    Dim EnumValue As clsEnum
+    Set EnumValue = CreateclsEnum
+    dicLocalParm.Add 0, strargTableName
+    dicLocalParm.Add 1, strargFieldName
+    If Not argaccdbType = -1 Then
+        'データ型が指定されている場合のみ実行
+        If (argaccdbType = Text_typ Or argaccdbType = Char_ShortText_typ Or argaccdbType = Decimal_typ) And strargDataSize <> "" Then
+            'サイズ指定可能な型で、かつサイズ指定されている場合
+            dicLocalParm.Add 2, EnumValue.AccdbDataType(argaccdbType) & strargDataSize
         Else
-            '新しいフィールドが見つからなかった場合→なぜ・・・？
-            DebugMsgWithTime "AppendField: Fail AppendField: " & strargFieldName
-            AppendField = False
-            Exit Function
+            'データ型指定のない型、もしくはサイズ指定がされていない場合
+            dicLocalParm.Add 2, EnumValue.AccdbDataType(argaccdbType)
         End If
+    End If
+    Set GetReplaceParmDic = dicLocalParm
 End Function
 'DBファイルの存在有無を確認する。初期テーブル作成は別プロシージャにて行う
 Public Function IsDBFileExist(Optional strargDBFileName As String, Optional strargDBPath As String = "") As Boolean
@@ -697,7 +836,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     'テーブル一覧を取得
     'Connectionオブジェクトの作成、接続
     '接続文字列がクラスのプロパティと引数で与えられたのが一緒で、かつConnectedがTrueになってたら接続を再利用する
-    Dim conTableExists As ADODB.Connection
+    Dim conTableExists As adodb.Connection
     If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
         If Me.Connected Then
@@ -715,7 +854,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
         End If
     Else
         '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
-        Set conTableExists = New ADODB.Connection
+        Set conTableExists = New adodb.Connection
         conTableExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
         conTableExists.CursorLocation = adUseClient
         conTableExists.Open
@@ -725,7 +864,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     '制約列(条件にArrayで与える)
     'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,TABLE_TYPE
     'Array(Empty,Empty,TableName,"TABLE")
-    Dim rsTableExists As ADODB.Recordset
+    Dim rsTableExists As adodb.Recordset
     Set rsTableExists = conTableExists.OpenSchema(adSchemaTables, Array(Empty, Empty, strargTableName, "TABLE"))
     If rsTableExists.RecordCount <= 0 Then
         'Recordcountが0以下ならないのが確定
@@ -798,7 +937,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     End If
     'Connectionオブジェクトのopwnschemaメソッドでスキーマ情報を取得し、フィールドの有無をチェックする
     'Connecvtionオブジェクトの作成と接続を行う
-    Dim conFieldExists As ADODB.Connection
+    Dim conFieldExists As adodb.Connection
     If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
         If Me.Connected Then
@@ -816,7 +955,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
         End If
     Else
         '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
-        Set conFieldExists = New ADODB.Connection
+        Set conFieldExists = New adodb.Connection
         conFieldExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
         conFieldExists.CursorLocation = adUseClient
         conFieldExists.Open
@@ -825,7 +964,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     'adSchemaColumns
     'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME
     'array(empty,empty,strargTableName,strargFieldName)
-    Dim rsFieldExists As ADODB.Recordset
+    Dim rsFieldExists As adodb.Recordset
     Set rsFieldExists = conFieldExists.OpenSchema(adSchemaColumns, Array(Empty, Empty, strargTableName, strargFieldName))
     If rsFieldExists.RecordCount <= 0 Then
         'RecordCountが0以下なら指定のフィールドはない
