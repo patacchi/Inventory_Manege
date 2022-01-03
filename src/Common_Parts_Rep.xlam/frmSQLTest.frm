@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmSQLTest 
    Caption         =   "SQLテスト"
-   ClientHeight    =   8865.001
+   ClientHeight    =   8865
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   13785
@@ -26,13 +26,22 @@ Private Sub Browser_GetFileName_BeforeNavigate2(ByVal pDisp As Object, URL As Va
         DebugMsgWithTime "IEBrowser_BeforeNavigate: file?: " & URL & " not found"
         Exit Sub
     End If
-    Dim EnumValue As clsEnum
-    Set EnumValue = CreateclsEnum
-    If Not LCase(fsoFileNameGet.GetExtensionName(URL)) = LCase(EnumValue.DBFileExetension(accdb_dext)) Then
-        'ファイルの拡張子がDBFileExtentionと一致しない場合は処理を中断する
-        DebugMsgWithTime "IEBrowser_BeforeNavigate: Exetention is not accdb"
+    '拡張子よりDBのファイルかどうかを判定する
+    Dim adoExtention As clsADOHandle
+    Set adoExtention = CreateclsADOHandleInstance
+    If Not adoExtention.IsDBExtention(CStr(URL)) Then
+        'DBファイルの拡張子では無かった場合
+        '何もしないで抜ける
+        DebugMsgWithTime "GetFileName_Brouser: Target file is not DB file " & URL
         Exit Sub
     End If
+'    Dim EnumValue As clsEnum
+'    Set EnumValue = CreateclsEnum
+'    If Not LCase(fsoFileNameGet.GetExtensionName(URL)) = LCase(EnumValue.DBFileExetension(accdb_dext)) Then
+'        'ファイルの拡張子がDBFileExtentionと一致しない場合は処理を中断する
+'        DebugMsgWithTime "IEBrowser_BeforeNavigate: Exetention is not accdb"
+'        Exit Sub
+'    End If
     'DBファイル名とディレクトリに設定してやる
     txtBoxDefaultDBDirectory.Text = fsoFileNameGet.GetParentFolderName(URL)
     txtBoxDefaultDBFile.Text = fsoFileNameGet.GetFileName(URL)
@@ -52,20 +61,101 @@ End Sub
 ''' 単体でテストしたいプロシージャを記述
 '''
 Private Sub btnSingleTest_Click()
-''''ビットフラグテスト
-''''32ビットまで順番にフラグを立てて、Longでどう表現されるか
-'
-'    Dim longFlag As Long
-'    Dim intBitCount As Integer
+    'オートフィルタ設定・確認
+    'Excelファイルかどうか確認する
+    Dim fsoFilter As FileSystemObject
+    Set fsoFilter = New FileSystemObject
+    Dim EnumValue As clsEnum
+    Set EnumValue = CreateclsEnum
+    Select Case fsoFilter.GetExtensionName(txtBoxDefaultDBFile)
+    Case EnumValue.DBFileExetension(xlam_dext), EnumValue.DBFileExetension(xlsm_dext), _
+    EnumValue.DBFileExetension(xls_dext), EnumValue.DBFileExetension(xlsb_dext), EnumValue.DBFileExetension(xlsx_dext)
+        'エクセル関連ファイルの時
+        '非表示で処理するために、ApplicationオブジェクトとWorkbookオブジェクトを別に定義する
+        Dim objExcel As Excel.Application
+        Set objExcel = New Excel.Application
+        Dim sqlBC As clsSQLStringBuilder
+        Set sqlBC = CreateclsSQLStringBuilder
+        Dim wkbFilter As Workbook
+        'workbookオブジェクトを取得
+        Set wkbFilter = objExcel.Workbooks.Open(fsoFilter.BuildPath(txtBoxDefaultDBDirectory, txtBoxDefaultDBFile))
+        '存在しないシート名を開いた場合はErr.Number = 9 、インデックス外エラーが発生するので、エラートラップを行う
+        Err.Clear
+        Dim shtZaikoInfo As Worksheet
+        '在庫情報シートのオブジェクトを取得する、このタイミングでシートが存在しない場合はエラーが発生する
+        On Error Resume Next
+        Set shtZaikoInfo = wkbFilter.Worksheets(INV_CONST.INV_SH_ZAIKO_NAME)
+        On Error GoTo 0
+        'Err.Numberが0以外の時は処理を中断
+        If Err.Number <> 0 Then
+            GoTo CloseAndExit
+            Exit Sub
+        End If
+        If shtZaikoInfo.AutoFilterMode = False Then
+            '在庫情報シートにフィルターが設定されていない場合
+            Dim rngZaikoInfoColumn As Range
+            '在庫情報の列名のうち一つを検索し、Rangeオブジェクトを得る
+            Set rngZaikoInfoColumn = shtZaikoInfo.Cells.Find(INV_CONST.F_SH_ZAIKO_TEHAI_TEXT)
+            If Not rngZaikoInfoColumn Is Nothing Then
+                '手配コードの列が見つかった場合
+                '手配コードの列を基準にしてオートフィルタを設定する
+                rngZaikoInfoColumn.AutoFilter
+                'フィルタ設定した状態でブックを保存する
+                wkbFilter.Save
+            End If
+        Else
+            'フィルタモードが有効になっている場合
+            'フィルタ設定範囲が名前定義として存在しているが、非表示になっているので表示する設定にする
+            '名前定義すべてに対してループする
+            Dim elmName As Name
+            Dim flgSave As Boolean
+            '保存フラグをFalseで初期化する
+            flgSave = False
+            For Each elmName In shtZaikoInfo.Names
+                If elmName.Visible = False Then
+                    '名前定義が非表示なっていた場合
+                    elmName.Visible = True
+                    '保存フラグを立てる
+                    flgSave = True
+                End If
+            Next elmName
+            '保存フラグの状態を調べる
+            If flgSave Then
+                '保存フラグが立っていたらブックを保存する
+                wkbFilter.Save
+            End If
+        End If
+    End Select
+    GoTo CloseAndExit
+CloseAndExit:
+    Set shtZaikoInfo = Nothing
+    If Not wkbFilter Is Nothing Then
+        'WorkBookオブジェクトがNothingではない場合
+        wkbFilter.Close
+        Set wkbFilter = Nothing
+    End If
+    If Not objExcel Is Nothing Then
+        'Excell.ApplicationオブジェクトがNothingではない場合
+        objExcel.Quit
+        Set objExcel = Nothing
+    End If
+    Set fsoFilter = Nothing
+    Set EnumValue = Nothing
+    Exit Sub
 '    Dim logBeki As Double
-'    longFlag = 0
-'    For intBitCount = 0 To 30
-'        longFlag = 0 Or (2 ^ intBitCount)
-'        logBeki = Log(longFlag) / Log(2#)
-'        DebugMsgWithTime (vbCrLf & intBitCount & "bit" & vbCrLf & longFlag & vbCrLf & logBeki)
-'    Next intBitCount
-'ダウンロードパス取得
-    MsgBox GetDownloadPath
+'''''32ビットまで順番にフラグを立てて、Longでどう表現されるか
+''
+''    Dim longFlag As Long
+''    Dim intBitCount As Integer
+''    Dim logBeki As Double
+''    longFlag = 0
+''    For intBitCount = 0 To 30
+''        longFlag = 0 Or (2 ^ intBitCount)
+''        logBeki = Log(longFlag) / Log(2#)
+''        DebugMsgWithTime (vbCrLf & intBitCount & "bit" & vbCrLf & longFlag & vbCrLf & logBeki)
+''    Next intBitCount
+''ダウンロードパス取得
+'    MsgBox GetDownloadPath
 End Sub
 '''Author Daisuke Oota 2021_10_18
 '''パラメータバインドを使用するかどうか
@@ -156,13 +246,13 @@ Private Sub btnSQLGo_Click()
     dbTest.DBFileName = txtBoxDefaultDBFile.Text
     If chkBoxUseParm.Value Then
         'パラメータバインド有りの場合
-        Dim sqlBc As clsSQLStringBuilder
-        Set sqlBc = New clsSQLStringBuilder
+        Dim sqlBC As clsSQLStringBuilder
+        Set sqlBC = New clsSQLStringBuilder
         Dim dicParm As Dictionary
         Set dicParm = CreateParmDic
-        isCollect = dbTest.Do_SQL_with_NO_Transaction(sqlBc.ReplaceParm(txtboxSQLText.Text, dicParm))
+        isCollect = dbTest.Do_SQL_with_NO_Transaction(sqlBC.ReplaceParm(txtboxSQLText.Text, dicParm))
         Set dicParm = Nothing
-        Set sqlBc = Nothing
+        Set sqlBC = Nothing
     Else
         isCollect = dbTest.Do_SQL_with_NO_Transaction(txtboxSQLText.Text)
     End If

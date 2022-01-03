@@ -158,10 +158,10 @@ Private Sub btnGetTableList_Click()
         Exit Sub
     End If
     'テーブル一覧を取得
-    Dim adoxcatChange As adox.Catalog
-    Set adoxcatChange = New adox.Catalog
+    Dim adoxcatChange As ADOX.Catalog
+    Set adoxcatChange = New ADOX.Catalog
     adoxcatChange.ActiveConnection = dbGetTable.ConnectionString
-    Dim adoxTable As adox.Table
+    Dim adoxTable As ADOX.Table
     Dim strarrTableName() As String
     Dim longTableCount As Long
     longTableCount = 0
@@ -219,16 +219,24 @@ Private Sub IEbrowser_BeforeNavigate2(ByVal pDisp As Object, URL As Variant, Fla
         DebugMsgWithTime "IEBrowser_BeforeNavigate: file?: " & URL & " not found"
         Exit Sub
     End If
-    Dim EnumValue As clsEnum
-    Set EnumValue = CreateclsEnum
-    If Not LCase(fsoFileNameGet.GetExtensionName(URL)) = LCase(EnumValue.DBFileExetension(accdb_dext)) Then
-        'ファイルの拡張子がDBFileExtentionと一致しない場合は処理を中断する
-        DebugMsgWithTime "IEBrowser_BeforeNavigate: Exetention is not accdb"
+    '拡張子よりDBのファイルかどうかを判定する
+    Dim adoExtention As clsADOHandle
+    Set adoExtention = CreateclsADOHandleInstance
+    If Not adoExtention.IsDBExtention(CStr(URL)) Then
+        'DBファイルの拡張子では無かった場合
+        '何もしないで抜ける
+        DebugMsgWithTime "GetFileName_Brouser: Target file is not DB file " & URL
+        GoTo CloseAndExit
         Exit Sub
     End If
     'DBファイル名とディレクトリに設定してやる
     txtBoxDB_Directory.Text = fsoFileNameGet.GetParentFolderName(URL)
     txtBoxDB_FileName.Text = fsoFileNameGet.GetFileName(URL)
+    GoTo CloseAndExit
+CloseAndExit:
+    Set adoExtention = Nothing
+    Set fsoFileNameGet = Nothing
+    Exit Sub
 End Sub
 Private Sub lstBOxField_Name_Change()
     'テーブル名とフィールド名どちらも選択されていたらUpdateボタンを有効にする
@@ -247,17 +255,23 @@ Private Sub lstBoxTable_Name_Change()
     Set dbFieldList = New clsADOHandle
     dbFieldList.DBPath = txtBoxDB_Directory.Text
     dbFieldList.DBFileName = txtBoxDB_FileName.Text
-    Dim strSQL As String
-    strSQL = "SELECT TOP 1 * FROM " & lstBoxTable_Name.List(lstBoxTable_Name.ListIndex)
-    dbFieldList.SQL = strSQL
-    Dim isCollect As Boolean
-    isCollect = dbFieldList.Do_SQL_with_NO_Transaction()
-    If Not isCollect Then
-        Exit Sub
-    End If
-    '一旦フィールドリストを有効にする
-    lstBoxField_Name.Enabled = True
-    If dbFieldList.RS.RecordCount <= 0 Then
+    'Adoxを利用して、フィールド一覧を取得する
+    Dim adoxCatField As ADOX.Catalog
+    Set adoxCatField = New ADOX.Catalog
+    adoxCatField.ActiveConnection = dbFieldList.ConnectionString
+    If adoxCatField.Tables(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex)).Columns.Count >= 1 Then
+        '列数のカウントが1以上の場合
+        '既存のフィールド名リストボックスを消去
+        lstBoxField_Name.Clear
+        lstBoxField_Name.ListIndex = -1
+        Dim adoxColumn As ADOX.Column
+        For Each adoxColumn In adoxCatField.Tables(lstBoxTable_Name.List(lstBoxTable_Name.ListIndex)).Columns
+            'リストボックスに列名を追加する
+            lstBoxField_Name.AddItem adoxColumn.Name
+        Next adoxColumn
+        Set adoxCatField = Nothing
+    Else
+        '列数がなかった場合
         lstBoxField_Name.ListIndex = -1
         lstBoxField_Name.Clear
         lstBoxField_Name.AddItem ("レコード件数が0件以下でした。")
@@ -266,17 +280,6 @@ Private Sub lstBoxTable_Name_Change()
         lstBoxField_Name.Enabled = False
         Exit Sub
     End If
-    Dim strarrFieldList() As String
-    ReDim strarrFieldList(dbFieldList.RS.Fields.Count - 1)
-    Dim longFieldCount As Long
-    For longFieldCount = 0 To dbFieldList.RS.Fields.Count - 1
-        strarrFieldList(longFieldCount) = dbFieldList.RS.Fields(longFieldCount).Name
-    Next longFieldCount
-    'フィールド名リストに配列を設定
-    lstBoxField_Name.List = strarrFieldList
-    'フィールド名リストを未選択状態にする
-    lstBoxField_Name.ListIndex = -1
-    'フィールド名を選択するまでUpdateボタンを無効に
     btnDoUpdate.Enabled = False
     Set dbFieldList = Nothing
 End Sub
@@ -310,10 +313,10 @@ Private Sub UserForm_Initialize()
     txtBoxDB_FileName.Text = dbChange.DBFileName
     txtBoxDate_Max.Text = GetLocalTimeWithMilliSec
     'テーブル一覧を取得
-    Dim adoxcatChange As adox.Catalog
-    Set adoxcatChange = New adox.Catalog
+    Dim adoxcatChange As ADOX.Catalog
+    Set adoxcatChange = New ADOX.Catalog
     adoxcatChange.ActiveConnection = dbChange.ConnectionString
-    Dim adoxTable As adox.Table
+    Dim adoxTable As ADOX.Table
     Dim strarrTableName() As String
     Dim longTableCount As Long
     longTableCount = 0

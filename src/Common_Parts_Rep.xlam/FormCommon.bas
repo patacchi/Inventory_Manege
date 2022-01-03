@@ -20,7 +20,8 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
             For intFieldCounter = LBound(argVarData, 2) To UBound(argVarData, 2)
                 '今のフィールドで、配列のほうが短ければ更新してやる
                 If IsNull(argVarData(longRowCounter, intFieldCounter)) Then
-                    Exit For
+                    '中身がNullだった場合、このループでは何もしない
+'                    Exit For
                 End If
                 If sglArrChrLength(intFieldCounter) < LenB(argVarData(longRowCounter, intFieldCounter)) Then
                     sglArrChrLength(intFieldCounter) = LenB(argVarData(longRowCounter, intFieldCounter))

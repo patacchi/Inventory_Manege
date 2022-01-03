@@ -21,6 +21,8 @@ Private dicCATMasterDescriptionField As Dictionary
 Private dicCATMasterDetailField As Dictionary
 Private dicMasterDigitField As Dictionary
 Private dicCATTmpField As Dictionary
+Private dicINVMasterParts As Dictionary
+Private dicSHZaikoParts As Dictionary
 Private Sub Class_Initialize()
     Call Initial_Valueset
 End Sub
@@ -28,12 +30,23 @@ Private Sub Initial_Valueset()
     'クラス初期化時にEnum毎のDictionaryに値を入れる
 ''DBファイルの列挙体
 'Public Enum DB_file_exetension
-'    accdb = 0
+'    accdb_dext = 1
+'    xlam_dext = 2
+'    xlsm_dext = 3
+'    xlsx_dext = 4
+'    xlsb_dext = 5
+'    csv_dext = 6
 'End Enum
     If dicDBFileExetension Is Nothing Then
         Set dicDBFileExetension = New Dictionary
     End If
-    dicDBFileExetension.Add DB_file_exetension.accdb_dext, "accdb"
+    dicDBFileExetension.Add DB_file_exetension.accdb_dext, PublicConst.DB_FILE_EXETENSION_ACCDB
+    dicDBFileExetension.Add DB_file_exetension.xlam_dext, PublicConst.DB_FILE_EXETENSION_XLAM
+    dicDBFileExetension.Add DB_file_exetension.xlsm_dext, PublicConst.DB_FILE_EXETENSION_XLSM
+    dicDBFileExetension.Add DB_file_exetension.xlsx_dext, PublicConst.DB_FILE_EXETENSION_XLSX
+    dicDBFileExetension.Add DB_file_exetension.xlsb_dext, PublicConst.DB_FILE_EXETENSION_XLSB
+    dicDBFileExetension.Add DB_file_exetension.xls_dext, PublicConst.DB_FILE_EXETENSION_XLS
+    dicDBFileExetension.Add DB_file_exetension.csv_dext, PublicConst.DB_FILE_EXETENSION_CSV
 'Public Enum ACCDB_Data_Type
 '    [Text] = 1
 '    [INTEGER] = 2
@@ -58,6 +71,8 @@ Private Sub Initial_Valueset()
     dicAccdbDataType.Add ACCDB_Data_Type.Double_Typ, "FLOAT"
     'CATテーブルのEnum初期設定
     Call CAT_Enum_Initialset
+    'INVテーブルのEnum初期設定
+    Call INV_Enum_Initialize
 End Sub
 '''CATテーブルのEnumの初期化をする
 '''---------------------------------------------------------------------------------------------------------------------------------------------
@@ -79,7 +94,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATHeaderField.Add Enum_CAT_Header.F_DescriptionTable_chd, CAT_CONST.F_CAT_DESCRIPTIONTABLE
     dicCATHeaderField.Add Enum_CAT_Header.F_DetailTable_chd, CAT_CONST.F_CAT_DETAILTABLE
     dicCATHeaderField.Add Enum_CAT_Header.F_SpecialTable_chd, CAT_CONST.F_CAT_SPECIALTABLE
-    dicCATHeaderField.Add Enum_CAT_Header.F_InputDate_chd, CAT_CONST.INPUT_DATE
+    dicCATHeaderField.Add Enum_CAT_Header.F_InputDate_chd, PublicConst.INPUT_DATE
 ''DescriptionテーブルのEnum
 'Public Enum Enum_CAT_Description
 '    T_Name_0_Kishu = 0          'インデックス0（機種名に置換が必要）Descriptionテーブル名
@@ -93,7 +108,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATDescriptionField.Add Enum_CAT_Description.T_Name_0_Kishu_cdc, CAT_CONST.T_CAT_DESCRIPTION_0kishu
     dicCATDescriptionField.Add Enum_CAT_Description.F_Digit_Row_cdc, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATDescriptionField.Add Enum_CAT_Description.F_Descriptoin_ID_cdc, CAT_CONST.F_CAT_DESCRIPTION_ID
-    dicCATDescriptionField.Add Enum_CAT_Description.F_InputDate_cdc, CAT_CONST.INPUT_DATE
+    dicCATDescriptionField.Add Enum_CAT_Description.F_InputDate_cdc, PublicConst.INPUT_DATE
 ''DetailテーブルのEnum
 'Public Enum Enum_CAT_Detail
 '    T_Name_0_Kishu = 0          'Detaiテーブル名 0 （機種名置換）が必要
@@ -109,7 +124,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATDetailField.Add Enum_CAT_Detail.F_Digit_Row_cdt, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATDetailField.Add Enum_CAT_Detail.F_Chr_cdt, CAT_CONST.F_CAT_CHR
     dicCATDetailField.Add Enum_CAT_Detail.F_Detail_ID_cdt, CAT_CONST.F_CAT_DETAIL_ID
-    dicCATDetailField.Add Enum_CAT_Detail.F_InputDate_cdt, CAT_CONST.INPUT_DATE
+    dicCATDetailField.Add Enum_CAT_Detail.F_InputDate_cdt, PublicConst.INPUT_DATE
 ''SpecialテーブルのEnum
 'Public Enum Enum_CAT_Special
 '    T_Name_0_Kishu = 0          'Specialのテーブル名、{0}を機種名置換必要
@@ -123,7 +138,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATSpecialField.Add Enum_CAT_Special.T_Name_0_Kishu_csp, CAT_CONST.T_CAT_SPECIAL_0kishu
     dicCATSpecialField.Add Enum_CAT_Special.F_Condition_csp, CAT_CONST.F_CAT_CONDITION
     dicCATSpecialField.Add Enum_CAT_Special.F_Execute_csp, CAT_CONST.F_CAT_EXECUTE
-    dicCATSpecialField.Add Enum_CAT_Special.F_InputDate_csp, CAT_CONST.INPUT_DATE
+    dicCATSpecialField.Add Enum_CAT_Special.F_InputDate_csp, PublicConst.INPUT_DATE
 ''DescriptionマスターテーブルのEnum
 'Public Enum Enum_CAT_M_Description
 '    T_Name = 0                  'Descriptionマスターのテーブル名
@@ -139,7 +154,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_ID_cmdc, CAT_CONST.F_CAT_DESCRIPTION_ID
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Digit_Row_cmdc, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_Text_cmdc, CAT_CONST.F_CAT_DESCRIPTION_TEXT
-    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_InputDate_cmdc, CAT_CONST.INPUT_DATE
+    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_InputDate_cmdc, PublicConst.INPUT_DATE
 ''DetailマスターテーブルのEnum
 'Public Enum Enum_CAT_M_Detail
 '    T_Name = 0                  'Detailマスターのテーブル名
@@ -157,7 +172,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Digit_Row_cmdt, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Chr_cmdt, CAT_CONST.F_CAT_CHR
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Detail_Text_cmdt, CAT_CONST.F_CAT_DETAIL_TEXT
-    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_InputDate_cmdt, CAT_CONST.INPUT_DATE
+    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_InputDate_cmdt, PublicConst.INPUT_DATE
 ''桁数マスターテーブルのEnum
 'Public Enum Enum_CAT_M_Digit
 '    T_Name = 0                  '桁数マスターテーブルの名前
@@ -179,9 +194,81 @@ Private Sub CAT_Enum_Initialset()
     End If
     dicCATTmpField.Add CAT_Tmp.F_Digit_Update_ctm, CAT_CONST.F_DIGIT_UPDATE
 End Sub
+Private Sub INV_Enum_Initialize()
+    '在庫情報DBのEnumの初期化を行う
+'手配コードマスターのEnum定義
+'Public Enum Enum_INV_M_Parts
+'    Table_Name_IMPrt = 1
+'    F_Tehai_ID_IMPrt = 2
+'    F_Tehai_Code_IMPrt = 3
+'    F_Manege_Section_IMPrt = 4
+'    F_System_TanaNo_IMPrt = 5
+'    F_Kishu_IMPrt = 6
+'    F_Store_Code_IMPrt = 7
+'    F_Deliver_LOT_IMPrt = 8
+'    F_Fill_Lot_IMPrt = 9
+'    F_Lead_Time_IMPrt = 10
+'    F_Order_Amount_IMPrt = 11
+'    F_Order_Remain_IMPrt = 12
+'    F_Stock_Amount_IMPrt = 13
+'    F_Tana_ID_IMPrt = 14
+'    F_System_Name_IMPrt = 15
+'    F_System_Spec_IMPrt = 16
+'    F_Store_Unit_IMPrt = 17
+'    F_System_Description_IMPrt = 18
+'    F_Local_Description_IMPrt = 19
+'    F_Manege_Section_Sub_IMPrt = 20
+'    F_InputDate_IMPrt = 21
+'End Enum
+    If dicINVMasterParts Is Nothing Then
+        Set dicINVMasterParts = New Dictionary
+    End If
+    dicINVMasterParts.Add Enum_INV_M_Parts.Table_Name_IMPrt, INV_CONST.T_INV_PARTS_MASTER
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_ID_IMPrt, INV_CONST.F_INV_TEHAI_ID
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_Code_IMPrt, INV_CONST.F_INV_TEHAI_TEXT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_IMPrt, INV_CONST.F_INV_MANEGE_SECTON
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_TanaNo_IMPrt, INV_CONST.F_INV_SYSTEM_TANA_NO
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Kishu_IMPrt, INV_CONST.F_INV_KISHU
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Store_Code_IMPrt, INV_CONST.F_INV_STORE_CODE
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Deliver_Lot_IMPrt, INV_CONST.F_INV_DELIVER_LOT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Fill_Lot_IMPrt, INV_CONST.F_INV_FILL_LOT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Lead_Time_IMPrt, INV_CONST.F_INV_LEAD_TIME
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Order_Amount_IMPrt, INV_CONST.F_INV_ORDER_AMOUNT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Order_Remain_IMPrt, INV_CONST.F_INV_ORDER_REMAIN
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Stock_Amount_IMPrt, INV_CONST.F_INV_STOCK_AMOUNT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Tana_ID_IMPrt, INV_CONST.F_INV_TANA_ID
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Name_IMPrt, INV_CONST.F_INV_SYSTEM_NAME
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Spec_IMPrt, INV_CONST.F_INV_SYSTEM_SPEC
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Store_Unit_IMPrt, INV_CONST.F_INV_STORE_UNIT
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Description_IMPrt, INV_CONST.F_INV_SYSTEM_DESCRIPTION
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Local_Description_IMPrt, INV_CONST.F_INV_LOCAL_DESCRIPTION
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt, INV_CONST.F_INV_MANEGE_SECTION_SUB
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
+End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
     DBFileExetension = dicDBFileExetension(DBext)
+End Property
+'DBExetensionのDictionary
+Property Get DBFileExetension_Dic() As Dictionary
+    If dicDBFileExetension Is Nothing Then
+        'メンバ変数がNothingだったらNothingを返す
+        Set DBFileExetension_Dic = Nothing
+    Else
+        'メンバ変数のDictionaryよりKeyが拡張子（String)、ValueがEnumの定数（KeyとValueが反転する）を作成し、返す
+        Dim dicLocalResult As Dictionary
+        Set dicLocalResult = New Dictionary
+        Dim varKey As Variant
+        For Each varKey In dicDBFileExetension
+            If Not dicLocalResult.Exists(dicDBFileExetension(varKey)) Then
+                '拡張子がローカルdicのキーに存在しない場合のみ追加
+                dicLocalResult.Add dicDBFileExetension(varKey), varKey
+            End If
+        Next varKey
+        '作成したDictionaryを戻り値とする
+        Set DBFileExetension_Dic = dicLocalResult
+    End If
+    Exit Property
 End Property
 'AccdbDataType
 Property Get AccdbDataType(accdbType As ACCDB_Data_Type) As String
@@ -226,5 +313,14 @@ End Property
 'CATTmp
 Property Get CATTempField(TmpField As CAT_Tmp) As String
     CATTempField = dicCATTmpField(TmpField)
+    Exit Property
+End Property
+'-----------------------------------------------------------------------------------------------------------------------------
+'Sh_Zaiko
+'-----------------------------------------------------------------------------------------------------------------------------
+'INV_DB
+'INVMasterParts
+Property Get INVMasterParts(MasterPartsField As Enum_INV_M_Parts) As String
+    INVMasterParts = dicINVMasterParts(MasterPartsField)
     Exit Property
 End Property

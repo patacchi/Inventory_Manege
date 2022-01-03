@@ -14,10 +14,15 @@ Option Explicit
 Const constDatabasePath             As String = "C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB"      'データベースディレクトリ
 Const constDBFILENAME               As String = "CAT_Find.accdb"           'CAT情報格納用DBファイル名
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
-Const Field_Initialdate             As String = "InitialInputDate"      '各テーブル共通、初回入力時刻
-Const Field_Update                  As String = "UpdateDate"            '各テーブル共通、最終更新時刻
-Const constLONGDEFAULTARRAYSIZE     As Long = 15000                     '結果格納用配列の初期サイズ（暫定）
-Const constLONGEXPANDARRAYSIZE      As Long = 3000                      '格納配列が足りない場合の1回の拡張量
+Const CONNECTION_STRING_ACCDB_0DBFullPath           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0}"       '接続文字列_accdb
+Const CONNECTION_STRING_XLSM_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 Macro;HDR=Yes;"";"
+'xlamｈはxlsmと同じ接続文字列・・だけどxlamに対して接続する事はないかも・・・
+Const CONNECTION_STRING_XLAM_0DBFullPath            As String = PublicConst.DB_FILE_EXETENSION_XLSM
+Const CONNECTION_STRING_XLSB_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0;HDR=Yes;"";"
+Const CONNECTION_STRING_XLSX_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 xml;HDR=Yes;"";"
+Const CONNECTION_STRING_XLS_0DBFullPath             As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 8.0;HDR=Yes;"";"
+'CSVだけDataSourceがファイルの入ってるディレクトリまでなので注意、ファイル名はFROM のテーブル名として渡す
+Const CONNECTION_STRING_CSV_0DBPathOnly             As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Text;HDR=Yes;FMT=Delimited"""
 'メンバ変数
 Private strDBPath As String
 Private strDBFileName As String
@@ -382,7 +387,8 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
     DBReady = True
     Exit Function
 End Function
-''接続文字列を作成する
+'''接続文字列を作成する
+'''与えられた拡張子により接続文字を分岐する
 Private Function CreateConnectionString(Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String) As String
     If strargDBPath = "" Then
         '引数でDBパスが指定されていなかったらプロパティから引っ張る
@@ -392,13 +398,78 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         '引数でDBファイル名が指定されていなかったらプロパティから引っ張る
         strargDBFileName = Me.DBFileName
     End If
-    Dim strlocalConnection As String
-    Dim sqlBc As clsSQLStringBuilder
-    Set sqlBc = New clsSQLStringBuilder
-    strlocalConnection = constDBPROVIDER_Pri
-    strlocalConnection = strlocalConnection & sqlBc.addQuote(strargDBPath & "\" & strargDBFileName)
-    CreateConnectionString = strlocalConnection
-    Set sqlBc = Nothing
+    Dim fsoCreateConnectionString As FileSystemObject
+    Set fsoCreateConnectionString = New FileSystemObject
+    Dim strDBFileFullPath As String
+    'DBファイルのフルパスを得る
+    strDBFileFullPath = fsoCreateConnectionString.BuildPath(strargDBPath, strargDBFileName)
+    'DBファイルの存在確認を行う
+    If Not fsoCreateConnectionString.FileExists(strDBFileFullPath) Then
+        'ファイルが存在しなかった場合
+        DebugMsgWithTime "CreateConnectionString: file not found"
+        CreateConnectionString = Empty
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    '引数で与えられたファイルがDBファイルかどうかを判定する
+    If Not IsDBExtention(strDBFileFullPath) Then
+        'DBファイルの拡張子ではなかった場合
+        DebugMsgWithTime "CreateConnectionString: Not DB file Exetention."
+        CreateConnectionString = Empty
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    '拡張子により分岐し、それぞれの接続文字列を作成する
+    Dim EnumValues As clsEnum
+    Set EnumValues = CreateclsEnum
+    Dim dicExtentions As Dictionary
+    'Keyが拡張子、ValueがDB_file_exetension列挙体のDictionariを得る
+    Set dicExtentions = EnumValues.DBFileExetension_Dic
+    '拡張子により分岐
+    Dim dicReplaceParm As Dictionary
+    Set dicReplaceParm = New Dictionary
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = New clsSQLStringBuilder
+    Select Case CLng(dicExtentions(LCase(fsoCreateConnectionString.GetExtensionName(strDBFileFullPath))))
+    Case DB_file_exetension.accdb_dext
+        'accdbの場合
+        dicReplaceParm.Add 0, sqlBC.addQuote(strDBFileFullPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_ACCDB_0DBFullPath, dicReplaceParm)
+    Case DB_file_exetension.xlam_dext, DB_file_exetension.xlsm_dext
+        'xlsm(xlam)ファイルの場合
+        dicReplaceParm.Add 0, sqlBC.addQuote(strDBFileFullPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_XLSM_0DBFullPath, dicReplaceParm)
+    Case DB_file_exetension.xlsx_dext
+        'xlsxの場合
+        dicReplaceParm.Add 0, sqlBC.addQuote(strDBFileFullPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_XLSX_0DBFullPath, dicReplaceParm)
+    Case DB_file_exetension.xlsb_dext
+        'xlsbの場合
+        dicReplaceParm.Add 0, sqlBC.addQuote(strDBFileFullPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_XLSB_0DBFullPath, dicReplaceParm)
+    Case DB_file_exetension.xls_dext
+        'xlsの場合
+        dicReplaceParm.Add 0, sqlBC.addQuote(strDBFileFullPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_XLS_0DBFullPath, dicReplaceParm)
+    Case DB_file_exetension.csv_dext
+        'csvの場合
+        'ここだけフルパスじゃないので注意
+        dicReplaceParm.Add 0, sqlBC.addQuote(strargDBPath)
+        CreateConnectionString = sqlBC.ReplaceParm(CONNECTION_STRING_CSV_0DBPathOnly, dicReplaceParm)
+    Case Else
+        '未定義だった場合
+        DebugMsgWithTime "CreateConnectionString: Undefined extention"
+        CreateConnectionString = Empty
+        GoTo CloseAndExit
+    End Select
+    GoTo CloseAndExit
+'    strlocalConnection = constDBPROVIDER_Pri
+'    strlocalConnection = strlocalConnection & sqlBc.addQuote(strargDBPath & "\" & strargDBFileName)
+'    CreateConnectionString = strlocalConnection
+    GoTo CloseAndExit
+CloseAndExit:
+    Set sqlBC = Nothing
+    Set fsoCreateConnectionString = Nothing
     Exit Function
 End Function
 '''DBへの接続を開始する
@@ -506,8 +577,8 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
         End If
     End If
     'とりあえず空のDBファイルを作成する
-    Dim adoxCat As adox.Catalog
-    Set adoxCat = New adox.Catalog
+    Dim adoxCat As ADOX.Catalog
+    Set adoxCat = New ADOX.Catalog
     '接続文字列作成
     Call adoxCat.Create(Me.ConnectionString)
     Set adoxCat = Nothing
@@ -564,8 +635,8 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
         Exit Function
     End If
     Dim strSQL As String
-    Dim sqlBc As clsSQLStringBuilder
-    Set sqlBc = CreateclsSQLStringBuilder
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
 '    Set dicAppendField = New Dictionary
 '    Dim clsEnumValue As clsEnum
 '    Set clsEnumValue = CreateclsEnum
@@ -579,7 +650,7 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     '置換パラメータ用Dictionary取得
     Dim dicAppendField As Dictionary
     Set dicAppendField = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
-    strSQL = sqlBc.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
+    strSQL = sqlBC.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
     If Not isCollect Then
@@ -647,14 +718,14 @@ Public Function DeleteField(strargTableName As String, strargFieldName As String
         Exit Function
     End If
     Dim strSQL As String
-    Dim sqlBc As clsSQLStringBuilder
-    Set sqlBc = CreateclsSQLStringBuilder
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
     Dim dicDeleteField As Dictionary
 '    Set dicDeleteField = New Dictionary
 '    dicDeleteField.Add 0, strargTableName
 '    dicDeleteField.Add 1, strargFieldName
     Set dicDeleteField = GetReplaceParmDic(strargTableName, strargFieldName)
-    strSQL = sqlBc.ReplaceParm(SQL_DELETE_FIELD_0Tablename_1Fieldname, dicDeleteField)
+    strSQL = sqlBC.ReplaceParm(SQL_DELETE_FIELD_0Tablename_1Fieldname, dicDeleteField)
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
     If Not isCollect Then
@@ -722,8 +793,8 @@ Public Function ChangeDataType(strargTableName As String, strargFieldName As Str
         Exit Function
     End If
     Dim strSQL As String
-    Dim sqlBc As clsSQLStringBuilder
-    Set sqlBc = CreateclsSQLStringBuilder
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
     Dim dicChangeDataType As Dictionary
 '    Set dicChangeDataType = New Dictionary
 '    Dim clsEnumValue As clsEnum
@@ -733,7 +804,7 @@ Public Function ChangeDataType(strargTableName As String, strargFieldName As Str
 '    dicChangeDataType.Add 2, clsEnumValue.AccdbDataType(argaccdbType)
     '置換用のパラメータのDictionaryを取得する
     Set dicChangeDataType = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
-    strSQL = sqlBc.ReplaceParm(SQL_CHANGE_DATATYPE_0Tablename_1Fieldname_2DataType, dicChangeDataType)
+    strSQL = sqlBC.ReplaceParm(SQL_CHANGE_DATATYPE_0Tablename_1Fieldname_2DataType, dicChangeDataType)
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
     If Not isCollect Then
@@ -743,7 +814,7 @@ Public Function ChangeDataType(strargTableName As String, strargFieldName As Str
     Else
         ChangeDataType = True
     End If
-    Set sqlBc = Nothing
+    Set sqlBC = Nothing
 End Function
 '''Author Patacchi 2021_12_26
 '''テーブル名、フィールド名、(データ型(サイズ))を引数に取り、置換パラメータ用のDictionaryを返す
@@ -800,6 +871,29 @@ Public Function IsDBFileExist(Optional strargDBFileName As String, Optional stra
     End If
     '正常終了
     IsDBFileExist = True
+End Function
+'''Authour Daisuke Oota 2021_12_31
+'''指定されたファイルがデータベースファイルかどうか判定する（拡張子ベース）
+'''戻り値 Boolean DBFileならTrue それ以外はFalse
+'''parms
+'''strargFullPath   ファイルのフルパス
+Public Function IsDBExtention(strargFilename_or_Fullpass As String) As Boolean
+    Dim fsoExtension As FileSystemObject
+    Set fsoExtension = New FileSystemObject
+    Dim EnumValue As clsEnum
+    Set EnumValue = CreateclsEnum
+    Dim dicEnumExtention As Dictionary
+    '拡張子EnumのDictionaryを取得する
+    Set dicEnumExtention = EnumValue.DBFileExetension_Dic
+    'キーに拡張子が入っているので、引数のフルパスより拡張子を取り出し一致するかチェック
+    If dicEnumExtention.Exists(LCase(fsoExtension.GetExtensionName(strargFilename_or_Fullpass))) Then
+        '存在していた場合
+        IsDBExtention = True
+    Else
+        '存在していなかった場合
+        IsDBExtention = False
+    End If
+    Exit Function
 End Function
 '''Authour Daisuke Oota 2021_12_19
 '''指定されたデータベースパス、データベースファイル名で指定されたテーブルが存在するか確認する
@@ -869,13 +963,13 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     If rsTableExists.RecordCount <= 0 Then
         'Recordcountが0以下ならないのが確定
         IsTableExists = False
-        GoTo CloseandExit
+        GoTo CloseAndExit
     Else
         '1以上なら存在するぽい
         IsTableExists = True
-        GoTo CloseandExit
+        GoTo CloseAndExit
     End If
-CloseandExit:
+CloseAndExit:
     Set rsTableExists = Nothing
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列がクラスのものと一致しない場合は一時利用なので接続を明示的に閉じてやる
@@ -969,13 +1063,13 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     If rsFieldExists.RecordCount <= 0 Then
         'RecordCountが0以下なら指定のフィールドはない
         IsFieldExists = False
-        GoTo CloseandExit
+        GoTo CloseAndExit
     Else
         '1以上ならある
         IsFieldExists = True
-        GoTo CloseandExit
+        GoTo CloseAndExit
     End If
-CloseandExit:
+CloseAndExit:
     Set rsFieldExists = Nothing
     '接続文字列がクラスのプロパティと一致しない場合は一時利用なので明示的に接続を閉じる
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then

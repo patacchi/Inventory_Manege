@@ -3,8 +3,6 @@ Option Explicit
 '''CATテーブルに関する定数を置いておく
 'Global
 Public Const CAT_DB_FILENAME As String = "CAT_Find.accdb"                   'CATコードのDBファイル名
-'各テーブルにはDefaultとしてInputDateが入る
-Public Const INPUT_DATE As String = "InputDate"
 'Header
 Public Const T_CAT_HEADER As String = "T_CAT_Header"                        'CATコードのヘッダ情報を詰め込んだテーブル（起点）
 Public Const F_CAT_HEADER As String = "F_CAT_Header"                        'CATヘッダのフィールド名、これが通常機種名になる
