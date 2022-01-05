@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmSQLTest 
    Caption         =   "SQLƒeƒXƒg"
-   ClientHeight    =   8865
+   ClientHeight    =   8865.001
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   13785

@@ -244,6 +244,50 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Local_Description_IMPrt, INV_CONST.F_INV_LOCAL_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt, INV_CONST.F_INV_MANEGE_SECTION_SUB
     dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
+''在庫情報シートのフィールド名（漢字）
+''大部分をINV_Master_PartsのEnumと共有する
+''棚番のみは共有できないので、独自に数字を振る
+'Public Enum Enum_Sh_Zaiko
+'    F_Tehai_Code_ShZ = Enum_INV_M_Parts.F_Tehai_Code_IMPrt
+'    F_Manege_Section_ShZ = Enum_INV_M_Parts.F_Manege_Section_IMPrt
+'    F_System_TanaNO_ShZ = Enum_INV_M_Parts.F_System_TanaNo_IMPrt
+'    F_kishu_ShZ = Enum_INV_M_Parts.F_Kishu_IMPrt
+'    F_Store_Code_ShZ = Enum_INV_M_Parts.F_Store_Code_IMPrt
+'    F_Deliver_Lot_ShZ = Enum_INV_M_Parts.F_Deliver_Lot_IMPrt
+'    F_Fill_Lot_ShZ = Enum_INV_M_Parts.F_Fill_Lot_IMPrt
+'    F_Lead_Time_ShZ = Enum_INV_M_Parts.F_Lead_Time_IMPrt
+'    F_Order_Amount_ShZ = Enum_INV_M_Parts.F_Order_Amount_IMPrt
+'    F_Order_Remail_ShZ = Enum_INV_M_Parts.F_Order_Remain_IMPrt
+'    F_Stock_Amount_ShZ = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
+'    F_System_Name_ShZ = Enum_INV_M_Parts.F_System_Name_IMPrt
+'    F_System_Spec_ShZ = Enum_INV_M_Parts.F_System_Spec_IMPrt
+'    F_Store_Unit_ShZ = Enum_INV_M_Parts.F_Store_Unit_IMPrt
+'    F_System_Description_ShZ = Enum_INV_M_Parts.F_System_Description_IMPrt
+'    F_Manege_Section_Sub_ShZ = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
+'    '棚番テキストのみこちらで独自に設定する
+'    F_Tana_Text_ShZ = 101
+'End Enum
+    If dicSHZaikoParts Is Nothing Then
+        '在庫情報シートのDictionaryを初期化
+        Set dicSHZaikoParts = New Dictionary
+    End If
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Deliver_Lot_ShZ, INV_CONST.F_SH_ZAIKO_DELIVER_LOT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Fill_Lot_ShZ, INV_CONST.F_SH_ZAIKO_FILL_LOT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_kishu_ShZ, INV_CONST.F_SH_ZAIKO_KISHU
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Lead_Time_ShZ, INV_CONST.F_SH_ZAIKO_LEAD_TIME
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Manege_Section_ShZ, INV_CONST.F_SH_ZAIKO_MANEGE_SECTON
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ, INV_CONST.F_SH_ZAIKO_MANEGE_SECTION_SUB
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Order_Amount_ShZ, INV_CONST.F_SH_ZAIKO_ORDER_AMOUNT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Order_Remain_ShZ, INV_CONST.F_SH_ZAIKO_ORDER_REMAIN
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Stock_Amount_ShZ, INV_CONST.F_SH_ZAIKO_STOCK_AMOUNT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Store_Code_ShZ, INV_CONST.F_SH_ZAIKO_STORE_CODE
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Store_Unit_ShZ, INV_CONST.F_SH_ZAIKO_STORE_UNIT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_System_Description_ShZ, INV_CONST.F_SH_ZAIKO_SYSTEM_DESCRIPTION
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_System_Name_ShZ, INV_CONST.F_SH_ZAIKO_SYSTEM_NAME
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_System_Spec_ShZ, INV_CONST.F_SH_ZAIKO_SYSTEM_SPEC
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_System_TanaNO_ShZ, INV_CONST.F_SH_ZAIKO_SYSTEM_TANA_NO
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Tana_Text_ShZ, INV_CONST.F_SH_ZAIKO_TANA_TEXT
+    dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Tehai_Code_ShZ, INV_CONST.F_SH_ZAIKO_TEHAI_TEXT
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
@@ -317,6 +361,10 @@ Property Get CATTempField(TmpField As CAT_Tmp) As String
 End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'Sh_Zaiko
+Property Get shZaikoField(ZaikoField As Enum_Sh_Zaiko) As String
+    shZaikoField = dicSHZaikoParts(ZaikoField)
+    Exit Property
+End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'INV_DB
 'INVMasterParts

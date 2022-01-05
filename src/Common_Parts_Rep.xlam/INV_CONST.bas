@@ -69,7 +69,7 @@ Public Const F_SH_ZAIKO_MANEGE_SECTION_SUB As String = "ŠÇ—‰ÛƒTƒu"         'ƒVƒ
 Public Const F_SH_ZAIKO_TANA_TEXT As String = "ƒƒP[ƒVƒ‡ƒ“"                '’I”Ô†–¼‘OADB‚É‚Í’Iƒ}ƒXƒ^[ƒe[ƒuƒ‹‚©‚çˆø‚Á’£‚Á‚½ID‚ğƒZƒbƒg‚·‚é
 'İŒÉî•ñƒV[ƒg‚ÌEnum
 '‘å•”•ª‚ğINV_Master_Parts‚ÌEnum‚Æ‹¤—L‚·‚é
-'’I”Ô‚Ì‚İ‚Í‹¤—L‚Å‚«‚È‚¢‚Ì‚ÅA“Æ©‚É”š‚ğ~‚é
+'’I”Ô‚Ì‚İ‚Í‹¤—L‚Å‚«‚È‚¢‚Ì‚ÅA“Æ©‚É”š‚ğU‚é
 Public Enum Enum_Sh_Zaiko
     F_Tehai_Code_ShZ = Enum_INV_M_Parts.F_Tehai_Code_IMPrt
     F_Manege_Section_ShZ = Enum_INV_M_Parts.F_Manege_Section_IMPrt
@@ -80,7 +80,7 @@ Public Enum Enum_Sh_Zaiko
     F_Fill_Lot_ShZ = Enum_INV_M_Parts.F_Fill_Lot_IMPrt
     F_Lead_Time_ShZ = Enum_INV_M_Parts.F_Lead_Time_IMPrt
     F_Order_Amount_ShZ = Enum_INV_M_Parts.F_Order_Amount_IMPrt
-    F_Order_Remail_ShZ = Enum_INV_M_Parts.F_Order_Remain_IMPrt
+    F_Order_Remain_ShZ = Enum_INV_M_Parts.F_Order_Remain_IMPrt
     F_Stock_Amount_ShZ = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
     F_System_Name_ShZ = Enum_INV_M_Parts.F_System_Name_IMPrt
     F_System_Spec_ShZ = Enum_INV_M_Parts.F_System_Spec_IMPrt
