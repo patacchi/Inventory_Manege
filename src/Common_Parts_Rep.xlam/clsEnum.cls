@@ -371,4 +371,29 @@ End Property
 Property Get INVMasterParts(MasterPartsField As Enum_INV_M_Parts) As String
     INVMasterParts = dicINVMasterParts(MasterPartsField)
     Exit Property
-End Property
+End Property
+'-----------------------------------------------------------------------------------------------------------------------------
+'プロシージャー
+'''Author Daisuke Oota 2021_01_06
+'''在庫情報シートとT_INV_Master_Partsの共通フィールドをStringの配列にして返す
+'''戻り値 StringArray(n,1),nは共通フィールド数、2次元目は、0がDBフィールド、1がシートのフィールド名
+'''ex)(0,0) F_INV_Tehai_Code (0,1) 手配コード
+Public Function GetZaikoFieldNameArrayShandDB() As String()
+    If dicINVMasterParts Is Nothing Or dicSHZaikoParts Is Nothing Then
+        'DB側のdicかシート側のdicがNothingだった
+        '何もせずに抜ける
+        DebugMsgWithTime "GetZaikoFieldArray: member dictionary is nothing"
+        Exit Function
+    End If
+    Dim arrZaikoField() As String
+    ReDim arrZaikoField(dicSHZaikoParts.Count - 2, 1)
+    'シートdicでループ処理
+    Dim intArrRowCounter As Integer
+    Dim varshKey As Variant
+    For Each varshKey In dicSHZaikoParts
+        If dicINVMasterParts.Exists(varshKey) Then
+            'シートdicと共通のKeyがDBdicにも存在する時
+            'シートdicとDBdicそれぞれの値をstring配列に入れてやる
+        End If
+    Next varshKey
+End Function
