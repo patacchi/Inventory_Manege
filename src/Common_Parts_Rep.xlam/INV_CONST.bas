@@ -49,6 +49,7 @@ Public Enum Enum_INV_M_Parts
     F_InputDate_IMPrt = 21
 End Enum
 '在庫情報シートに関する定数
+'Excelファイル名は日付をシリアル値とした文字列を付加するので、毎回変動する
 Public Const INV_SH_ZAIKO_NAME As String = "在庫情報"                       '在庫検索でダウンロードできるExcelファイルの在庫情報シート名
 Public Const F_SH_ZAIKO_TEHAI_TEXT As String = "手配コード"                 '手配コード
 Public Const F_SH_ZAIKO_MANEGE_SECTON As String = "管理課記号"              '管理課

@@ -377,6 +377,7 @@ End Property
 '''Author Daisuke Oota 2021_01_06
 '''在庫情報シートとT_INV_Master_Partsの共通フィールドをStringの配列にして返す
 '''戻り値 StringArray(n,1),nは共通フィールド数、2次元目は、0がDBフィールド、1がシートのフィールド名
+'''シートdiにしか無い値（手配コードとか）は2次元目は初期値になるので、受け取り側で判断する
 '''ex)(0,0) F_INV_Tehai_Code (0,1) 手配コード
 Public Function GetZaikoFieldNameArrayShandDB() As String()
     If dicINVMasterParts Is Nothing Or dicSHZaikoParts Is Nothing Then
@@ -386,14 +387,30 @@ Public Function GetZaikoFieldNameArrayShandDB() As String()
         Exit Function
     End If
     Dim arrZaikoField() As String
-    ReDim arrZaikoField(dicSHZaikoParts.Count - 2, 1)
+    'String配列をシートdicの要素数で初期化
+    ReDim arrZaikoField(dicSHZaikoParts.Count - 1, 1)
     'シートdicでループ処理
     Dim intArrRowCounter As Integer
+    intArrRowCounter = 0
     Dim varshKey As Variant
     For Each varshKey In dicSHZaikoParts
         If dicINVMasterParts.Exists(varshKey) Then
             'シートdicと共通のKeyがDBdicにも存在する時
             'シートdicとDBdicそれぞれの値をstring配列に入れてやる
+            'DBフィールド
+            arrZaikoField(intArrRowCounter, 0) = CStr(dicINVMasterParts(varshKey))
+            'シートフィールド
+            arrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
+        Else
+            'シートdicにしかkeyが存在しない場合
+            '2次元目の1にシートdicのValueのみを入れてやる、2次元目の0は初期値
+            'シートフィールドのみ
+            arrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
         End If
+        'StringArray行カウンターをインクリメント
+        intArrRowCounter = intArrRowCounter + 1
     Next varshKey
+    '結果を返す
+    GetZaikoFieldNameArrayShandDB = arrZaikoField
+    Exit Function
 End Function

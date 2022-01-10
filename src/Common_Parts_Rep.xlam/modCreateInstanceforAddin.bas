@@ -28,6 +28,14 @@ Public Function CreateclsEnum() As clsEnum
     Set T = Nothing
     Exit Function
 End Function
+'clsINVFB
+Public Function CreateclsINVDB() As clsINVDB
+    Dim T As clsINVDB
+    Set T = New clsINVDB
+    Set CreateclsINVDB = T
+    Set T = Nothing
+    Exit Function
+End Function
 '''SQLテストフォームを表示する
 Public Sub ShowfrmSQLTest()
     frmSQLTest.Show
