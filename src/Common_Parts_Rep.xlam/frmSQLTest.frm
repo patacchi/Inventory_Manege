@@ -62,85 +62,20 @@ End Sub
 '''
 Private Sub btnSingleTest_Click()
     'オートフィルタ設定・確認
-    'Excelファイルかどうか確認する
-    Dim fsoFilter As FileSystemObject
-    Set fsoFilter = New FileSystemObject
-    Dim EnumValue As clsEnum
-    Set EnumValue = CreateclsEnum
-    Select Case fsoFilter.GetExtensionName(txtBoxDefaultDBFile)
-    Case EnumValue.DBFileExetension(xlam_dext), EnumValue.DBFileExetension(xlsm_dext), _
-    EnumValue.DBFileExetension(xls_dext), EnumValue.DBFileExetension(xlsb_dext), EnumValue.DBFileExetension(xlsx_dext)
-        'エクセル関連ファイルの時
-        '非表示で処理するために、ApplicationオブジェクトとWorkbookオブジェクトを別に定義する
-        Dim objExcel As Excel.Application
-        Set objExcel = New Excel.Application
-        Dim sqlBC As clsSQLStringBuilder
-        Set sqlBC = CreateclsSQLStringBuilder
-        Dim wkbFilter As Workbook
-        'workbookオブジェクトを取得
-        Set wkbFilter = objExcel.Workbooks.Open(fsoFilter.BuildPath(txtBoxDefaultDBDirectory, txtBoxDefaultDBFile))
-        '存在しないシート名を開いた場合はErr.Number = 9 、インデックス外エラーが発生するので、エラートラップを行う
-        Err.Clear
-        Dim shtZaikoInfo As Worksheet
-        '在庫情報シートのオブジェクトを取得する、このタイミングでシートが存在しない場合はエラーが発生する
-        On Error Resume Next
-        Set shtZaikoInfo = wkbFilter.Worksheets(INV_CONST.INV_SH_ZAIKO_NAME)
-        On Error GoTo 0
-        'Err.Numberが0以外の時は処理を中断
-        If Err.Number <> 0 Then
-            GoTo CloseAndExit
-            Exit Sub
-        End If
-        If shtZaikoInfo.AutoFilterMode = False Then
-            '在庫情報シートにフィルターが設定されていない場合
-            Dim rngZaikoInfoColumn As Range
-            '在庫情報の列名のうち一つを検索し、Rangeオブジェクトを得る
-            Set rngZaikoInfoColumn = shtZaikoInfo.Cells.Find(INV_CONST.F_SH_ZAIKO_TEHAI_TEXT)
-            If Not rngZaikoInfoColumn Is Nothing Then
-                '手配コードの列が見つかった場合
-                '手配コードの列を基準にしてオートフィルタを設定する
-                rngZaikoInfoColumn.AutoFilter
-                'フィルタ設定した状態でブックを保存する
-                wkbFilter.Save
-            End If
-        Else
-            'フィルタモードが有効になっている場合
-            'フィルタ設定範囲が名前定義として存在しているが、非表示になっているので表示する設定にする
-            '名前定義すべてに対してループする
-            Dim elmName As Name
-            Dim flgSave As Boolean
-            '保存フラグをFalseで初期化する
-            flgSave = False
-            For Each elmName In shtZaikoInfo.Names
-                If elmName.Visible = False Then
-                    '名前定義が非表示なっていた場合
-                    elmName.Visible = True
-                    '保存フラグを立てる
-                    flgSave = True
-                End If
-            Next elmName
-            '保存フラグの状態を調べる
-            If flgSave Then
-                '保存フラグが立っていたらブックを保存する
-                wkbFilter.Save
-            End If
-        End If
-    End Select
-    GoTo CloseAndExit
-CloseAndExit:
-    Set shtZaikoInfo = Nothing
-    If Not wkbFilter Is Nothing Then
-        'WorkBookオブジェクトがNothingではない場合
-        wkbFilter.Close
-        Set wkbFilter = Nothing
-    End If
-    If Not objExcel Is Nothing Then
-        'Excell.ApplicationオブジェクトがNothingではない場合
-        objExcel.Quit
-        Set objExcel = Nothing
-    End If
-    Set fsoFilter = Nothing
-    Set EnumValue = Nothing
+    Dim InvDBTest As clsINVDB
+    Set InvDBTest = CreateclsINVDB
+    Dim fsoDBTest As FileSystemObject
+    Set fsoDBTest = New FileSystemObject
+    'クラスのプロパティにExcelファイルのフルパスを設定
+    InvDBTest.BKZAikoInfoFullPath = fsoDBTest.BuildPath(txtBoxDefaultDBDirectory.Text, txtBoxDefaultDBFile.Text)
+    'フィルタ処理し、結果の範囲の名前を受け取る
+    Dim arrstrRangeName() As String
+    arrstrRangeName = InvDBTest.GetFilterRangeNameFromExcel
+    MsgBox "file name" & vbCrLf & arrstrRangeName(0, 0) & vbCrLf & "TableName" & vbCrLf & arrstrRangeName(0, 1)
+    GoTo CloseandExit
+CloseandExit:
+    Set InvDBTest = Nothing
+    Set fsoDBTest = Nothing
     Exit Sub
 '    Dim logBeki As Double
 '''''32ビットまで順番にフラグを立てて、Longでどう表現されるか

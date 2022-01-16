@@ -227,7 +227,7 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_ID_IMPrt, INV_CONST.F_INV_TEHAI_ID
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_Code_IMPrt, INV_CONST.F_INV_TEHAI_TEXT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_IMPrt, INV_CONST.F_INV_MANEGE_SECTON
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_TanaNo_IMPrt, INV_CONST.F_INV_SYSTEM_TANA_NO
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_System_TanaNo_IMPrt, INV_CONST.F_INV_SYSTEM_LOCATION_NO
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Kishu_IMPrt, INV_CONST.F_INV_KISHU
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Store_Code_IMPrt, INV_CONST.F_INV_STORE_CODE
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Deliver_Lot_IMPrt, INV_CONST.F_INV_DELIVER_LOT

@@ -8,7 +8,7 @@ Public Const T_INV_PARTS_MASTER As String = "T_INV_M_Parts"                     
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
 Public Const F_INV_TEHAI_TEXT As String = "F_INV_Tehai_Code"                    '手配コード
 Public Const F_INV_MANEGE_SECTON As String = "F_INV_Manege_Section"             '管理課
-Public Const F_INV_SYSTEM_TANA_NO As String = "F_INV_System_Tana_No"            'システム側の棚番号
+Public Const F_INV_SYSTEM_LOCATION_NO As String = "F_INV_System_Location_No"    'システム側の棚番号
 Public Const F_INV_KISHU As String = "F_INV_Kishu"                              '機種名
 Public Const F_INV_STORE_CODE As String = "F_INV_Store_Code"                    '貯蔵記号
 Public Const F_INV_DELIVER_LOT As String = "F_INV_Deliver_Lot"                  '払い出しロット
@@ -17,7 +17,7 @@ Public Const F_INV_LEAD_TIME As String = "F_INV_Lead_Time"                      
 Public Const F_INV_ORDER_AMOUNT As String = "F_INV_Order_Amount"                '発注数
 Public Const F_INV_ORDER_REMAIN As String = "F_INV_Order_Remain"                '発注残数
 Public Const F_INV_STOCK_AMOUNT As String = "F_INV_Stock_Amount"                '在庫数
-Public Const F_INV_TANA_ID As String = "F_INV_Tana_ID"                          '棚番号のID、実態は棚番マスターから引っ張ること
+Public Const F_INV_TANA_ID As String = "F_INV_Tana_System_Text"                 'システム側のロケーション(実際に使用する方の棚番) 表示用の物などは棚番マスターテーブルで定義する
 Public Const F_INV_SYSTEM_NAME As String = "F_INV_System_Name"                  'システム側の品名、CASEとか
 Public Const F_INV_SYSTEM_SPEC As String = "F_INV_System_Spec"                  'システム側の型格、IMONOとか
 Public Const F_INV_STORE_UNIT As String = "F_INV_Sotre_Unit"                    '貯蔵単位　PとかSETとかの
@@ -88,6 +88,6 @@ Public Enum Enum_Sh_Zaiko
     F_Store_Unit_ShZ = Enum_INV_M_Parts.F_Store_Unit_IMPrt
     F_System_Description_ShZ = Enum_INV_M_Parts.F_System_Description_IMPrt
     F_Manege_Section_Sub_ShZ = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
-    '棚番テキストのみこちらで独自に設定する
+    '棚番テキストのみこちらで独自に設定する100番台～
     F_Tana_Text_ShZ = 101
 End Enum

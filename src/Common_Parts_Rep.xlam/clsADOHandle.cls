@@ -122,7 +122,7 @@ Property Get ConnectionString() As String
 End Property
 Property Let ConnectionString(ByVal strargConnection As String)
     '既に接続済みの場合は変更させない
-    If isConnected Then
+    If Me.Connected Then
         Exit Property
     End If
     If strargConnection <> "" Then
@@ -209,7 +209,7 @@ Private Sub Finalize()
     If Not adoConnection Is Nothing Then
         'Nothingじゃなかったら接続を閉じる
         '接続されていなければ閉じる
-        If isConnected Then
+        If Me.Connected Then
             Call adoConnection.Close
         End If
         Set adoConnection = Nothing
@@ -408,7 +408,7 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         'ファイルが存在しなかった場合
         DebugMsgWithTime "CreateConnectionString: file not found"
         CreateConnectionString = Empty
-        GoTo CloseAndExit
+        GoTo CloseandExit
         Exit Function
     End If
     '引数で与えられたファイルがDBファイルかどうかを判定する
@@ -416,7 +416,7 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         'DBファイルの拡張子ではなかった場合
         DebugMsgWithTime "CreateConnectionString: Not DB file Exetention."
         CreateConnectionString = Empty
-        GoTo CloseAndExit
+        GoTo CloseandExit
         Exit Function
     End If
     '拡張子により分岐し、それぞれの接続文字列を作成する
@@ -460,14 +460,14 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         '未定義だった場合
         DebugMsgWithTime "CreateConnectionString: Undefined extention"
         CreateConnectionString = Empty
-        GoTo CloseAndExit
+        GoTo CloseandExit
     End Select
-    GoTo CloseAndExit
+    GoTo CloseandExit
 '    strlocalConnection = constDBPROVIDER_Pri
 '    strlocalConnection = strlocalConnection & sqlBc.addQuote(strargDBPath & "\" & strargDBFileName)
 '    CreateConnectionString = strlocalConnection
-    GoTo CloseAndExit
-CloseAndExit:
+    GoTo CloseandExit
+CloseandExit:
     Set sqlBC = Nothing
     Set fsoCreateConnectionString = Nothing
     Exit Function
@@ -963,13 +963,13 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     If rsTableExists.RecordCount <= 0 Then
         'Recordcountが0以下ならないのが確定
         IsTableExists = False
-        GoTo CloseAndExit
+        GoTo CloseandExit
     Else
         '1以上なら存在するぽい
         IsTableExists = True
-        GoTo CloseAndExit
+        GoTo CloseandExit
     End If
-CloseAndExit:
+CloseandExit:
     Set rsTableExists = Nothing
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列がクラスのものと一致しない場合は一時利用なので接続を明示的に閉じてやる
@@ -1063,13 +1063,13 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     If rsFieldExists.RecordCount <= 0 Then
         'RecordCountが0以下なら指定のフィールドはない
         IsFieldExists = False
-        GoTo CloseAndExit
+        GoTo CloseandExit
     Else
         '1以上ならある
         IsFieldExists = True
-        GoTo CloseAndExit
+        GoTo CloseandExit
     End If
-CloseAndExit:
+CloseandExit:
     Set rsFieldExists = Nothing
     '接続文字列がクラスのプロパティと一致しない場合は一時利用なので明示的に接続を閉じる
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
@@ -1086,5 +1086,92 @@ ErrorCatch:
     Set conFieldExists = Nothing
     IsFieldExists = False
     DebugMsgWithTime "IsFielsExists code: " & Err.Number & " Description: " & Err.Description
+    Exit Function
+End Function
+'''Author Patacchi 2022_01_16
+'''指定されたDBファイルのテーブル一覧を取得する
+'''戻り値 string配列 テーブル名を格納した1次元String配列
+'''args
+'''Optional strargDBFileName        DBFilename、未指定の場合はクラスのプロパティから引っ張る
+'''Optional strargDBPath            DBPath、未指定の場合はクラスのプロパティから引っ張る
+Public Function GetTableList(Optional strargDBFileName As String, Optional strargDBPath As String) As String()
+    'DBPathかDBFilenameが空白だったらプロパティから引っ張ってみる
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    'プロパティから引っ張ってもDBPath、DBFilenameが空白だったら抜ける
+    If strargDBFileName = "" Or strargDBPath = "" Then
+        DebugMsgWithTime "GetTableList: Filename or Path is empty"
+        GoTo CloseandExit
+        Exit Function
+    End If
+    'DBFileの存在有無確認
+    Dim isDBFileExists As Boolean
+    isDBFileExists = Me.IsDBFileExist(strargDBFileName, strargDBPath)
+    If Not isDBFileExists Then
+        'ファイルが存在しなかったら抜ける
+        DebugMsgWithTime "GetTaleList Path:  " & strargDBPath & vbCrLf & " Filename: " & strargDBFileName & " is not exists"
+        GoTo CloseandExit
+        Exit Function
+    End If
+    'Connectionオブジェクトの作成、接続
+    '接続文字列がクラスのプロパティと引数で与えられたのが一緒で、かつConnectedがTrueになってたら接続を再利用する
+    Dim conGetTableList As adodb.Connection
+    If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
+        '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
+        If Me.Connected Then
+            '接続済みなら既存の接続を再利用してやる
+            Set conGetTableList = adoConnection
+        Else
+            '未接続ならクラスの接続メソッドを利用して接続する
+            Dim isCollecte As Boolean
+            isCollecte = DBReady()
+            If Not isCollecte Then
+                '接続失敗したっぽい
+                GoTo ErrorCatch
+            End If
+            Set conGetTableList = adoConnection
+        End If
+    Else
+        '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
+        Set conGetTableList = New adodb.Connection
+        conGetTableList.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
+        conGetTableList.CursorLocation = adUseClient
+        conGetTableList.Open
+    End If
+    'テーブル一覧を取得
+    Dim adoxGetTableList As ADOX.Catalog
+    Set adoxGetTableList = New ADOX.Catalog
+    Set adoxGetTableList.ActiveConnection = conGetTableList
+    Dim arrstrTables() As String
+    Dim adoxTable As ADOX.Table
+    Dim longTableCount As Long
+    longTableCount = 0
+    For Each adoxTable In adoxGetTableList.Tables
+        If adoxTable.Type = "TABLE" Then
+            ReDim Preserve arrstrTables(longTableCount)
+            arrstrTables(longTableCount) = adoxTable.Name
+            longTableCount = longTableCount + 1
+        End If
+    Next adoxTable
+    GetTableList = arrstrTables
+    GoTo CloseandExit
+ErrorCatch:
+    DebugMsgWithTime "GetTableList code: " & Err.Number & " Description: " & Err.Description
+    Dim arrError() As String
+    GetTableList = arrError
+    GoTo CloseandExit
+CloseandExit:
+    Set adoxTable = Nothing
+    If Not adoxGetTableList Is Nothing Then
+        Set adoxGetTableList = Nothing
+    End If
+'    If Not conGetTableList Is Nothing Then
+'        conGetTableList.Close
+'        Set conGetTableList = Nothing
+'    End If
     Exit Function
 End Function

@@ -226,14 +226,14 @@ Private Sub IEbrowser_BeforeNavigate2(ByVal pDisp As Object, URL As Variant, Fla
         'DBファイルの拡張子では無かった場合
         '何もしないで抜ける
         DebugMsgWithTime "GetFileName_Brouser: Target file is not DB file " & URL
-        GoTo CloseAndExit
+        GoTo CloseandExit
         Exit Sub
     End If
     'DBファイル名とディレクトリに設定してやる
     txtBoxDB_Directory.Text = fsoFileNameGet.GetParentFolderName(URL)
     txtBoxDB_FileName.Text = fsoFileNameGet.GetFileName(URL)
-    GoTo CloseAndExit
-CloseAndExit:
+    GoTo CloseandExit
+CloseandExit:
     Set adoExtention = Nothing
     Set fsoFileNameGet = Nothing
     Exit Sub
