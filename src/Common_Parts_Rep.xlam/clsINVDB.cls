@@ -14,6 +14,7 @@ Option Explicit
 Private Const FILTER_NAME_RANGE_PART As String = "FilterDatabase"
 '------------------------------------------------------------------------------------------------------
 'メンバ変数定義
+Private objExcel As Excel.Application
 Private strINVDBFullPath As String                                  'INV_Manege.accdbのフルパス、基本的には未指定でデフォルトの場所を読みに行く
 Private strBKZaikoInfoFullPath As String                            '在庫情報のExcelファイルのフルパス、毎回ファイル名が変動するのでデフォルト値は無し
 '------------------------------------------------------------------------------------------------------
@@ -62,6 +63,27 @@ Property Let BKZAikoInfoFullPath(strargBKZaikoInfoFullPath As String)
     strBKZaikoInfoFullPath = strargBKZaikoInfoFullPath
     Exit Property
 End Property
+'''Autor Daisuke_oota 2021_01_17
+'''クラス初期化時に行う処理
+Private Sub ClassInitialize()
+End Sub
+'''Autor Daisuke_oota 2021_01_17
+'''クラス初破棄時に行う処理
+Private Sub ClassFinarize()
+    If Not objExcel Is Nothing Then
+        'ExcelObjectがNothingじゃない場合
+        objExcel.Quit
+        Set objExcel = Nothing
+    End If
+End Sub
+'------------------------------------------------------------------------------------------------------
+'コンストラクタ、デストラクタ
+Private Sub Class_Initialize()
+    Call ClassInitialize
+End Sub
+Private Sub Class_Terminate()
+    Call ClassFinarize
+End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
 '''Author Patacchi 2022_01_16
@@ -97,8 +119,10 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
     EnumValue.DBFileExetension(xls_dext), EnumValue.DBFileExetension(xlsb_dext), EnumValue.DBFileExetension(xlsx_dext)
         'エクセル関連ファイルの時
         '非表示で処理するために、ApplicationオブジェクトとWorkbookオブジェクトを別に定義する
-        Dim objExcel As Excel.Application
-        Set objExcel = New Excel.Application
+        If objExcel Is Nothing Then
+            'クラスのobjExcelが初期化されていなかったらここで行う
+            Set objExcel = New Excel.Application
+        End If
         Dim wkbFilter As Workbook
         'workbookオブジェクトを取得
         Set wkbFilter = objExcel.Workbooks.Open(strargExcelFileFullpath)
@@ -209,11 +233,6 @@ CloseandExit:
         'WorkbookオブジェクトがNothingじゃない場合
         wkbFilter.Close
         Set wkbFilter = Nothing
-    End If
-    If Not objExcel Is Nothing Then
-        'ExcelObjectがNothingじゃない場合
-        objExcel.Quit
-        Set objExcel = Nothing
     End If
     Set dbGetTableList = Nothing
     Set EnumValue = Nothing

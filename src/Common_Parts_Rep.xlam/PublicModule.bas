@@ -29,52 +29,6 @@ Public Function ChCurrentDirW(ByVal DirName As String) As Boolean
     'StrPtrを介す必要がある・・？
     SetCurrentDirectoryW StrPtr(DirName)
 End Function
-'-----------------------------------------------------------------------------------------------------------
-'Public Sub CreateAliasTable()
-'    'エイリアステーブル作成
-'    '2021_09_14 Patacchi エイリアステーブル分割
-'    'HeaderとKishuNameそれぞれのエイリアステーブルに分割する
-'
-'    Dim strSQL As String
-'    Dim dbAlias As clsSQLiteHandle
-'    Dim sqlbC As clsSQLStringBuilder
-'    On Error GoTo ErrorCatch
-'    Set dbAlias = New clsSQLiteHandle
-'    Set sqlbC = New clsSQLStringBuilder
-'    'Header
-'    'テーブルが存在しない場合のみ実行する
-'    If Not IsTableExist(Table_AliasHeader) Then
-'        strSQL = ""
-'        strSQL = strSQL & strTable1_NextTable & Table_AliasHeader
-'        strSQL = strSQL & strTable2_Next1stField & sqlbC.addQuote(Kishu_Header) & strTable3_TEXT & strTable_NotNull & strTable_Unique & strTable4_EndRow
-'        strSQL = strSQL & sqlbC.addQuote(Kishu_Origin) & strTable3_TEXT & strTable_NotNull & strTable4_EndRow
-'        strSQL = strSQL & strTable4_5_PrimaryKey & sqlbC.addQuote(Kishu_Header) & strTable4_6_EndPrimary & strTable5_EndSQL
-'        dbAlias.SQL = strSQL
-'        Call dbAlias.DoSQL_No_Transaction
-'    End If
-'    'KishuName
-'    'テーブルが存在しない場合のみ実行する
-'    If Not IsTableExist(Table_AliasKishu) Then
-'        strSQL = ""
-'        strSQL = strSQL & strTable1_NextTable & Table_AliasKishu
-'        strSQL = strSQL & strTable2_Next1stField & sqlbC.addQuote(Kishu_KishuName) & strTable3_TEXT & strTable_NotNull & strTable_Unique & strTable4_EndRow
-'        strSQL = strSQL & sqlbC.addQuote(Kishu_Origin) & strTable3_TEXT & strTable_NotNull & strTable4_EndRow
-'        strSQL = strSQL & strTable4_5_PrimaryKey & sqlbC.addQuote(Kishu_KishuName) & strTable4_6_EndPrimary & strTable5_EndSQL
-'        dbAlias.SQL = strSQL
-'        Call dbAlias.DoSQL_No_Transaction
-'    End If
-'    GoTo CloseAndExit
-'ErrorCatch:
-'    If Err.Number <> 0 Then
-'        MsgBox Err.Number & vbCrLf & Err.Description
-'    End If
-'    DebugMsgWithTime "CreateAliasTable code: " & Err.Number & "Description: " & Err.Description
-'    GoTo CloseAndExit
-'CloseAndExit:
-'    Set dbAlias = Nothing
-'    Set sqlbC = Nothing
-'    Exit Sub
-'End Sub
 '------------------------------------------------------------------------------------------------------
 Public Function getArryDimmensions(ByRef varArry As Variant) As Byte
     '配列の次元数を返す（Byteまでしか対応しないよ）
@@ -118,6 +72,24 @@ Public Function GetLocalTimeWithMilliSec() As String
     strDateWithMillisec = strDateWithMillisec & "."
     strDateWithMillisec = strDateWithMillisec & Format(timeLocalTime.wMilliseconds, "000")
     GetLocalTimeWithMilliSec = strDateWithMillisec
+End Function
+'''Author Daisuke oota 2022_01_17
+'''ファイル名で使用できる形式でミリ秒まで含めて文字列で返す
+'''戻り値 string
+'''parm Optional strargDelimiter 区切り文字を変更したい場合は指定する、指定なしの場合は"_"
+Public Function GetTimeForFileNameWithMilliSec(Optional strargDelimiter = "_") As String
+    'yyyy_mm_dd_HH_MM_SS_FFF
+    Dim arrstrDateWithMillisecFileName(6) As String
+    Dim timeLocalTime As SYSTEMTIME
+    Call GetLocalTime(timeLocalTime)
+    arrstrDateWithMillisecFileName(0) = Format(timeLocalTime.wYear, "0000")
+    arrstrDateWithMillisecFileName(1) = Format(timeLocalTime.wMonth, "00")
+    arrstrDateWithMillisecFileName(2) = Format(timeLocalTime.wDay, "00")
+    arrstrDateWithMillisecFileName(3) = Format(timeLocalTime.wHour, "00")
+    arrstrDateWithMillisecFileName(4) = Format(timeLocalTime.wMinute, "00")
+    arrstrDateWithMillisecFileName(5) = Format(timeLocalTime.wSecond, "00")
+    arrstrDateWithMillisecFileName(6) = Format(timeLocalTime.wMilliseconds, "000")
+    GetTimeForFileNameWithMilliSec = Join(arrstrDateWithMillisecFileName, strargDelimiter)
 End Function
 Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal strargFilePath As String, Optional ByVal strargFileEncoding As String = "UTF-8")
     '二次元配列をCSVに吐き出す
