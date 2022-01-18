@@ -12,7 +12,13 @@ Option Explicit
 '2021_10_10 IE連携のために新規作成 Patacchi
 'DB接続関係の定数設定
 Const constDatabasePath             As String = "C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB"      'データベースディレクトリ
-Const constDBFILENAME               As String = "CAT_Find.accdb"           'CAT情報格納用DBファイル名
+#If DebugDB Then
+'Local環境
+Const constDBFILENAME               As String = "INV_Manege_Local.accdb"    '在庫管理ローカル用
+#Else
+'本番環境
+Const constDBFILENAME               As String = "INV_Manege.accdb"          '在庫管理DB
+#End If
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const CONNECTION_STRING_ACCDB_0DBFullPath           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0}"       '接続文字列_accdb
 Const CONNECTION_STRING_XLSM_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 Macro;HDR=Yes;"";"
