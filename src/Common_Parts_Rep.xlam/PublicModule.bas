@@ -78,17 +78,18 @@ End Function
 '''戻り値 string
 '''parm Optional strargDelimiter 区切り文字を変更したい場合は指定する、指定なしの場合は"_"
 Public Function GetTimeForFileNameWithMilliSec(Optional strargDelimiter = "_") As String
-    'yyyy_mm_dd_HH_MM_SS_FFF
-    Dim arrstrDateWithMillisecFileName(6) As String
+    '_yyyy_mm_dd_HH_MM_SS_FFF
+    Dim arrstrDateWithMillisecFileName(7) As String
     Dim timeLocalTime As SYSTEMTIME
     Call GetLocalTime(timeLocalTime)
-    arrstrDateWithMillisecFileName(0) = Format(timeLocalTime.wYear, "0000")
-    arrstrDateWithMillisecFileName(1) = Format(timeLocalTime.wMonth, "00")
-    arrstrDateWithMillisecFileName(2) = Format(timeLocalTime.wDay, "00")
-    arrstrDateWithMillisecFileName(3) = Format(timeLocalTime.wHour, "00")
-    arrstrDateWithMillisecFileName(4) = Format(timeLocalTime.wMinute, "00")
-    arrstrDateWithMillisecFileName(5) = Format(timeLocalTime.wSecond, "00")
-    arrstrDateWithMillisecFileName(6) = Format(timeLocalTime.wMilliseconds, "000")
+    arrstrDateWithMillisecFileName(0) = ""
+    arrstrDateWithMillisecFileName(1) = Format(timeLocalTime.wYear, "0000")
+    arrstrDateWithMillisecFileName(2) = Format(timeLocalTime.wMonth, "00")
+    arrstrDateWithMillisecFileName(3) = Format(timeLocalTime.wDay, "00")
+    arrstrDateWithMillisecFileName(4) = Format(timeLocalTime.wHour, "00")
+    arrstrDateWithMillisecFileName(5) = Format(timeLocalTime.wMinute, "00")
+    arrstrDateWithMillisecFileName(6) = Format(timeLocalTime.wSecond, "00")
+    arrstrDateWithMillisecFileName(7) = Format(timeLocalTime.wMilliseconds, "000")
     GetTimeForFileNameWithMilliSec = Join(arrstrDateWithMillisecFileName, strargDelimiter)
 End Function
 Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal strargFilePath As String, Optional ByVal strargFileEncoding As String = "UTF-8")

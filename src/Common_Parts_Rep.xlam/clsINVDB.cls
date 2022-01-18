@@ -321,10 +321,6 @@ CloseandExit:
         wkbCSV.Close
         Set wkbCSV = Nothing
     End If
-    If Not objExcel Is Nothing Then
-        objExcel.Quit
-        Set objExcel = Nothing
-    End If
     Set EnumValue = Nothing
     Set fsoCSV = Nothing
     Exit Function

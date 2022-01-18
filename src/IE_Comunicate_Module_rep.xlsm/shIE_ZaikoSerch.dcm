@@ -9,5 +9,30 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
 Public Sub btnZaikoSerch_Click()
-    Call ZaikoSerchbyTehaiCode(Me.Cells(4, 3).Value)
+    '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
+    '''dicTehaiSh は key に Tehaicode を Value に シートフルパスを入れる
+    Dim strTehaiCode As String
+    strTehaiCode = CStr(Me.Range("TehaiCode").Value)
+    Dim dicTehaiSh As Dictionary
+    Set dicTehaiSh = New Dictionary
+    If dicTehaiSh.Exists(strTehaiCode) Then
+        '指定の手配コードが既にあった場合
+        Exit Sub
+    End If
+     dicTehaiSh.Add strTehaiCode, modZaikoSerch.ZaikoSerchbyTehaiCode(strTehaiCode)
+     Dim INVTehaiTest As clsINVDB
+     Set INVTehaiTest = CreateclsINVDB
+     Dim strFilteredFileName() As String
+     strFilteredFileName = INVTehaiTest.GetFilterRangeNameFromExcel(dicTehaiSh(strTehaiCode))
+     If strFilteredFileName(0, 0) <> dicTehaiSh(strTehaiCode) Then
+        'フィルタ掛ける前と掛けた後でファイル名が違った場合
+        'まずは既存の項目を消去
+        dicTehaiSh.Remove (strTehaiCode)
+        '次にフィルタ掛かった後のファイル名を新たに追加
+        dicTehaiSh.Add strTehaiCode, strFilteredFileName
+     End If
+     '取得したファイル名でSelect文を作ってみる
+     MsgBox "FilterdFileName: " & vbCrLf & dicTehaiSh(strTehaiCode) & vbCrLf & _
+     "SQL: " & vbCrLf & "SELECT * FROM " & strFilteredFileName(0, 1)
+     Call ShowfrmSQLTest
 End Sub

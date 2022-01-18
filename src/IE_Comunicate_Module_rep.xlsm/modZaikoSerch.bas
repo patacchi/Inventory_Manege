@@ -1,4 +1,4 @@
-Attribute VB_Name = "mobZaikoSerch"
+Attribute VB_Name = "modZaikoSerch"
 Option Explicit
 Private Const zaikoSerchURL As String = "http://www.freeway.fuchu.toshiba.co.jp/faz/zaikoSearch/"
 Private Const DEBUG_SHOW_IE As Long = &H1                           'IEの画面を表示させるフラグ(1bit)
@@ -8,15 +8,18 @@ Private Const ZAIKO_SERCH_DL_SCRIPT As String = "chkSetChild( document );$('#mai
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
 '''Summary
-'''手配コードを引数として、在庫検索（のファイルDL）を行うプロシージャ
+'''手配コードを引数として、在庫検索（のファイルDL）を行い、DLしたファイル名のフルパスを返す
+'''戻り値 string    DLしたファイルのフルパス
+'''parms
+'''optional strargReturnFileName
 '''--------------------------------------------------------------------------------------------------------------
-Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
+Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, Optional strargReturnFileName As String) As String
     Dim getIETest As clsGetIE
     Set getIETest = New clsGetIE
     If strTehaiCode = "" Then
         '手配コードが指定されていなかったら抜ける
         MsgBox "ZaikoSerchbyTehaiCode: 手配コードが空でした（必須項目）"
-        Exit Sub
+        Exit Function
     End If
     '在庫情報検索ページを設定
     getIETest.URL = zaikoSerchURL
@@ -47,21 +50,19 @@ Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
         Dim docConfirm As HTMLDocument
         Set docConfirm = dicReturnHTMLDoc(ZAIKO_SERCH_SCRIPT_TREE)
         docConfirm.parentWindow.execScript ZAIKO_SERCH_DL_SCRIPT
-'        docConfirm.parentWindow.execScript "chkSetChild( document );"
-'        docConfirm.parentWindow.execScript "$('#mainFm').attr('action', '../zaikoInfoSearch/validate/');"
-'        docConfirm.parentWindow.execScript "if(validateSearchCondition()) { document.forms[0].action = '../zaikoInfoSearch/download/'; document.forms[0].submit();}"
     End If
     '-----------------------------------------------------------------------------------------------------------
     'Saveの場合（基本はこっち）
     '保存ファイル名の生成（ファイル名のみ、ディレクトリはDownloadの場所になるはずなので可変）
-    Dim strFleName As String
-    strFleName = "ZaikoSerch" & (Format(Now(), "yyyymmddhhmmss"))
+    If strargReturnFileName = "" Then
+        '保存ファイル名が指定されなかった場合
+        'TehaiCode_yyyy_mm_dd_HH_MM_SS_fff
+        strargReturnFileName = strTehaiCode & GetTimeForFileNameWithMilliSec
+    End If
     Dim strResultFilePath As String
     '保存ボタンを押し、結果のファイル名を受け取る
-    strResultFilePath = getIETest.DownloadSave_NotificationBar(strFleName)
-    'これで保存したファイル名がフルパスで取得できているので、あとは利用するのみ
-'    MsgBox strResultFilePath
-'    Call Application.Workbooks.Open(strResultFilePath)
+    strResultFilePath = getIETest.DownloadSave_NotificationBar(strargReturnFileName)
+    ZaikoSerchbyTehaiCode = strResultFilePath
 '    '-----------------------------------------------------------------------------------------------------------
 '    'SaveAsの時の使用方法
 '    '保存ファイル名生成
@@ -85,16 +86,15 @@ Public Sub ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String)
 '    Dim elementStrArray() As String
 '    elementStrArray = getIETest.getTextArrayByTagName(localHTMLDoc, "A")
 '    Cells(getIETest.shRow, getIETest.shColumn).Value = dicReturnHTMLDoc(1).Title
-    'Stop
     Set getIETest = Nothing
-    Exit Sub
+    Exit Function
 ErrorCatch:
     DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & Err.Number & " Description: " & Err.Description
     If Not getIETest Is Nothing Then
         Set getIETest = Nothing
     End If
-    Exit Sub
-End Sub
+    Exit Function
+End Function
 '''Author Daisuke_Oota
 '''GetIEクラスを引数として、在庫検索の手配コードに指定の文字列をセットする
 '''
