@@ -17,8 +17,14 @@ Option Explicit
     Const ZAIKO_LOCAL_SPLIT_MAX As Long = 3
 #End If
 Public Sub btnZaikoSerch_Click()
+    '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
+    '''dicTehaiSh は key に Tehaicode を Value に シートフルパスを入れる
+    Dim dicTehaiSh As Dictionary
+    Set dicTehaiSh = New Dictionary
+    'Local環境と本番環境で対象ファイルの取得方法を変える
 #If DebugDB Then
     'ローカルテスト
+    MsgBox "DebugDB = 1"
     'DBディレクトリはそのまま
     'ファイルは予め作成してある物を使用
     Dim sqlBC As clsSQLStringBuilder
@@ -31,9 +37,20 @@ Public Sub btnZaikoSerch_Click()
         '最初にAppendFormat用のdictionaryをクリア
         dicAppendFormat.RemoveAll
         dicAppendFormat.Add 0, CStr(longZaikoLocalSplitCount)
-        Dim strLocalZaikoFileName As String
-        'Local在庫情報ファイル名取得
-        strLocalZaikoFileName = sqlBC.ReplaceParm(LOCAL_XLS_FILENAME, dicAppendFormat)
+        Dim fsoLocalZaiko As FileSystemObject
+        Set fsoLocalZaiko = New FileSystemObject
+        Dim adoLocalZaiko As clsADOHandle
+        Set adoLocalZaiko = CreateclsADOHandleInstance
+        Dim strLocalZaikoFullPath As String
+        'Local在庫情報フルパス名取得
+        'ディレクトリはclsAdoのデフォルトDBPath、ファイル名は連番のあれ
+        strLocalZaikoFullPath = fsoLocalZaiko.BuildPath(adoLocalZaiko.DBPath, sqlBC.ReplaceParm(LOCAL_XLS_FILENAME, dicAppendFormat))
+        'ファイル存在確認し、ファイルが存在する場合のみdicTehaiShに追加してやる
+        'Local官許の場合は、keyはファイルの偽分割番号を入れる
+        If fsoLocalZaiko.FileExists(strLocalZaikoFullPath) Then
+            'ファイルが存在する場合
+            dicTehaiSh.Add CStr(longZaikoLocalSplitCount), strLocalZaikoFullPath
+        End If
     Next longZaikoLocalSplitCount
 #Else
     '本番環境
@@ -41,8 +58,6 @@ Public Sub btnZaikoSerch_Click()
     '''dicTehaiSh は key に Tehaicode を Value に シートフルパスを入れる
     Dim strTehaiCode As String
     strTehaiCode = CStr(Me.Range("TehaiCode").Value)
-    Dim dicTehaiSh As Dictionary
-    Set dicTehaiSh = New Dictionary
     If dicTehaiSh.Exists(strTehaiCode) Then
         '指定の手配コードが既にあった場合
         Exit Sub
@@ -59,9 +74,9 @@ Public Sub btnZaikoSerch_Click()
         '次にフィルタ掛かった後のファイル名を新たに追加
         dicTehaiSh.Add strTehaiCode, strFilteredFileName
      End If
+#End If
      '取得したファイル名でSelect文を作ってみる
      MsgBox "FilterdFileName: " & vbCrLf & dicTehaiSh(strTehaiCode) & vbCrLf & _
      "SQL: " & vbCrLf & "SELECT * FROM " & strFilteredFileName(0, 1)
      Call ShowfrmSQLTest
-#End If
 End Sub
