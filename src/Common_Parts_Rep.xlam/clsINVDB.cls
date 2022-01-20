@@ -324,4 +324,7 @@ CloseandExit:
     Set EnumValue = Nothing
     Set fsoCSV = Nothing
     Exit Function
-End Function
+End Function
+'''Author Daisuke Oota 2022_01_20
+'''
+'''

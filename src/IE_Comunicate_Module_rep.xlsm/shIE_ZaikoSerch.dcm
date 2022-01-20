@@ -11,7 +11,7 @@ Option Explicit
 #If DebugDB Then
     'ローカル環境の時のみ使う定数
     '在庫情報 偽分割 0～3まで作った
-    Const LOCAL_XLS_FILENAME As String = "Zaiko_{0}_Local.xls"
+    Const LOCAL_XLS_FILENAME As String = "Zaiko_{0}_Local.xlsx"
     '在庫情報偽分割ファイルの分割最小値と最大値
     Const ZAIKO_LOCAL_SPLIT_MIN As Long = 0
     Const ZAIKO_LOCAL_SPLIT_MAX As Long = 3
@@ -52,6 +52,15 @@ Public Sub btnZaikoSerch_Click()
             dicTehaiSh.Add CStr(longZaikoLocalSplitCount), strLocalZaikoFullPath
         End If
     Next longZaikoLocalSplitCount
+    '各ファイル（在庫情報）からDBに登録する
+    'CommonPartsのclsINVDBにメソッドを追加するのがいいかも
+    Dim INVTehaiTest As clsINVDB
+    Set INVTehaiTest = CreateclsINVDB
+    Dim varKey As Variant
+    For Each varKey In dicTehaiSh
+        '偽分割ファイルの各ファイルに対して処理を実行する
+        '
+    Next varKey
 #Else
     '本番環境
     '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
@@ -74,9 +83,9 @@ Public Sub btnZaikoSerch_Click()
         '次にフィルタ掛かった後のファイル名を新たに追加
         dicTehaiSh.Add strTehaiCode, strFilteredFileName
      End If
-#End If
      '取得したファイル名でSelect文を作ってみる
      MsgBox "FilterdFileName: " & vbCrLf & dicTehaiSh(strTehaiCode) & vbCrLf & _
      "SQL: " & vbCrLf & "SELECT * FROM " & strFilteredFileName(0, 1)
      Call ShowfrmSQLTest
+#End If
 End Sub
