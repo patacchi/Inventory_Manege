@@ -90,4 +90,8 @@ Public Enum Enum_Sh_Zaiko
     F_Manege_Section_Sub_ShZ = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
     '棚番テキストのみこちらで独自に設定する100番台～
     F_Tana_Text_ShZ = 101
-End Enum
+End Enum
+'------------------------------------------------------------------------------------------------------------------------------------------------------
+'SQL定義
+'手配コード先頭4文字リスト取得
+Public Const SQL_INV_TEHAICODE_FIRST4 As String = "SELECT DISTINCT LEFT({0},4) FROM {1}"

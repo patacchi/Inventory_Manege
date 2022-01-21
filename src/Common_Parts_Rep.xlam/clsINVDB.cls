@@ -141,14 +141,15 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
         Dim shtFilter As Worksheet
         '在庫情報シートのオブジェクトを取得する、このタイミングでシートが存在しない場合はエラーが発生する
         On Error Resume Next
+        Err.Clear
         Set shtFilter = wkbFilter.Worksheets(strargSheetName)
-        On Error GoTo ErrorCatch
         'Err.Numberが0以外の時は処理を中断
         If Err.Number <> 0 Then
             DebugMsgWithTime "GetFilterRangeNameFromExcel: sheet not found: " & strargSheetName
             GoTo CloseandExit
             Exit Function
         End If
+        On Error GoTo ErrorCatch
         Dim flgSave As Boolean
         flgSave = False
         If shtFilter.AutoFilterMode = False Then
@@ -326,5 +327,90 @@ CloseandExit:
     Exit Function
 End Function
 '''Author Daisuke Oota 2022_01_20
-'''
-'''
+'''在庫情報シートのフルパスを引数として、INVパーツマスターDBに登録するプロシージャ
+'''args
+'''strargZaikoSHFullPath    在庫情報シートのフルパス
+'''clsADOUpsert             ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
+'''                         DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
+'''clsINVDBUpsert           INVDBクラスのインスタンスを指定する。このメソッド以前に作成していたら再利用する（コンストラクタの動作が重いため）
+'''戻り値 long      変更があったレコード数を返す。0以下だと何かしらがあった？
+Public Function UpsertINVPartsMasterfromZaikoSH(strargZaikoSHFullPath As String, ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle) As Long
+    On Error GoTo ErrorCatch
+    'クラスの存在確認
+    If clsINVDBUpsert Is Nothing Then
+        '初期化されてないクラスインスタンスが渡された
+        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH: Class instance is nothing"
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseandExit
+        Exit Function
+    End If
+#If DebugDB = 1 Then
+    'DebugDBモードの時
+    strargZaikoSHFullPath = Application.GetOpenFilename()
+#End If
+    'ファイルの存在確認
+    Dim fsoUpsertPartsMaster As FileSystemObject
+    Set fsoUpsertPartsMaster = New FileSystemObject
+    If Not fsoUpsertPartsMaster.FileExists(strargZaikoSHFullPath) Then
+        '引数で指定したファイルが存在しなかった場合
+        DebugMsgWithTime "UpsertINVPartsMaster file not found: " & strargZaikoSHFullPath
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseandExit
+    End If
+    Dim strFilterdZaikoSh() As String
+    'フィルタ処理後のファイル名を受け取る。この時、シート名を明示的にINT_CONSTから引っ張り指定してやる
+    strFilterdZaikoSh = clsINVDBUpsert.GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME)
+    '処理後に初期化されていない配列が帰ってきたら、在庫情報シートが存在しない可能性が高いので処理を中断する
+    If Not IsRedim(strFilterdZaikoSh) Then
+        DebugMsgWithTime "UpserINVPartsMaster: not found zako_info sheets origin file: " & strargZaikoSHFullPath
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseandExit
+    End If
+    '''ここまでで在庫情報シートが確定したので、在庫情報からDBに登録するメソッドで処理を行う
+    Dim longResultAffected As Long
+    longResultAffected = DoUpsertbyZaikoSH(strFilterdZaikoSh(0, 0), strFilterdZaikoSh(0, 1), clsADOUpsert)
+    GoTo CloseandExit
+ErrorCatch:
+    DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseandExit
+CloseandExit:
+    Set fsoUpsertPartsMaster = Nothing
+    'INVDBインスタンスはByRefで他の物を再利用しているので解放禁止
+'    If Not INVDBupsertINVPartMaster Is Nothing Then
+'        'INVDB変数がNothingだった場合
+'        Set INVDBupsertINVPartMaster = Nothing
+'    End If
+    Exit Function
+End Function
+'''Author Daisuke oota 2022_01_21
+'''在庫情報シートのフルパスを引数として、DBに登録するメソッド
+'''args
+'''strargFilterdZaikoSHFullPath         フィルタ処理済みのブック名のフルパス
+'''strargTableName                      在庫情報シートのSelect 文 Fromに入るテーブル名
+'''clsADOUpsert                         ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
+'''                                     DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
+'''戻り値 long      影響のあった行数を返す
+Private Function DoUpsertbyZaikoSH(strargFilterdZaikoSHFullPath As String, strargTableName As String, ByRef clsADOUpsert As clsADOHandle) As Long
+    On Error GoTo ErrorCatch
+    'AdoHandleのクラス初期化状況を確認
+    If clsADOUpsert Is Nothing Then
+        DebugMsgWithTime "DoUpsertbyZaikoSH: warning! clsADOHandle instance Nothing. will delay cause create new class"
+        Set clsADOUpsert = CreateclsADOHandleInstance
+        DoUpsertbyZaikoSH = 0
+        GoTo CloseandExit
+        Exit Function
+    End If
+    'ファイル、テーブルの空データチェック
+    If strargFilterdZaikoSHFullPath = "" Or strargTableName = "" Then
+        DebugMsgWithTime "DoUpsertbyZaikoSH: Zaiko sheet filename or table name is empty"
+        DoUpsertbyZaikoSH = 0
+        GoTo CloseandExit
+        Exit Function
+    End If
+ErrorCatch:
+    DebugMsgWithTime "DoUpsertbyZaikoSH code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseandExit
+    Exit Function
+CloseandExit:
+    Exit Function
+End Function
