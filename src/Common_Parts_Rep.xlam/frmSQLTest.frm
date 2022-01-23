@@ -61,6 +61,9 @@ End Sub
 ''' 単体でテストしたいプロシージャを記述
 '''
 Private Sub btnSingleTest_Click()
+#If DebugDB Then
+    MsgBox "DebugDB = 1"
+#End If
     'オートフィルタ設定・確認
     Dim InvDBTest As clsINVDB
     Set InvDBTest = CreateclsINVDB
@@ -70,10 +73,24 @@ Private Sub btnSingleTest_Click()
     InvDBTest.BKZAikoInfoFullPath = fsoDBTest.BuildPath(txtBoxDefaultDBDirectory.Text, txtBoxDefaultDBFile.Text)
     'フィルタ処理し、結果の範囲の名前を受け取る
     Dim arrstrRangeName() As String
-    arrstrRangeName = InvDBTest.GetFilterRangeNameFromExcel
-    MsgBox "file name" & vbCrLf & arrstrRangeName(0, 0) & vbCrLf & "TableName" & vbCrLf & arrstrRangeName(0, 1)
-    GoTo CloseandExit
-CloseandExit:
+'    arrstrRangeName = InvDBTest.GetFilterRangeNameFromExcel
+    Dim adoSingle As clsADOHandle
+    Set adoSingle = CreateclsADOHandleInstance
+    Dim clsEnumSingle As clsEnum
+    Set clsEnumSingle = CreateclsEnum
+    '手配コード最初4桁取得テスト
+    Dim arrstrResult() As String
+    arrstrResult = InvDBTest.Return4digitTehaiCodeFromCSV("", adoSingle, InvDBTest, clsEnumSingle)
+    MsgBox "先頭4文字の種類は: " & CStr(UBound(arrstrResult) + 1)
+'    'Select INTO テスト
+'    Dim adoSingle As clsADOHandle
+'    Set adoSingle = CreateclsADOHandleInstance
+'    Dim clsEnumSingle As clsEnum
+'    Set clsEnumSingle = CreateclsEnum
+'    MsgBox "変更箇所は:" & CStr(InvDBTest.UpsertINVPartsMasterfromZaikoSH(arrstrRangeName(0, 0), InvDBTest, adoSingle, clsEnumSingle))
+'    GoTo CloseAndExit
+CloseAndExit:
+    Set clsEnumSingle = Nothing
     Set InvDBTest = Nothing
     Set fsoDBTest = Nothing
     Exit Sub

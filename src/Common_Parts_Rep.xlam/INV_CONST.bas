@@ -3,6 +3,7 @@ Attribute VB_Name = "INV_CONST"
 Option Explicit
 '在庫情報DBに関する定数
 Public Const INV_DB_FILENAME As String = "INV_Manege.accdb"                     '在庫情報のDBファイル名
+Public Const T_INV_TEMP As String = "T_INV_Temp"                                'INVDBの一時テーブル名
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_PARTS_MASTER As String = "T_INV_M_Parts"                     '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
@@ -94,4 +95,43 @@ End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'SQL定義
 '手配コード先頭4文字リスト取得
-Public Const SQL_INV_TEHAICODE_FIRST4 As String = "SELECT DISTINCT LEFT({0},4) FROM {1}"
+Public Const SQL_INV_TEHAICODE_FIRST4_0TableName As String = "SELECT DISTINCT LEFT(" & F_SH_ZAIKO_TEHAI_TEXT & ",4) FROM {0}"             '0にテーブル名を入れる
+'DB Upsert向け定数
+Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
+Public Const SQL_ALIAS_T_INVDB_Tana As String = "TDBTana"                                           'INV_M_Tanaテーブル別名定義
+Public Const SQL_ALIAS_T_SH_ZAIKO As String = "TSHZaiko"                                            '在庫情報シートテーブル名別名定義
+Public Const SQL_AFTER_IN_ACCDB_0FullPath As String = "[MS ACCESS;DATABASE={0};]"                   'Select From の IN""句の後に来る文字列accdb
+Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE={0};HDR=Yes;]"     'In xlsm,xlam
+Public Const SQL_AFTER_IN_XLSB_0FullPath As String = "[Excel 12.0;DATABASE={0};HDR=Yes;]"           'IN xlsb
+Public Const SQL_AFTER_IN_XLSX_0FullPath As String = "[Excel 12.0 xml;DATABASE={0};HDR=Yes;]"       'IN xlsx
+Public Const SQL_AFTER_IN_XLS_0FullPath As String = "[Excel 8.0;DATABASE={0};HDR=Yes;]"             'IN xls
+'在庫情報シートのみ外部ファイル参照なので、IN句で指定してやる
+'INの後はダブルクォーテーションふたつ、ファイル名に空白があってもエスケープする必要なし?
+'SELECT TSHZaiko.手配コード,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text,TDBTana.F_INV_Tana_System_Text
+'FROM    (
+'    SELECT * FROM T_INV_M_Tana
+'    IN ""[MS ACCESS;DATABASE=R:\Tmp\Patacchi\Test Dir\INV_Manege_Local.accdb;]
+'    ) AS TDBTana
+'RIGHT JOIN (
+'    SELECT * FROM [在庫情報$FilterDatabase]
+'    IN ""[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
+'    ) AS TSHZaiko
+'ON TDBTana.F_INV_Tana_System_Text = TSHZaiko.ロケーション
+'WHERE NOT TDBTana.F_INV_Tana_ID IS NULL;
+''------------------------------------------------------------------------------------------
+''外部データを新規テーブルとしてインポートする
+''T_Tempが存在していたらエラーになるので事前に削除が必要
+Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INTO " & INV_CONST.T_INV_TEMP & " " & vbCrLf & _
+"FROM " & vbCrLf & _
+    "(SELECT * FROM {0} " & vbCrLf & _
+    "IN """"{1} ) "
+'
+''------------------------------------------------------------------------------------------
+''一時テーブルを作成した上でのUpdateは成功
+'UPDATE T_INV_M_Tana AS TDBTana
+'RIGHT JOIN (
+'SELECT * FROM T_Temp
+'IN ""[MS ACCESS;DATABASE=R:\Tmp\Patacchi\Test Dir\INV_Manege_Local.accdb;] ) AS TDBTemp
+'ON TDBTana.F_INV_Tana_System_Text = TDBTemp.ロケーション
+'Set TDBTana.F_INV_Tana_System_Text = TDBTemp.ロケーション
+'WHERE F_INV_Tana_System_Text Is Null

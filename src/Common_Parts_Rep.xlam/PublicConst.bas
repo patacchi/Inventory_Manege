@@ -21,6 +21,8 @@ Public Enum DB_file_exetension
 End Enum
 '各テーブルにはDefaultとしてInputDateが入る
 Public Const INPUT_DATE As String = "InputDate"
+'Tempデータベース、Excelファイルは一時テーブルに格納した方が上手くいくみたいなので、とりあえず一時テーブルのみを置くデータベースファイル
+Public Const TEMP_DB_FILENAME As String = "DB_Temp_Local.accdb"       '全DB共通
 '-------リスト表示のための定数定義
 'MS ゴシック（等幅）文字サイズ9ptの場合
 Public Const sglChrLengthToPoint = 4.1

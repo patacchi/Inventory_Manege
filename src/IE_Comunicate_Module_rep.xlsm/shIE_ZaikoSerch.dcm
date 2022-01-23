@@ -11,7 +11,7 @@ Option Explicit
 #If DebugDB Then
     'ローカル環境の時のみ使う定数
     '在庫情報 偽分割 0～3まで作った
-    Const LOCAL_XLS_FILENAME As String = "Zaiko_{0}_Local.xlsx"
+    Const LOCAL_XLS_FILENAME As String = "Zaiko_{0}_Local.xls"
     '在庫情報偽分割ファイルの分割最小値と最大値
     Const ZAIKO_LOCAL_SPLIT_MIN As Long = 0
     Const ZAIKO_LOCAL_SPLIT_MAX As Long = 3
@@ -24,6 +24,9 @@ Public Sub btnZaikoSerch_Click()
     '実際は繰り返しUpsertを行う事になるので、AdoHandleインスタンスも共有する
     Dim adoUpsert As clsADOHandle
     Set adoUpsert = CreateclsADOHandleInstance
+    '同様に繰り返し使用に備え、clsEnumもインスタンス共有する
+    Dim EnumUpsert As clsEnum
+    Set EnumUpsert = CreateclsEnum
     'Local環境と本番環境で対象ファイルの取得方法を変える
 #If DebugDB Then
     'ローカルテスト
@@ -49,7 +52,7 @@ Public Sub btnZaikoSerch_Click()
         'ディレクトリはclsAdoのデフォルトDBPath、ファイル名は連番のあれ
         strLocalZaikoFullPath = fsoLocalZaiko.BuildPath(adoUpsert.DBPath, sqlBC.ReplaceParm(LOCAL_XLS_FILENAME, dicAppendFormat))
         'ファイル存在確認し、ファイルが存在する場合のみdicTehaiShに追加してやる
-        'Local官許の場合は、keyはファイルの偽分割番号を入れる
+        'Local環境の場合は、keyはファイルの偽分割番号を入れる
         If fsoLocalZaiko.FileExists(strLocalZaikoFullPath) Then
             'ファイルが存在する場合
             dicTehaiSh.Add CStr(longZaikoLocalSplitCount), strLocalZaikoFullPath
@@ -64,9 +67,10 @@ Public Sub btnZaikoSerch_Click()
     For Each varKey In dicTehaiSh
         '偽分割ファイルの各ファイルに対して処理を実行する
         'singleTest
-        longAffectedRows = INVTehaiTest.UpsertINVPartsMasterfromZaikoSH("", INVTehaiTest, adoUpsert)
-        DebugMsgWithTime CStr(longAffectedRows)
+        longAffectedRows = INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert)
+        DebugMsgWithTime CStr(longAffectedRows) & " 件更新"
     Next varKey
+    MsgBox "デバッグ実行成功"
 #Else
     '本番環境
     '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納

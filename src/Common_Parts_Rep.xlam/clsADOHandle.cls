@@ -22,7 +22,7 @@ Const constDBFILENAME               As String = "INV_Manege.accdb"          'İŒ
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const CONNECTION_STRING_ACCDB_0DBFullPath           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0}"       'Ú‘±•¶š—ñ_accdb
 Const CONNECTION_STRING_XLSM_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 Macro;HDR=Yes;"";"
-'xlam‚ˆ‚Íxlsm‚Æ“¯‚¶Ú‘±•¶š—ñEE‚¾‚¯‚Çxlam‚É‘Î‚µ‚ÄÚ‘±‚·‚é–‚Í‚È‚¢‚©‚àEEE
+'xlam‚Íxlsm‚Æ“¯‚¶Ú‘±•¶š—ñEE‚¾‚¯‚Çxlam‚É‘Î‚µ‚ÄÚ‘±‚·‚é–‚Í‚È‚¢‚©‚àEEE
 Const CONNECTION_STRING_XLAM_0DBFullPath            As String = PublicConst.DB_FILE_EXETENSION_XLSM
 Const CONNECTION_STRING_XLSB_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0;HDR=Yes;"";"
 Const CONNECTION_STRING_XLSX_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 xml;HDR=Yes;"";"
@@ -46,7 +46,8 @@ Private longAffected As Long                                            '‰e‹¿‚ğ
 Property Get DBPath() As String
     If strDBPath = "" Then
         'ƒƒ“ƒo•Ï”‚ª‰Šúó‘Ô‚È‚ç’è”‚ğƒZƒbƒg‚µ‚Ä‚â‚é
-        strDBPath = constDatabasePath
+'        strDBPath = constDatabasePath
+        Me.DBPath = constDatabasePath
     End If
     DBPath = strDBPath
 End Property
@@ -120,8 +121,11 @@ Property Get ConnectionString() As String
         ConnectionString = strConnection
         Exit Property
     Else
-        '–¢Ú‘±‚È‚çƒvƒƒpƒeƒB‚ÌDBPath‚ÆDBFilename‚©‚çÚ‘±•¶š—ñ‚ğ¶¬‚µ‚Ä‚â‚é
-        strConnection = CreateConnectionString(Me.DBPath, Me.DBFileName)
+        '–¢Ú‘±‚ÅAX‚ÉƒNƒ‰ƒX‚Ìƒƒ“ƒo•Ï”‚ª‹ó‚¾‚Á‚½‚çƒvƒƒpƒeƒB‚ÌDBPath‚ÆDBFilename‚©‚çÚ‘±•¶š—ñ‚ğ¶¬‚µ‚Ä‚â‚é
+        If strConnection = "" Then
+            'ƒNƒ‰ƒX‚ÌstrConnection‚ª‹ó‚¾‚Á‚½i–¢w’èó‘Ô)
+            strConnection = CreateConnectionString(Me.DBPath, Me.DBFileName)
+        End If
         ConnectionString = strConnection
         Exit Property
     End If
@@ -216,7 +220,8 @@ Private Sub Finalize()
         'Nothing‚¶‚á‚È‚©‚Á‚½‚çÚ‘±‚ğ•Â‚¶‚é
         'Ú‘±‚³‚ê‚Ä‚¢‚È‚¯‚ê‚Î•Â‚¶‚é
         If Me.Connected Then
-            Call adoConnection.Close
+'            Call adoConnection.Close
+            Call CloseClassConnection
         End If
         Set adoConnection = Nothing
     End If
@@ -373,6 +378,15 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
         'DBƒtƒ@ƒCƒ‹–¼ˆø”‚ª‹ó‚¾‚Á‚½‚çƒvƒƒpƒeƒB‚©‚çˆø‚Á’£‚é
         strargDBFileName = Me.DBFileName
     End If
+    'ˆêƒe[ƒuƒ‹Ši”[DB‚Ì‘¶İƒ`ƒFƒbƒN‚Æì¬
+    Call CreateandCheckTempDB(strargDBPath)
+    'Ú‘±Ï‚İ‚ÅAƒNƒ‰ƒX‚ÌConnectionString‚Æˆø”‚©‚çì¬‚µ‚½ConnectionString‚ªˆá‚¤ê‡‚Íˆê’UØ’f‚·‚é
+    '–¾¦“I‚Éw’è‚³‚ê‚½ƒpƒX‚Æƒtƒ@ƒCƒ‹–¼‚ğ—Dæ‚³‚¹‚é‚½‚ß
+    If Me.Connected And Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
+        'Ú‘±Ï‚İ‚Å‚©‚ÂƒNƒ‰ƒX‚ÌÚ‘±•¶š—ñ‚Æˆø”‚æ‚è¶¬‚µ‚½Connectionstring‚ªˆá‚¤ê‡
+        'ˆê’UÚ‘±‚ğ‰ğœ‚µ‚Ä‚â‚é
+        Call CloseClassConnection
+    End If
     'Ú‘±•¶š—ñ‚ğİ’è‚·‚é
     Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
     'DBƒtƒ@ƒCƒ‹‚Ì‘¶İ—L–³‚ğŠm”F‚µA–³‚¯‚ê‚ÎV‹Kì¬‚·‚é
@@ -395,7 +409,9 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
 End Function
 '''Ú‘±•¶š—ñ‚ğì¬‚·‚é
 '''—^‚¦‚ç‚ê‚½Šg’£q‚É‚æ‚èÚ‘±•¶š‚ğ•ªŠò‚·‚é
-Private Function CreateConnectionString(Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String) As String
+'''args
+'''Optional NoExistCheck    True‚Åƒtƒ@ƒCƒ‹‚Ì‘¶İŠm”F‚ğs‚í‚È‚¢Bƒtƒ@ƒCƒ‹V‹Kì¬‚ÉAdox.catalog‚ğg—p‚·‚éê‡‚ÉA‘¶İ‚µ‚È‚¢ƒtƒ@ƒCƒ‹–¼‚ğw’è‚·‚é‰Â”\«‚ª‚ ‚é‚½‚ß
+Private Function CreateConnectionString(Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String, Optional NoExistCheck As Boolean = False) As String
     If strargDBPath = "" Then
         'ˆø”‚ÅDBƒpƒX‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚çƒvƒƒpƒeƒB‚©‚çˆø‚Á’£‚é
         strargDBPath = Me.DBPath
@@ -409,12 +425,12 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
     Dim strDBFileFullPath As String
     'DBƒtƒ@ƒCƒ‹‚Ìƒtƒ‹ƒpƒX‚ğ“¾‚é
     strDBFileFullPath = fsoCreateConnectionString.BuildPath(strargDBPath, strargDBFileName)
-    'DBƒtƒ@ƒCƒ‹‚Ì‘¶İŠm”F‚ğs‚¤
-    If Not fsoCreateConnectionString.FileExists(strDBFileFullPath) Then
+    'DBƒtƒ@ƒCƒ‹‚Ì‘¶İŠm”F‚ğs‚¤A’A‚µNoExistChekƒtƒ‰ƒO‚ª—§‚Á‚Ä‚½‚ç–³‹‚·‚é
+    If (Not NoExistCheck) And (Not fsoCreateConnectionString.FileExists(strDBFileFullPath)) Then
         'ƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚È‚©‚Á‚½ê‡
         DebugMsgWithTime "CreateConnectionString: file not found"
         CreateConnectionString = Empty
-        GoTo CloseandExit
+        GoTo CloseAndExit
         Exit Function
     End If
     'ˆø”‚Å—^‚¦‚ç‚ê‚½ƒtƒ@ƒCƒ‹‚ªDBƒtƒ@ƒCƒ‹‚©‚Ç‚¤‚©‚ğ”»’è‚·‚é
@@ -422,7 +438,7 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         'DBƒtƒ@ƒCƒ‹‚ÌŠg’£q‚Å‚Í‚È‚©‚Á‚½ê‡
         DebugMsgWithTime "CreateConnectionString: Not DB file Exetention."
         CreateConnectionString = Empty
-        GoTo CloseandExit
+        GoTo CloseAndExit
         Exit Function
     End If
     'Šg’£q‚É‚æ‚è•ªŠò‚µA‚»‚ê‚¼‚ê‚ÌÚ‘±•¶š—ñ‚ğì¬‚·‚é
@@ -466,14 +482,11 @@ Private Function CreateConnectionString(Optional ByVal strargDBPath As String, O
         '–¢’è‹`‚¾‚Á‚½ê‡
         DebugMsgWithTime "CreateConnectionString: Undefined extention"
         CreateConnectionString = Empty
-        GoTo CloseandExit
+        GoTo CloseAndExit
     End Select
-    GoTo CloseandExit
-'    strlocalConnection = constDBPROVIDER_Pri
-'    strlocalConnection = strlocalConnection & sqlBc.addQuote(strargDBPath & "\" & strargDBFileName)
-'    CreateConnectionString = strlocalConnection
-    GoTo CloseandExit
-CloseandExit:
+    GoTo CloseAndExit
+    Exit Function
+CloseAndExit:
     Set sqlBC = Nothing
     Set fsoCreateConnectionString = Nothing
     Exit Function
@@ -526,7 +539,7 @@ ErrorCatch:
 End Function
 '''Author Patacchi 2021_12_29
 '''ƒNƒ‰ƒX‚Ìƒƒ“ƒo‚ÌConnection‚ÌÚ‘±‚ğ•Â‚¶‚é
-Private Sub CloseClassConnection()
+Public Sub CloseClassConnection()
     If Me.Connected Then
         'Ú‘±‚³‚ê‚Ä‚¢‚½‚ç•Â‚¶‚é
         adoConnection.Close
@@ -969,13 +982,13 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     If rsTableExists.RecordCount <= 0 Then
         'Recordcount‚ª0ˆÈ‰º‚È‚ç‚È‚¢‚Ì‚ªŠm’è
         IsTableExists = False
-        GoTo CloseandExit
+        GoTo CloseAndExit
     Else
         '1ˆÈã‚È‚ç‘¶İ‚·‚é‚Û‚¢
         IsTableExists = True
-        GoTo CloseandExit
+        GoTo CloseAndExit
     End If
-CloseandExit:
+CloseAndExit:
     Set rsTableExists = Nothing
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
         'Ú‘±•¶š—ñ‚ªƒNƒ‰ƒX‚Ì‚à‚Ì‚Æˆê’v‚µ‚È‚¢ê‡‚Íˆê—˜—p‚È‚Ì‚ÅÚ‘±‚ğ–¾¦“I‚É•Â‚¶‚Ä‚â‚é
@@ -1069,13 +1082,13 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     If rsFieldExists.RecordCount <= 0 Then
         'RecordCount‚ª0ˆÈ‰º‚È‚çw’è‚ÌƒtƒB[ƒ‹ƒh‚Í‚È‚¢
         IsFieldExists = False
-        GoTo CloseandExit
+        GoTo CloseAndExit
     Else
         '1ˆÈã‚È‚ç‚ ‚é
         IsFieldExists = True
-        GoTo CloseandExit
+        GoTo CloseAndExit
     End If
-CloseandExit:
+CloseAndExit:
     Set rsFieldExists = Nothing
     'Ú‘±•¶š—ñ‚ªƒNƒ‰ƒX‚ÌƒvƒƒpƒeƒB‚Æˆê’v‚µ‚È‚¢ê‡‚Íˆê—˜—p‚È‚Ì‚Å–¾¦“I‚ÉÚ‘±‚ğ•Â‚¶‚é
     If Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
@@ -1111,7 +1124,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     'ƒvƒƒpƒeƒB‚©‚çˆø‚Á’£‚Á‚Ä‚àDBPathADBFilename‚ª‹ó”’‚¾‚Á‚½‚ç”²‚¯‚é
     If strargDBFileName = "" Or strargDBPath = "" Then
         DebugMsgWithTime "GetTableList: Filename or Path is empty"
-        GoTo CloseandExit
+        GoTo CloseAndExit
         Exit Function
     End If
     'DBFile‚Ì‘¶İ—L–³Šm”F
@@ -1120,7 +1133,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     If Not isDBFileExists Then
         'ƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚È‚©‚Á‚½‚ç”²‚¯‚é
         DebugMsgWithTime "GetTaleList Path:  " & strargDBPath & vbCrLf & " Filename: " & strargDBFileName & " is not exists"
-        GoTo CloseandExit
+        GoTo CloseAndExit
         Exit Function
     End If
     'ConnectionƒIƒuƒWƒFƒNƒg‚Ìì¬AÚ‘±
@@ -1164,13 +1177,13 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
         End If
     Next adoxTable
     GetTableList = arrstrTables
-    GoTo CloseandExit
+    GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "GetTableList code: " & Err.Number & " Description: " & Err.Description
     Dim arrError() As String
     GetTableList = arrError
-    GoTo CloseandExit
-CloseandExit:
+    GoTo CloseAndExit
+CloseAndExit:
     Set adoxTable = Nothing
     If Not adoxGetTableList Is Nothing Then
         Set adoxGetTableList = Nothing
@@ -1179,5 +1192,83 @@ CloseandExit:
 '        conGetTableList.Close
 '        Set conGetTableList = Nothing
 '    End If
+    Exit Function
+End Function
+'''ˆêƒtƒ@ƒCƒ‹’u‚«êDB‚ª–³‚¯‚ê‚Îì¬‚·‚é
+'''args
+'''optilnal strargDBPath        ˆêƒtƒ@ƒCƒ‹‚ğì¬‚·‚éêŠ‚ğw’è‚·‚éA–¢w’è‚Ìê‡‚ÍƒNƒ‰ƒX‚ÌƒvƒƒpƒeƒB
+Private Sub CreateandCheckTempDB(Optional strargDBPath As String)
+    On Error GoTo ErrorCatch
+    If strargDBPath = "" Then
+        'DBPath‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚çƒvƒƒpƒeƒB‚©‚çˆø‚Á’£‚é
+        strargDBPath = Me.DBPath
+    End If
+    Dim fsoTempDB As FileSystemObject
+    Set fsoTempDB = New FileSystemObject
+    Dim strTempDBFullPath As String
+    strTempDBFullPath = fsoTempDB.BuildPath(strargDBPath, PublicConst.TEMP_DB_FILENAME)
+    If Not fsoTempDB.FileExists(strTempDBFullPath) Then
+        'ˆêƒe[ƒuƒ‹Ši”[DBƒtƒ@ƒCƒ‹‚ª‚È‚¢ê‡
+        'ì¬‚·‚é
+        Dim adoxTempDB As ADOX.Catalog
+        Set adoxTempDB = New ADOX.Catalog
+        adoxTempDB.Create (CreateConnectionString(strargDBPath, PublicConst.TEMP_DB_FILENAME, True))
+        Set adoxTempDB = Nothing
+    End If
+    GoTo CloseAndExit
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "CreateTempDB code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Set adoxTempDB = Nothing
+    Set fsoTempDB = Nothing
+    Exit Sub
+End Sub
+'''w’è‚Ìƒe[ƒuƒ‹‚ğÁ‹‚·‚é
+'''–ß‚è’l Bool  ¬Œ÷‚µ‚½‚çTrueA‚»‚êˆÈŠO‚ÍFalse
+'''args
+'''optional strargDBFileName        'DB‚Ìƒtƒ@ƒCƒ‹–¼A–¢w’è‚Ìê‡‚ÍƒNƒ‰ƒX‚ÌƒvƒƒpƒeƒB‚ğ“K—p
+'''optional strargDBPath            'DB‚ÌƒfƒBƒŒƒNƒgƒŠA–¢w’è‚Ìê‡‚ÍƒNƒ‰ƒX‚ÌƒvƒƒpƒeƒB‚ğ“K—p
+Public Function DropTable(strargTableName As String, Optional strargDBFileName As String, Optional strargDBPath As String) As Boolean
+    If strargTableName = "" Then
+        'ƒe[ƒuƒ‹–¼‚ª‹ó‚¾‚Á‚½‚ç”²‚¯‚é
+        DebugMsgWithTime "DropTable Table name empty"
+        DropTable = False
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'DBFilename‚ÆDBPath‚ªw’è‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚çƒNƒ‰ƒX‚ÌƒvƒƒpƒeƒB‚©‚çˆø‚Á’£‚é
+    If strargDBFileName = "" Then
+        strargDBFileName = Me.DBFileName
+    End If
+    If strargDBPath = "" Then
+        strargDBPath = Me.DBPath
+    End If
+    'w’è‚Ìƒe[ƒuƒ‹‚ª‘¶İ‚·‚é‚©Šm”F
+    If Not IsTableExists(strargTableName, strargDBFileName, strargDBPath) Then
+        'Šù‚Éw’è‚Ìƒe[ƒuƒ‹‚ª‘¶İ‚µ‚È‚©‚Á‚½ê‡
+        DebugMsgWithTime "DropTable: table not exists: " & strargTableName
+        DropTable = True
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'ƒe[ƒuƒ‹Á‹Às
+    Dim isCollect As Boolean
+     isCollect = Do_SQL_with_NO_Transaction("DROP TABLE " & strargTableName, strargDBPath, strargDBFileName)
+    If isCollect Then
+        '¬Œ÷‚µ‚½‚Æ‚«
+        DebugMsgWithTime "Drop Table: " & strargTableName & " Success"
+        DropTable = True
+        GoTo CloseAndExit
+        Exit Function
+    Else
+        '¸”s‚µ‚½‚Æ‚«
+        DebugMsgWithTime "Drop Table: " & strargTableName & "Fail"
+        DropTable = False
+        GoTo CloseAndExit
+        Exit Function
+    End If
+CloseAndExit:
     Exit Function
 End Function
