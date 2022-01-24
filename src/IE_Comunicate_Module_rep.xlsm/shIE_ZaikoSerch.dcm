@@ -81,7 +81,10 @@ Public Sub btnZaikoSerch_Click()
         '指定の手配コードが既にあった場合
         Exit Sub
     End If
-     dicTehaiSh.Add strTehaiCode, modZaikoSerch.ZaikoSerchbyTehaiCode(strTehaiCode)
+    Dim clsGetIEZaikoserchTehaiCode As clsGetIE
+    Set clsGetIEZaikoserchTehaiCode = New clsGetIE
+    clsget
+     dicTehaiSh.Add strTehaiCode, modZaikoSerch.ZaikoSerchbyTehaiCode(strTehaiCode, clsGetIEZaikoserchTehaiCode)
      Dim INVTehaiTest As clsINVDB
      Set INVTehaiTest = CreateclsINVDB
      Dim strFilteredFileName() As String
@@ -98,4 +101,45 @@ Public Sub btnZaikoSerch_Click()
      "SQL: " & vbCrLf & "SELECT * FROM " & strFilteredFileName(0, 1)
      Call ShowfrmSQLTest
 #End If
+End Sub
+'''デイリー棚卸CSVからDBに登録する
+Public Sub RegistDBbyDailyTanaCSV()
+#If DebugDB Then
+    MsgBox "DebugDB = 1"
+#End If
+    '棚卸CSVを指定し、手配コード先頭4文字のリストを受け取る
+    '当面の間はCSVファイルを手動で選択する
+    Dim arrstrTeheiCode4Digit() As String
+    Dim clsINVDBCsv As clsINVDB
+    Set clsINVDBCsv = CreateclsINVDB
+    '共有インスタンスのためにクラス変数定義
+    Dim clsADOCsv As clsADOHandle
+    Set clsADOCsv = CreateclsADOHandleInstance
+    Dim clsEnumCSV As clsEnum
+    Set clsEnumCSV = CreateclsEnum
+    Dim clsGetIECSV As clsGetIE
+    Set clsGetIECSV = New clsGetIE
+    arrstrTeheiCode4Digit = clsINVDBCsv.Return4digitTehaiCodeFromCSV("", clsADOCsv, clsINVDBCsv, clsEnumCSV)
+    If Not IsRedim(arrstrTeheiCode4Digit) Then
+        '初期化されていない配列が帰ってきた
+        DebugMsgWithTime "RegistDBbyDailyTanaCSV: Return tehai 4digit array not initialized"
+        GoTo CloseAndExit
+        Exit Sub
+    End If
+    Dim longArrayRowCounter As Long
+    Dim arrstrDownloadFileList() As String
+    ReDim arrstrDownloadFileList(UBound(arrstrTeheiCode4Digit))
+    For longArrayRowCounter = 0 To UBound(arrstrTeheiCode4Digit)
+        '先頭4文字の手配コードについて在庫情報シートをダウンロードし、ファイル名を配列に格納する
+        arrstrDownloadFileList(longArrayRowCounter) = ZaikoSerchbyTehaiCode(arrstrTeheiCode4Digit(longArrayRowCounter), clsGetIECSV)
+    Next longArrayRowCounter
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOCsv Is Nothing Then
+        clsADOCsv.CloseClassConnection
+        Set clsADOCsv = Nothing
+    End If
+    Set clsINVDBCsv = Nothing
+    Set clsEnumCSV = Nothing
+    Exit Sub
 End Sub

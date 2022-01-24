@@ -121,7 +121,7 @@ Public Const SQL_AFTER_IN_XLS_0FullPath As String = "[Excel 8.0;DATABASE={0};HDR
 ''------------------------------------------------------------------------------------------
 ''外部データを新規テーブルとしてインポートする
 ''T_Tempが存在していたらエラーになるので事前に削除が必要
-Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INTO " & INV_CONST.T_INV_TEMP & " " & vbCrLf & _
+Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INTO " & T_INV_TEMP & " " & vbCrLf & _
 "FROM " & vbCrLf & _
     "(SELECT * FROM {0} " & vbCrLf & _
     "IN """"{1} ) "

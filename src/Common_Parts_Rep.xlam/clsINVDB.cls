@@ -518,8 +518,10 @@ ByRef clsAdo4Digit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEn
         'カレントディレクトリをダウンロードディレクトリに移動する
 #If DebugDB Then
         'ローカル試験用
-        'カレントディレクトリをDBディレクトリにする
-        Call ChCurrentDirW(clsAdo4Digit.DBPath)
+'        'カレントディレクトリをDBディレクトリにする
+'        Call ChCurrentDirW(clsAdo4Digit.DBPath)
+        'カレントディレクトリをダウンロードディレクトリに移動する
+        Call ChCurrentDirW(GetDownloadPath)
 #Else
         '本番環境用
         'カレントディレクトリをダウンロードディレクトリに移動する
