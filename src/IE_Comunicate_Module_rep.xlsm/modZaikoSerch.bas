@@ -22,8 +22,6 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
         DebugMsgWithTime "ZaikoSerhbyTehaiCode: Warning! clsGetIE instance empy. will delay...."
         Set clsGetieZaikoSerch = New clsGetIE
     End If
-'    Dim clsGetieZaikoSerch As clsGetIE
-'    Set clsGetieZaikoSerch = New clsGetIE
     If strTehaiCode = "" Then
         '手配コードが指定されていなかったら抜ける
         MsgBox "ZaikoSerchbyTehaiCode: 手配コードが空でした（必須項目）"
@@ -31,17 +29,20 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
     End If
     '在庫情報検索ページを設定
     clsGetieZaikoSerch.URL = zaikoSerchURL
-    'Debug用
-'    isCollect = clsgetiezaikoserch.OpenIEwithURL
-    '指定したURLのHTML DocをDictionaryで受け取るテスト
     Dim longDebugFlag As Long                   'デバッグフラグを管理するためのLong変数
 '    longDebugFlag = 0 Or DEBUG_SHOW_IE
-    If longDebugFlag And DEBUG_SHOW_IE Then
-        'IE表示フラグが立ってたのでプロパティ設定
-        clsGetieZaikoSerch.Visible = True
-    End If
+'    If longDebugFlag And DEBUG_SHOW_IE Then
+'        'IE表示フラグが立ってたのでプロパティ設定
+'        clsGetieZaikoSerch.Visible = True
+'    End If
     On Error Resume Next
     Dim dicReturnHTMLDoc As Dictionary
+    If Not dicReturnHTMLDoc Is Nothing Then
+        '2週目以降はインスタンス再利用するため、Dictionaryに中身が入ったままになっている
+        'RemoveAllを試してみる
+        'ダメだった場合は１週ごとにNothingにするように
+        dicReturnHTMLDoc.RemoveAll
+    End If
     '指定したURLより全フレームのHTMLDocを取得する Dictionary形式
     Set dicReturnHTMLDoc = clsGetieZaikoSerch.ResultHTMLDoc
     If Err.Number <> 0 Then
@@ -56,6 +57,11 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
     If dicReturnHTMLDoc.Exists(ZAIKO_SERCH_SCRIPT_TREE) Then
         '在庫検索スクリプトページの階層文字列が存在する場合のみ実行する
         Dim docConfirm As HTMLDocument
+        If Not docConfirm Is Nothing Then
+            'この時点でdocConfirmがNothingじゃなかった場合
+'            docConfirm.Close
+            docConfirm.Clear
+        End If
         Set docConfirm = dicReturnHTMLDoc(ZAIKO_SERCH_SCRIPT_TREE)
         docConfirm.parentWindow.execScript ZAIKO_SERCH_DL_SCRIPT
     End If

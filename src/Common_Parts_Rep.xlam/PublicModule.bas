@@ -206,7 +206,7 @@ Public Sub ForceForeground(ByVal longptrhWnd As LongPtr)
     'ウィンドウ切り替え待機時間を0にする
     Call SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, dummy, SPIF_SENDCHANGE)
     'ウィンドウを最前面に持ってくる
-    Call SetForegroundWindow(Application.hwnd)
+    Call SetForegroundWindow(longptrhWnd)
 '    Call BringWindowToTop(Application.hwnd)
     'ウィンドウ切り替え時間の設定を戻す
     Call SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, longptrTimeout, SPIF_SENDCHANGE)

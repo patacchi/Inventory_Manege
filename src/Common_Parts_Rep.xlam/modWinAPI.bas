@@ -26,6 +26,7 @@ Public Declare PtrSafe Function BringWindowToTop Lib "user32" (ByVal hwnd As Lon
 Public Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
 Public Declare PtrSafe Function GetWindowThreadProcessId Lib "user32" (ByVal hwnd As LongPtr, lpdwProcessId As Long) As Long
 Public Declare PtrSafe Function AttachThreadInput Lib "user32" (ByVal idAttach As Long, ByVal idAttachTo As Long, ByVal fAttach As Long) As Long
+Public Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 '-----------------------------------------------------------------------------------------------------------------------
 'UNCëŒâûÇÃÇΩÇﬂÅAWin32APIégóp
 Public Declare PtrSafe Function SetCurrentDirectoryW Lib "kernel32" (ByVal lpPathName As LongPtr) As LongPtr

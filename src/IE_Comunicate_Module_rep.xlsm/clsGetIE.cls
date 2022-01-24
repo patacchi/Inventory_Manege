@@ -556,11 +556,15 @@ Private Function PressSave_NotificationBar(ByRef argUIAuto As CUIAutomation, ByV
     End If
     '保存ボタンを押下してみるよ
     'ここでWindow表示させないとうまくいかないみたい・・・
+    Call MoveWindow(hIEWnd, -650, -300, 650, 200, 1)
+    sleep 100
     Call ShowWindow(hIEWnd, SW_RESTORE)
     Dim iptn As IUIAutomationInvokePattern
     Set iptn = elmASaveSplitButton.GetCurrentPattern(UIA_InvokePatternId)
     iptn.Invoke
+    sleep 100
     Call ShowWindow(hIEWnd, SW_HIDE)
+    Call MoveWindow(hIEWnd, -650, -350, 650, 200, 1)
     PressSave_NotificationBar = True
     Exit Function
 ErrorCatch:
