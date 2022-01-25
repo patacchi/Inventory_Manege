@@ -359,10 +359,6 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
         DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: warning! Enum instance is nothing.will delay..."
         Set clsEnumUpsert = CreateclsEnum
     End If
-'#If DebugDB = 1 Then
-'    'DebugDBモードの時
-'    strargZaikoSHFullPath = Application.GetOpenFilename()
-'#End If
     'ファイルの存在確認
     Dim fsoUpsertPartsMaster As FileSystemObject
     Set fsoUpsertPartsMaster = New FileSystemObject
@@ -381,17 +377,39 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
         UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
     End If
-    '''ここまでで在庫情報シートが確定したので、在庫情報からDBに登録するメソッドで処理を行う
+    'ここまでで在庫情報シートが確定したので、在庫情報からDBに登録するメソッドで処理を行う
     Dim longResultAffected As Long
+    '棚卸CSVから在庫情報シートを取得した場合、AdoHandleのDBPathが変更されているので、明示的にデフォルトに戻す
+    clsADOUpsert.SetDBPathandFilenameDefault
     'まずは在庫情報シートをTempTableに格納する（直接Excelファイル参照だとうまくいかなかった）
     longResultAffected = IncludeZaikoSH_to_TempTable(strFilterdZaikoSh(0, 0), strFilterdZaikoSh(0, 1), clsADOUpsert, clsEnumUpsert)
     UpsertINVPartsMasterfromZaikoSH = longResultAffected
+    If longResultAffected < 1 Then
+        '件数が1件未満だった場合は抜ける
+        DebugMsgWithTime "UpsertINVPartMasterFromZaikoSH: no entry found"
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'TempTableから本番テーブルに登録する
+    'まずは棚番マスターから
+    'SQL作成
+    '置換用dic
+    Dim dicReplaceParam As Dictionary
+    Set dicReplaceParam = New Dictionary
+    dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME)
+    dicReplaceParam.Add 1, sqlBC.addQuote(GetLocalTimeWithMilliSec)
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
+    clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
+    Call clsADOUpsert.Do_SQL_with_NO_Transaction
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set fsoUpsertPartsMaster = Nothing
+    Set dicReplaceParam = Nothing
+    Set sqlBC = Nothing
     'INVDBインスタンスはByRefで他の物を再利用しているので解放禁止
 '    If Not INVDBupsertINVPartMaster Is Nothing Then
 '        'INVDB変数がNothingだった場合
@@ -502,31 +520,29 @@ CloseAndExit:
     Set fsoINWord = Nothing
     Exit Function
 End Function
-'''デイリー棚卸のCSVファイルから重複なしの手配コード先頭4文字のリストを受け取る関数
-'''戻り値 string()      String1次元配列で手配コードの先頭4文字（重複なし）が入っている
+'''デイリー棚卸のCSVファイルから重複なしの手配コード先頭n文字のリストを受け取る関数
+'''戻り値 string()      String1次元配列で手配コードの先頭n文字（重複なし）が入っている
 '''args
 '''strargDailyTanaCSVFullPath           デイリー棚卸のCSVファイルのフルパスを渡す。IEの解析が済むまではダイアログを表示し、選択する
-'''clsAdo4Digit                         この3個はインスタンスをプロシージャ間で共有し、コンストラクタの動作を少しでも軽量化したい
+'''longargDigitNum                      LeftN文字の文字数を設定、1以上
+'''clsAdonDigit                         この3個はインスタンスをプロシージャ間で共有し、コンストラクタの動作を少しでも軽量化したい
 '''clsINVDBdigit
 '''clsEnumDigit
-Public Function Return4digitTehaiCodeFromCSV(strargDailyTanaCSVFullPath As String, _
-ByRef clsAdo4Digit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEnumDigit As clsEnum) As String()
+Public Function ReturnNdigitTehaiCodeFromCSV(strargDailyTanaCSVFullPath As String, longargDigitNum As Long, _
+ByRef clsAdonDigit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEnumDigit As clsEnum) As String()
     On Error GoTo ErrorCatch
+    '桁数チェック
+    If longargDigitNum < 1 Then
+        '桁数が1未満
+        DebugMsgWithTime "ReturnNdigitTehaiCodeFromCSV: digit num under 1"
+        GoTo CloseAndExit
+        Exit Function
+    End If
     'CSVファイル名のチェック、しばらくはダイアログで選択してもらうことにする
     If strargDailyTanaCSVFullPath = "" Then
         '引数でCSVのファイル名が指定されなかった場合
         'カレントディレクトリをダウンロードディレクトリに移動する
-#If DebugDB Then
-        'ローカル試験用
-'        'カレントディレクトリをDBディレクトリにする
-'        Call ChCurrentDirW(clsAdo4Digit.DBPath)
-        'カレントディレクトリをダウンロードディレクトリに移動する
         Call ChCurrentDirW(GetDownloadPath)
-#Else
-        '本番環境用
-        'カレントディレクトリをダウンロードディレクトリに移動する
-        Call ChCurrentDirW(GetDownloadPath)
-#End If
         strargDailyTanaCSVFullPath = CStr(Application.GetOpenFilename("CSVファイル,*.csv", 1, "デイリー棚卸でダウンロードしたCSVファイルを選択して下さい"))
     End If
     'CSVファイルにフィルタ処理かけた後のファイル名とテーブル名を受け取る
@@ -536,37 +552,38 @@ ByRef clsAdo4Digit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEn
     Dim dicReplaceParm As Dictionary
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, arrstrFilterdFileandTableName(0, 1)
+    dicReplaceParm.Add 1, CStr(longargDigitNum)
     Dim sqlBC As clsSQLStringBuilder
     Set sqlBC = CreateclsSQLStringBuilder
     'SQL文作成
-    clsAdo4Digit.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_TEHAICODE_FIRST4_0TableName, dicReplaceParm)
+    clsAdonDigit.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_TEHAICODE_n_0TableName_1DigitNum, dicReplaceParm)
     'AdoのクラスのプロパティにCSVのパスとファイル名を設定
     Dim fso4Digit As FileSystemObject
     Set fso4Digit = New FileSystemObject
-    clsAdo4Digit.DBPath = fso4Digit.GetParentFolderName(arrstrFilterdFileandTableName(0, 0))
-    clsAdo4Digit.DBFileName = fso4Digit.GetFileName(arrstrFilterdFileandTableName(0, 0))
+    clsAdonDigit.DBPath = fso4Digit.GetParentFolderName(arrstrFilterdFileandTableName(0, 0))
+    clsAdonDigit.DBFileName = fso4Digit.GetFileName(arrstrFilterdFileandTableName(0, 0))
     'SQL実行
-    Call clsAdo4Digit.Do_SQL_with_NO_Transaction
-    If clsAdo4Digit.RecordCount <= 0 Then
+    Call clsAdonDigit.Do_SQL_with_NO_Transaction
+    If clsAdonDigit.RecordCount <= 0 Then
         '結果が0件だったにょ
-        DebugMsgWithTime "Return4digitTehaiCodeFromCSV: no entry found"
+        DebugMsgWithTime "ReturnNdigitTehaiCodeFromCSV: no entry found"
         GoTo CloseAndExit
         Exit Function
     End If
     Dim arrstr4Digit() As String
-    ReDim arrstr4Digit(clsAdo4Digit.RecordCount - 1)
-    clsAdo4Digit.RS.MoveFirst
+    ReDim arrstr4Digit(clsAdonDigit.RecordCount - 1)
+    clsAdonDigit.RS.MoveFirst
     Dim longArrayRowCounter As Long
     longArrayRowCounter = 0
-    Do Until clsAdo4Digit.RS.EOF = True
-        arrstr4Digit(longArrayRowCounter) = CStr(clsAdo4Digit.RS.Fields(0).Value)
-        clsAdo4Digit.RS.MoveNext
+    Do Until clsAdonDigit.RS.EOF = True
+        arrstr4Digit(longArrayRowCounter) = CStr(clsAdonDigit.RS.Fields(0).Value)
+        clsAdonDigit.RS.MoveNext
         longArrayRowCounter = longArrayRowCounter + 1
     Loop
-    Call clsAdo4Digit.CloseClassConnection
+    Call clsAdonDigit.CloseClassConnection
     '変換後のファイルを削除
     Kill arrstrFilterdFileandTableName(0, 0)
-    Return4digitTehaiCodeFromCSV = arrstr4Digit
+    ReturnNdigitTehaiCodeFromCSV = arrstr4Digit
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:

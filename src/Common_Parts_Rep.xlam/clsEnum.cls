@@ -22,6 +22,7 @@ Private dicCATMasterDetailField As Dictionary
 Private dicMasterDigitField As Dictionary
 Private dicCATTmpField As Dictionary
 Private dicINVMasterParts As Dictionary
+Private dicINVMasterTana As Dictionary
 Private dicSHZaikoParts As Dictionary
 Private Sub Class_Initialize()
     Call Initial_Valueset
@@ -223,7 +224,7 @@ Private Sub INV_Enum_Initialize()
     If dicINVMasterParts Is Nothing Then
         Set dicINVMasterParts = New Dictionary
     End If
-    dicINVMasterParts.Add Enum_INV_M_Parts.Table_Name_IMPrt, INV_CONST.T_INV_PARTS_MASTER
+    dicINVMasterParts.Add Enum_INV_M_Parts.Table_Name_IMPrt, INV_CONST.T_INV_M_PARTS
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_ID_IMPrt, INV_CONST.F_INV_TEHAI_ID
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_Code_IMPrt, INV_CONST.F_INV_TEHAI_TEXT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_IMPrt, INV_CONST.F_INV_MANEGE_SECTON
@@ -288,6 +289,22 @@ Private Sub INV_Enum_Initialize()
     dicSHZaikoParts.Add Enum_Sh_Zaiko.F_System_TanaNO_ShZ, INV_CONST.F_SH_ZAIKO_SYSTEM_TANA_NO
     dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Tana_Text_ShZ, INV_CONST.F_SH_ZAIKO_TANA_TEXT
     dicSHZaikoParts.Add Enum_Sh_Zaiko.F_Tehai_Code_ShZ, INV_CONST.F_SH_ZAIKO_TEHAI_TEXT
+''T_M_Tanaフィールド定義Enum
+'Public Enum Enum_INV_M_Tana
+'    F_INV_TANA_ID = 1
+'    F_INV_Tana_Local_Text = 2
+'    F_INV_Tana_System_Text = 3
+'    F_INV_TIET_Delivary = 4
+'    F_InputDate = 5
+'End Enum
+If dicINVMasterTana Is Nothing Then
+    Set dicINVMasterTana = New Dictionary
+End If
+dicINVMasterTana.Add Enum_INV_M_Tana.F_InputDate_IMT, PublicConst.INPUT_DATE
+dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TANA_ID_IMT, INV_CONST.F_INV_TANA_ID
+dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_Local_Text_IMT, INV_CONST.F_INV_TANA_LOCAL_TEXT
+dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_System_Text_IMT, INV_CONST.F_INV_TANA_SYSTEM_TEXT
+dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TIET_Delivary_IMT, INV_CONST.F_INV_TANA_TIET_DELIVARY
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String

@@ -27,7 +27,8 @@ Private isVisible As Boolean                                                'IE‰
 Private dicReturnHTMLDocs As Dictionary                                     'ŠeƒtƒŒ[ƒ€–ˆ‚ÉHTML Doument‚ğ“ü‚ê‚ékey‚ÍƒtƒŒ[ƒ€”Ô†(t001EEE),value‚ÍHTML Document
 Private tableRow As HTMLTableRow                                            'ƒe[ƒuƒ‹‚Ì<tr>‚Ì“à—eAsî•ñ
 Private tableData As HTMLTableCell                                          'ƒe[ƒuƒ‹‚Ì<td>‚Ì“à—eAŒÂ•Ê‚Ìƒf[ƒ^
-'ƒV[ƒg‘‚«o‚µ‚ÌÛ‚Ég—p‚·‚éƒƒ“ƒo•Ï”
+'Excel‚ÉŠÖ˜A‚·‚éƒƒ“ƒo•Ï”
+Private strPrefixStatusBar As String                                        'ƒXƒe[ƒ^ƒXƒo[‚É•\¦‚·‚é•¶š—ñ‚ÌƒvƒŒƒtƒBƒbƒNƒX
 Private longColumn As Long                                                  'ƒV[ƒg‘‚«o‚·Û‚Ì—ñ”Ô†
 Private longRow As Long                                                     'ƒV[ƒg‘‚«o‚·Û‚Ìs”Ô†
 '----------------------------------------------------------------------------------------------------------------
@@ -109,9 +110,27 @@ Property Get ResultHTMLDoc(Optional ByRef argstrURL As String = "") As Dictionar
     'ˆø”‚É—^‚¦‚ç‚ê‚½URL‚ğŒ³‚Éƒƒ“ƒo•Ï”‚ÌdicReturnHTMLDocs‚ğXV‚µ‚Ä‚İ‚é
     If dicReturnHTMLDocs Is Nothing Then
         Set dicReturnHTMLDocs = New Dictionary
+    Else
+        '‰Šú‰»‚³‚ê‚Ä‚¢‚½‚çŠù‘¶‚Ì“à—e‚ğÁ‹‚·‚é(ƒCƒ“ƒXƒ^ƒ“ƒXÄ—˜—p‚Å2T–ÚˆÈ~‚È‚Ç‚É‹N‚±‚éj
+        dicReturnHTMLDocs.RemoveAll
     End If
     SetHTMLDocbyURL (argstrURL)
     Set ResultHTMLDoc = dicReturnHTMLDocs
+End Property
+'PrefixStatusBar
+Property Let PrefixStatusBar(strargPrefix As String)
+    If Not strargPrefix = "" Then
+        'ˆø”‚ª‹ó‚¶‚á‚È‚¢‚Ì‚İƒƒ“ƒo•Ï”‚ÉƒZƒbƒg‚µ‚Ä‚â‚é
+        strPrefixStatusBar = strargPrefix
+    End If
+    Exit Property
+End Property
+Property Get PrefixStatusBar() As String
+    If Not strPrefixStatusBar = "" Then
+        'ƒƒ“ƒo•Ï”‚ª‹ó‚¶‚á‚È‚¢‚Ì‚İ•Ô‚·
+        PrefixStatusBar = strPrefixStatusBar
+    End If
+    Exit Property
 End Property
 'ƒRƒ“ƒXƒgƒ‰ƒNƒ^
 'ÀÛ‚Ìˆ—“à—e‚Íƒƒ\ƒbƒh‚É•ª—£‚·‚é
@@ -174,11 +193,11 @@ Public Function OpenIEwithURL(Optional strargUrl As String) As Boolean
     ieObject.Visible = isVisible
     ieObject.navigate strargUrl
     'eƒy[ƒW“Ç‚İ‚İŠ®—¹‚Ü‚Å‘Ò‹@‚·‚é
-    Application.StatusBar = "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹‘Ò‚¿"
+    Application.StatusBar = Me.PrefixStatusBar & "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹‘Ò‚¿"
     Do Until ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE
         DoEvents
     Loop
-    Application.StatusBar = "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹Bqƒy[ƒW“Ç‚İ‚İ‚É“ü‚è‚Ü‚·"
+    Application.StatusBar = Me.PrefixStatusBar & "TOPƒy[ƒW“Ç‚İ‚İŠ®—¹Bqƒy[ƒW“Ç‚İ‚İ‚É“ü‚è‚Ü‚·"
 End Function
 '''Author Daisuke_Oota
 '''--------------------------------------------------------------------------------------------------------------
@@ -209,7 +228,7 @@ Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
     'HTMLDocument‚Ì“Ç‚İ‚İŠ®—¹‚ğ‘Ò‚Á‚Ä‚©‚çAƒtƒŒ[ƒ€‚Ì—L–³‚É‚Â‚¢‚ÄŠm”F‚µ
     'ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚éê‡‚ÍAƒtƒŒ[ƒ€“à‚Ì“Ç‚İ‚İŠ®—¹‚à‘Ò‹@‚·‚é
     Call IsReadComp(topDoc)
-    Application.StatusBar = "TOPƒy[ƒW€”õŠ®—¹"
+    Application.StatusBar = Me.PrefixStatusBar & "TOPƒy[ƒW€”õŠ®—¹"
     '2021_11_18 Daisuke_oota
     '”FØƒ`ƒFƒbƒN
     '‚±‚±‚ÅAw’è‚³‚ê‚Ä‚¢‚½URL‚Æieobject‚ÌLocation‚ªˆá‚Á‚Ä‚¢‚½ê‡‚ÍAƒƒOƒCƒ“‰æ–Ê‚ÉƒŠƒ_ƒCƒŒƒNƒg‚³‚ê‚Ä‚é‚Æv‚¤‚Ì‚Å
@@ -260,7 +279,7 @@ Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef st
     End If
     If argHTMLDoc.frames.Length > 0 Then
         'ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚éê‡
-        Application.StatusBar = "ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚é‚Ì‚ÅƒtƒŒ[ƒ€‚Ì“Ç‚İ‚İŠ®—¹‘Ò‹@‚É“ü‚è‚Ü‚·B"
+        Application.StatusBar = Me.PrefixStatusBar & "ƒtƒŒ[ƒ€‚ª‘¶İ‚·‚é‚Ì‚ÅƒtƒŒ[ƒ€‚Ì“Ç‚İ‚İŠ®—¹‘Ò‹@‚É“ü‚è‚Ü‚·B"
         'ƒtƒŒ[ƒ€”•ªƒ‹[ƒv‚·‚é
         Dim intFrameCount As Integer
         Dim frameDoc As HTMLDocument
@@ -300,7 +319,7 @@ Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef st
             'Ÿ‚Ìƒ‹[ƒv‚Ì‚½‚ß‚É‰Šú‰»‚µ‚Ä‚â‚é
             Set frameDoc = Nothing
         Next intFrameCount
-        Application.StatusBar = "ƒtƒŒ[ƒ€“Ç‚İŠ®—¹"
+        Application.StatusBar = Me.PrefixStatusBar & "ƒtƒŒ[ƒ€“Ç‚İŠ®—¹"
     Else
         'ƒtƒŒ[ƒ€‚ª‘¶İ‚µ‚È‚¢ê‡
         'Å‰‚ÅƒgƒbƒvƒhƒLƒ…ƒƒ“ƒg‚ğ’Ç‰Á‚µ‚Ä‚é‚Ì‚Å¤‚±‚±‚Å‚Í‰½‚à‚µ‚È‚¢
@@ -321,7 +340,7 @@ Private Function IsReadComp(argHTMLDoc As HTMLDocument) As Boolean
             DoEvents
         Loop
     End If
-    Application.StatusBar = "“Ç‚İ‚İŠ®—¹"
+    Application.StatusBar = Me.PrefixStatusBar & "“Ç‚İ‚İŠ®—¹"
     IsReadComp = True
     Exit Function
 End Function
@@ -556,9 +575,9 @@ Private Function PressSave_NotificationBar(ByRef argUIAuto As CUIAutomation, ByV
     End If
     '•Û‘¶ƒ{ƒ^ƒ“‚ğ‰Ÿ‰º‚µ‚Ä‚İ‚é‚æ
     '‚±‚±‚ÅWindow•\¦‚³‚¹‚È‚¢‚Æ‚¤‚Ü‚­‚¢‚©‚È‚¢‚İ‚½‚¢EEE
-    Call MoveWindow(hIEWnd, -650, -300, 650, 200, 1)
-    sleep 100
     Call ShowWindow(hIEWnd, SW_RESTORE)
+    sleep 100
+    Call MoveWindow(hIEWnd, -650, 1200, 650, 200, 1)
     Dim iptn As IUIAutomationInvokePattern
     Set iptn = elmASaveSplitButton.GetCurrentPattern(UIA_InvokePatternId)
     iptn.Invoke
@@ -603,7 +622,7 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
     Dim iptn As IUIAutomationInvokePattern
     Set iptn = elmSaveAsDropDownButton.GetCurrentPattern(UIA_InvokePatternId)
     'ƒƒjƒ…[ƒEƒBƒ“ƒhƒEiƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[j‚Ìæ“¾
-    Application.StatusBar = "ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[æ“¾"
+    Application.StatusBar = Me.PrefixStatusBar & "ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[æ“¾"
     Dim elmSaveMenyu As IUIAutomationElement
     Do
         'ƒhƒƒbƒvƒ_ƒEƒ“ƒ{ƒ^ƒ“.click()
@@ -644,7 +663,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
     Dim dateStart As Date
     'ˆ—ŠJnŠÔ‚ğæ“¾
     dateStart = Now()
-    Application.StatusBar = "’Ê’mƒo[æ“¾’†"
+    Application.StatusBar = Me.PrefixStatusBar & "’Ê’mƒo[æ“¾’†"
     On Error GoTo ErrorCatch
     Do
         DoEvents
@@ -666,7 +685,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
     Loop Until hWndNotification Or hWndDLDialog
     Call ShowWindow(hIEWnd, Common_Parts_Rep.modWinAPI.SW_MINIMIZE)
     '’Ê’mƒo[‚ª‰Â‹ó‘Ô‚É‚È‚é‚Ü‚Å‘Ò‹@i‚±‚ê‚ğ‚â‚ç‚È‚¢‚Æ‘€ì‚É¸”s‚·‚é‚±‚Æ‚ª‚ ‚éEEE‚ç‚µ‚¢j
-    Application.StatusBar = "’Ê’mƒo[€”õ’†"
+    Application.StatusBar = Me.PrefixStatusBar & "’Ê’mƒo[€”õ’†"
     Do
         DoEvents
         sleep (SLEEP_DEFAULT_MILLISEC)
@@ -678,7 +697,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
         End If
     Loop Until IsWindowVisible(hWndNotification)
     Debug.Print Second(Now() - dateStart) & " •b‚Å’Ê’mƒo[æ“¾Š®—¹"
-'    Application.StatusBar = "•Û‘¶ƒ{ƒ^ƒ“æ“¾’†"
+'    Application.StatusBar = me.PrefixStatusBar & "•Û‘¶ƒ{ƒ^ƒ“æ“¾’†"
     'ƒnƒ“ƒhƒ‹‚æ‚èNotificationBar‚ÌIUIAutomationElement‚ğæ“¾
     Dim elmNotificationBar As IUIAutomationElement
     Set elmNotificationBar = argUIAuto.ElementFromHandle(ByVal hWndNotification)
@@ -710,7 +729,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
         Exit Function
     End If
     '[–¼‘O‚ğ•t‚¯‚Ä•Û‘¶]ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‚Ìæ“¾
-    Application.StatusBar = "–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‘€ì’†"
+    Application.StatusBar = Me.PrefixStatusBar & "–¼‘O‚ğ•t‚¯‚Ä•Û‘¶ƒ_ƒCƒAƒƒOƒ{ƒbƒNƒX‘€ì’†"
     On Error GoTo ErrorCatch
     Dim elmSaveAsDialog As IUIAutomationElement
     Do
@@ -744,7 +763,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
         'Å¬‰»‚µ‚Ä‚İ‚é
         Call ShowWindow(hWndSaveAsDialog, SW_MINIMIZE)
     End If
-    Application.StatusBar = "•Û‘¶ˆ—’†"
+    Application.StatusBar = Me.PrefixStatusBar & "•Û‘¶ˆ—’†"
     '[•Û‘¶(S)]ƒ{ƒ^ƒ“æ“¾
     Dim elmSaveButton As IUIAutomationElement
     Do
@@ -772,7 +791,7 @@ End Function
 '''–ß‚è’l string ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‚µ‚½ƒtƒ@ƒCƒ‹–¼‚Ì‚İ
 Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal hIEWnd As LongPtr) As String
     On Error GoTo ErrorCatch
-    Application.StatusBar = "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿"
+    Application.StatusBar = Me.PrefixStatusBar & "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿"
     '’Ê’mƒo[‚ğæ“¾‚·‚é
     Dim hWndNotification As LongPtr
     'ˆ—ŠJnŠÔ‚ğæ“¾
@@ -813,7 +832,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
                                                 UIA_TextControlTypeId)
         DoEvents
         sleep (SLEEP_DEFAULT_MILLISEC)
-        Application.StatusBar = "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿ " & Second(Now() - dateStart) & " •bŒo‰ß..."
+        Application.StatusBar = Me.PrefixStatusBar & "ƒ_ƒEƒ“ƒ[ƒhŠ®—¹‘Ò‚¿ " & Second(Now() - dateStart) & " •bŒo‰ß..."
     Loop While elmNotificationText Is Nothing
     '’Ê’mƒo[‚ÌƒeƒLƒXƒg‚Ì“à—e‚ğæ“¾‚µ‚Ä‚İ‚é
     Dim vptnNotificationText As IUIAutomationValuePattern

@@ -230,6 +230,12 @@ Private Sub Finalize()
     'Patrameters
     Set adoParameters = Nothing
 End Sub
+'''DBPathとDBFilenameをクラスデフォルトの値に設定する
+'''arg 無し
+Public Sub SetDBPathandFilenameDefault()
+    Me.DBPath = constDatabasePath
+    Me.DBFileName = constDBFILENAME
+End Sub
 '''SQLをトランザクションなしで実行する
 '''
 Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String) As Boolean

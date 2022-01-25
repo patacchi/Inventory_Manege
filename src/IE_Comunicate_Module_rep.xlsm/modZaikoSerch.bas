@@ -47,7 +47,7 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
     Set dicReturnHTMLDoc = clsGetieZaikoSerch.ResultHTMLDoc
     If Err.Number <> 0 Then
         'エラー発生してたらとりあえずここに来てみる
-        DebugMsgWithTime "IETest code: " & Err.Number & " Description: " & Err.Description
+        DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & Err.Number & " Description: " & Err.Description
     End If
     On Error GoTo ErrorCatch
     '検索する手配コードをセットしてやる
@@ -112,17 +112,23 @@ ErrorCatch:
 End Function
 '''Author Daisuke_Oota
 '''GetIEクラスを引数として、在庫検索の手配コードに指定の文字列をセットする
-'''
+'''args
 Private Sub SetZaikoSerch_TehaiCode(ByRef clsargIE As clsGetIE, strargTeheaiCode As String)
+    On Error GoTo ErrorCatch
     If strargTeheaiCode = "" Then
         Exit Sub
     End If
+    'IEインスタンス（在庫検索ページ）の管理課に対して「W」を設定してやる
+    '現状 Index = 11 が MSブ W なのでそこを選択してやる、画面上の表示は変わっていないが、データ上は反映されている模様
+    clsargIE.IEInstance.document.frames(1).document.frames(0).document.forms(0).Item(ZAIKO_SERTH_KANRI_KA_INPUT_BOX_NAME).selectedIndex = 11
     'IEのインスタンスに対して在庫検索の手配コードを設定してやる
     clsargIE.IEInstance.document.frames(1).document.frames(0).document.forms(0).Item(ZAIKO_SERCH_TEHAI_CODE_INPUT_BOX_NAME).Value = strargTeheaiCode
-    '試験で表示させてみる
-    Dim longDebugFrag As Long
-    longDebugFrag = longDebugFrag Or DEBUG_SHOW_IE
-    If longDebugFrag And DEBUG_SHOW_IE Then
-        clsargIE.IEInstance.Visible = True
-    End If
+#If DebugShowIE Then
+    '条件付きコンパイル引数で表示する設定になっていたら表示してやる
+    clsargIE.IEInstance.Visible = True
+#End If
+Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "SetZaikoSerch_TehaiCode: " & Err.Number & " Description: " & Err.Description
+    Exit Sub
 End Sub

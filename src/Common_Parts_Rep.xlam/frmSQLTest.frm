@@ -80,7 +80,7 @@ Private Sub btnSingleTest_Click()
     Set clsEnumSingle = CreateclsEnum
     '手配コード最初4桁取得テスト
     Dim arrstrResult() As String
-    arrstrResult = InvDBTest.Return4digitTehaiCodeFromCSV("", adoSingle, InvDBTest, clsEnumSingle)
+    arrstrResult = InvDBTest.ReturnNdigitTehaiCodeFromCSV("", 2, adoSingle, InvDBTest, clsEnumSingle)
     MsgBox "先頭4文字の種類は: " & CStr(UBound(arrstrResult) + 1)
 '    'Select INTO テスト
 '    Dim adoSingle As clsADOHandle

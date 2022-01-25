@@ -103,11 +103,12 @@ Public Sub btnZaikoSerch_Click()
 #End If
 End Sub
 '''デイリー棚卸CSVからDBに登録する
-Public Sub RegistDBbyDailyTanaCSV()
+'''戻り値 long 処理したファイルの総数
+Public Function RegistDBbyDailyTanaCSV() As Long
 #If DebugDB Then
     MsgBox "DebugDB = 1"
 #End If
-    '棚卸CSVを指定し、手配コード先頭4文字のリストを受け取る
+    '棚卸CSVを指定し、手配コード先頭n文字のリストを受け取る
     '当面の間はCSVファイルを手動で選択する
     Dim arrstrTeheiCode4Digit() As String
     Dim clsINVDBCsv As clsINVDB
@@ -119,27 +120,41 @@ Public Sub RegistDBbyDailyTanaCSV()
     Set clsEnumCSV = CreateclsEnum
     Dim clsGetIECSV As clsGetIE
     Set clsGetIECSV = New clsGetIE
-    arrstrTeheiCode4Digit = clsINVDBCsv.Return4digitTehaiCodeFromCSV("", clsADOCsv, clsINVDBCsv, clsEnumCSV)
+    '先頭n文字のリスト取得
+    arrstrTeheiCode4Digit = clsINVDBCsv.ReturnNdigitTehaiCodeFromCSV("", 1, clsADOCsv, clsINVDBCsv, clsEnumCSV)
     If Not IsRedim(arrstrTeheiCode4Digit) Then
         '初期化されていない配列が帰ってきた
         DebugMsgWithTime "RegistDBbyDailyTanaCSV: Return tehai 4digit array not initialized"
         GoTo CloseAndExit
-        Exit Sub
+        Exit Function
     End If
     Dim longArrayRowCounter As Long
     Dim arrstrDownloadFileList() As String
     ReDim arrstrDownloadFileList(UBound(arrstrTeheiCode4Digit))
     For longArrayRowCounter = 0 To UBound(arrstrTeheiCode4Digit)
-        '先頭4文字の手配コードについて在庫情報シートをダウンロードし、ファイル名を配列に格納する
+        'StatusBarのプレフィックスに作業中ファイルの数を表示してやる
+        clsGetIECSV.PrefixStatusBar = "残りファイル数: " & CStr(longArrayRowCounter + 1) & " / " & CStr(UBound(arrstrTeheiCode4Digit) + 1)
+        '先頭2文字の手配コードについて在庫情報シートをダウンロードし、ファイル名を配列に格納する
         arrstrDownloadFileList(longArrayRowCounter) = ZaikoSerchbyTehaiCode(arrstrTeheiCode4Digit(longArrayRowCounter), clsGetIECSV)
+        'DLしたファイルをDBに登録する
+        Dim longAffectedRows As Long
+        longAffectedRows = clsINVDBCsv.UpsertINVPartsMasterfromZaikoSH(arrstrDownloadFileList(longArrayRowCounter), clsINVDBCsv, clsADOCsv, clsEnumCSV)
     Next longArrayRowCounter
+    '処理したファイルの総数を返す
+    RegistDBbyDailyTanaCSV = UBound(arrstrTeheiCode4Digit) + 1
+'    MsgBox "ファイル総数は: " & CStr(UBound(arrstrDownloadFileList) + 1) & " 個です"
     GoTo CloseAndExit
+    Exit Function
 CloseAndExit:
     If Not clsADOCsv Is Nothing Then
         clsADOCsv.CloseClassConnection
         Set clsADOCsv = Nothing
     End If
+    If Not clsGetIECSV Is Nothing Then
+        'GetIE
+        Set clsGetIECSV = Nothing
+    End If
     Set clsINVDBCsv = Nothing
     Set clsEnumCSV = Nothing
-    Exit Sub
-End Sub
+    Exit Function
+End Function
