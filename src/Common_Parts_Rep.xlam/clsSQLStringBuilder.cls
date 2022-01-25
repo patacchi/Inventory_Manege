@@ -111,4 +111,25 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     Exit Function
 ErrorCatch:
     DebugMsgWithTime "addQuote Error code: " & Err.Number & "Description: " & Err.Description
+End Function
+'''INVPartMasterテーブルと対応する在庫情報シートのフィールド名から UPDATE の SET パラメータや WHERE パラメータを作成する
+'''対応するフィールド名を = や <> で連結したStringを返す
+'''各フィールド名の前には、プレフィックスとしてテーブル名の短縮名エイリアスがつく
+'''戻り値 String  ex) "TDBPrts.F_INV_Tehai_Text = TTmp.手配コード,TDBPrts.F_INV_Stock_Amount = TTmp.在庫数量・・・・"
+'''args
+'''PartsPrefix          PartsMasterのフィールドの前に付くプレフィックス
+'''ZaikoSHPrefix        シートフィールド名の前につくプレフィックス、普通はTTmpになる
+'''FieldCondition       フィールド間をつなぐ文字列の列挙隊の数値
+'''clsEnumCondition     コンストラクタ動作軽量化のためのインスタンス共有
+Public Function ReturnArrayINVPartsandZaikoSHFieldCondition(PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
+ByRef clsEnumCondition As clsEnum) As String
+    'クラス変数チェック
+    If clsEnumCondition Is Nothing Then
+        'Enumが初期化されてなかった
+        DebugMsgWithTime "ReturnArrayINVPartsandZaikoSHFieldCondition: Warning!! Enum instance not initialized.will delay..."
+        Set clsEnumCondition = CreateclsEnum
+    End If
+    'まずはプレフィックスが付かないフィールド一覧を受け取る
+    Dim arrstrNormalFields() As String
+    arrstrNormalFields = clsEnumCondition.GetZaikoFieldNameArraySHandDB
 End Function

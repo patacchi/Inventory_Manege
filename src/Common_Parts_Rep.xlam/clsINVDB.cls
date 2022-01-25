@@ -373,7 +373,7 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     strFilterdZaikoSh = clsINVDBUpsert.GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME)
     '処理後に初期化されていない配列が帰ってきたら、在庫情報シートが存在しない可能性が高いので処理を中断する
     If Not IsRedim(strFilterdZaikoSh) Then
-        DebugMsgWithTime "UpserINVPartsMaster: not found zako_info sheets origin file: " & strargZaikoSHFullPath
+        DebugMsgWithTime "UpserINVPartsMaster: not found zaiko_info sheets origin file: " & strargZaikoSHFullPath
         UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
     End If
@@ -392,16 +392,22 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     End If
     'TempTableから本番テーブルに登録する
     'まずは棚番マスターから
+    'DBPathを初期値に戻す
+    clsADOUpsert.SetDBPathandFilenameDefault
     'SQL作成
     '置換用dic
     Dim dicReplaceParam As Dictionary
     Set dicReplaceParam = New Dictionary
-    dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME)
-    dicReplaceParam.Add 1, sqlBC.addQuote(GetLocalTimeWithMilliSec)
     Dim sqlBC As clsSQLStringBuilder
     Set sqlBC = CreateclsSQLStringBuilder
+    dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME)
+    dicReplaceParam.Add 1, sqlBC.addQuote(GetLocalTimeWithMilliSec)
     clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
     Call clsADOUpsert.Do_SQL_with_NO_Transaction
+    '次にPartsMasterを更新する
+    'Setの後の文字列を取得
+    Dim strSETExp As String
+    strSETExp = sqlBC.ReturnArrayINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, clsEnumUpsert)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description

@@ -24,6 +24,8 @@ Private dicCATTmpField As Dictionary
 Private dicINVMasterParts As Dictionary
 Private dicINVMasterTana As Dictionary
 Private dicSHZaikoParts As Dictionary
+Private dicSQLFieldCondition As Dictionary
+Private dicSQLINVAlias As Dictionary
 Private Sub Class_Initialize()
     Call Initial_Valueset
 End Sub
@@ -48,6 +50,16 @@ Private Sub Initial_Valueset()
     dicDBFileExetension.Add DB_file_exetension.xlsb_dext, PublicConst.DB_FILE_EXETENSION_XLSB
     dicDBFileExetension.Add DB_file_exetension.xls_dext, PublicConst.DB_FILE_EXETENSION_XLS
     dicDBFileExetension.Add DB_file_exetension.csv_dext, PublicConst.DB_FILE_EXETENSION_CSV
+''抽出条件文字列Enum
+'Public Enum_SQL_F_Condition
+'    Equal_sfc = 1
+'    NOT_Equal_sfc = 2
+'End Enum
+    If dicSQLFieldCondition Is Nothing Then
+        Set dicSQLFieldCondition = New Dictionary
+    End If
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Equal_sfc, SQL_F_EQUAL
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.NOT_Equal_sfc, SQL_F_NOT_EQUAL
 'Public Enum ACCDB_Data_Type
 '    [Text] = 1
 '    [INTEGER] = 2
@@ -95,7 +107,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATHeaderField.Add Enum_CAT_Header.F_DescriptionTable_chd, CAT_CONST.F_CAT_DESCRIPTIONTABLE
     dicCATHeaderField.Add Enum_CAT_Header.F_DetailTable_chd, CAT_CONST.F_CAT_DETAILTABLE
     dicCATHeaderField.Add Enum_CAT_Header.F_SpecialTable_chd, CAT_CONST.F_CAT_SPECIALTABLE
-    dicCATHeaderField.Add Enum_CAT_Header.F_InputDate_chd, PublicConst.INPUT_DATE
+'    dicCATHeaderField.Add Enum_CAT_Header.F_InputDate_chd, PublicConst.INPUT_DATE
 ''DescriptionテーブルのEnum
 'Public Enum Enum_CAT_Description
 '    T_Name_0_Kishu = 0          'インデックス0（機種名に置換が必要）Descriptionテーブル名
@@ -109,7 +121,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATDescriptionField.Add Enum_CAT_Description.T_Name_0_Kishu_cdc, CAT_CONST.T_CAT_DESCRIPTION_0kishu
     dicCATDescriptionField.Add Enum_CAT_Description.F_Digit_Row_cdc, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATDescriptionField.Add Enum_CAT_Description.F_Descriptoin_ID_cdc, CAT_CONST.F_CAT_DESCRIPTION_ID
-    dicCATDescriptionField.Add Enum_CAT_Description.F_InputDate_cdc, PublicConst.INPUT_DATE
+'    dicCATDescriptionField.Add Enum_CAT_Description.F_InputDate_cdc, PublicConst.INPUT_DATE
 ''DetailテーブルのEnum
 'Public Enum Enum_CAT_Detail
 '    T_Name_0_Kishu = 0          'Detaiテーブル名 0 （機種名置換）が必要
@@ -125,7 +137,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATDetailField.Add Enum_CAT_Detail.F_Digit_Row_cdt, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATDetailField.Add Enum_CAT_Detail.F_Chr_cdt, CAT_CONST.F_CAT_CHR
     dicCATDetailField.Add Enum_CAT_Detail.F_Detail_ID_cdt, CAT_CONST.F_CAT_DETAIL_ID
-    dicCATDetailField.Add Enum_CAT_Detail.F_InputDate_cdt, PublicConst.INPUT_DATE
+'    dicCATDetailField.Add Enum_CAT_Detail.F_InputDate_cdt, PublicConst.INPUT_DATE
 ''SpecialテーブルのEnum
 'Public Enum Enum_CAT_Special
 '    T_Name_0_Kishu = 0          'Specialのテーブル名、{0}を機種名置換必要
@@ -139,7 +151,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATSpecialField.Add Enum_CAT_Special.T_Name_0_Kishu_csp, CAT_CONST.T_CAT_SPECIAL_0kishu
     dicCATSpecialField.Add Enum_CAT_Special.F_Condition_csp, CAT_CONST.F_CAT_CONDITION
     dicCATSpecialField.Add Enum_CAT_Special.F_Execute_csp, CAT_CONST.F_CAT_EXECUTE
-    dicCATSpecialField.Add Enum_CAT_Special.F_InputDate_csp, PublicConst.INPUT_DATE
+'    dicCATSpecialField.Add Enum_CAT_Special.F_InputDate_csp, PublicConst.INPUT_DATE
 ''DescriptionマスターテーブルのEnum
 'Public Enum Enum_CAT_M_Description
 '    T_Name = 0                  'Descriptionマスターのテーブル名
@@ -155,7 +167,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_ID_cmdc, CAT_CONST.F_CAT_DESCRIPTION_ID
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Digit_Row_cmdc, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_Description_Text_cmdc, CAT_CONST.F_CAT_DESCRIPTION_TEXT
-    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_InputDate_cmdc, PublicConst.INPUT_DATE
+'    dicCATMasterDescriptionField.Add Enum_CAT_M_Description.F_InputDate_cmdc, PublicConst.INPUT_DATE
 ''DetailマスターテーブルのEnum
 'Public Enum Enum_CAT_M_Detail
 '    T_Name = 0                  'Detailマスターのテーブル名
@@ -173,7 +185,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Digit_Row_cmdt, CAT_CONST.F_CAT_DIGIT_ROW
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Chr_cmdt, CAT_CONST.F_CAT_CHR
     dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_Detail_Text_cmdt, CAT_CONST.F_CAT_DETAIL_TEXT
-    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_InputDate_cmdt, PublicConst.INPUT_DATE
+'    dicCATMasterDetailField.Add Enum_CAT_M_Detail.F_InputDate_cmdt, PublicConst.INPUT_DATE
 ''桁数マスターテーブルのEnum
 'Public Enum Enum_CAT_M_Digit
 '    T_Name = 0                  '桁数マスターテーブルの名前
@@ -244,7 +256,7 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Description_IMPrt, INV_CONST.F_INV_SYSTEM_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Local_Description_IMPrt, INV_CONST.F_INV_LOCAL_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt, INV_CONST.F_INV_MANEGE_SECTION_SUB
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
+'    dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
 ''在庫情報シートのフィールド名（漢字）
 ''大部分をINV_Master_PartsのEnumと共有する
 ''棚番のみは共有できないので、独自に数字を振る
@@ -300,11 +312,25 @@ Private Sub INV_Enum_Initialize()
 If dicINVMasterTana Is Nothing Then
     Set dicINVMasterTana = New Dictionary
 End If
-dicINVMasterTana.Add Enum_INV_M_Tana.F_InputDate_IMT, PublicConst.INPUT_DATE
-dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TANA_ID_IMT, INV_CONST.F_INV_TANA_ID
-dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_Local_Text_IMT, INV_CONST.F_INV_TANA_LOCAL_TEXT
-dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_System_Text_IMT, INV_CONST.F_INV_TANA_SYSTEM_TEXT
-dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TIET_Delivary_IMT, INV_CONST.F_INV_TANA_TIET_DELIVARY
+'dicINVMasterTana.Add Enum_INV_M_Tana.F_InputDate_IMT, PublicConst.INPUT_DATE
+    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TANA_ID_IMT, INV_CONST.F_INV_TANA_ID
+    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_Local_Text_IMT, INV_CONST.F_INV_TANA_LOCAL_TEXT
+    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_System_Text_IMT, INV_CONST.F_INV_TANA_SYSTEM_TEXT
+    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TIET_Delivary_IMT, INV_CONST.F_INV_TANA_TIET_DELIVARY
+''SQLAliasEnum
+'Public Enum Enum_SQL_INV_Alias
+'    INVDB_Parts_Alias_sia = 1
+'    INVDB_Tana_Alias_sia = 2
+'    INVDB_Tmp_Alias_sia = 3
+'    ZaikoSH_Alias_sia = 4
+'End Enum
+    If dicSQLINVAlias Is Nothing Then
+        Set dicSQLINVAlias = New Dictionary
+    End If
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Parts_Alias_sia, INV_CONST.SQL_ALIAS_T_INVDB_Parts
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tana_Alias_sia, INV_CONST.SQL_ALIAS_T_INVDB_Tana
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tmp_Alias_sia, INV_CONST.SQL_ALIAS_T_TEMP
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.ZaikoSH_Alias_sia, SQL_ALIAS_T_SH_ZAIKO
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
@@ -329,6 +355,11 @@ Property Get DBFileExetension_Dic() As Dictionary
         '作成したDictionaryを戻り値とする
         Set DBFileExetension_Dic = dicLocalResult
     End If
+    Exit Property
+End Property
+'sqlFieldCondition
+Property Get SQLFieldCondition(SQLCondition As Enum_SQL_F_Condition) As String
+    SQLFieldCondition = dicSQLFieldCondition(SQLCondition)
     Exit Property
 End Property
 'AccdbDataType
@@ -389,45 +420,73 @@ Property Get INVMasterParts(MasterPartsField As Enum_INV_M_Parts) As String
     INVMasterParts = dicINVMasterParts(MasterPartsField)
     Exit Property
 End Property
+'INVMasterTana
+Property Get INVMasterTana(MasterTana As Enum_INV_M_Tana) As String
+    INVMasterTana = dicINVMasterTana(MasterTana)
+    Exit Property
+End Property
+'SqlINV_Alias
+Property Get SQL_INV_Alias(SqlAlias As Enum_SQL_INV_Alias) As String
+    SQL_INV_Alias = dicSQLINVAlias(SqlAlias)
+    Exit Property
+End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'プロシージャー
 '''Author Daisuke Oota 2021_01_06
 '''在庫情報シートとT_INV_Master_Partsの共通フィールドをStringの配列にして返す
 '''戻り値 StringArray(n,1),nは共通フィールド数、2次元目は、0がDBフィールド、1がシートのフィールド名
-'''シートdiにしか無い値（手配コードとか）は2次元目は初期値になるので、受け取り側で判断する
+'''xシートdiにしか無い値（手配コードとか）は2次元目は初期値になるので、受け取り側で判断する
+'''共通項目のみ配列に入れるよう変更 2022_01_25 Patacchi
 '''ex)(0,0) F_INV_Tehai_Code (0,1) 手配コード
-Public Function GetZaikoFieldNameArrayShandDB() As String()
+Public Function GetZaikoFieldNameArraySHandDB() As String()
     If dicINVMasterParts Is Nothing Or dicSHZaikoParts Is Nothing Then
         'DB側のdicかシート側のdicがNothingだった
         '何もせずに抜ける
         DebugMsgWithTime "GetZaikoFieldArray: member dictionary is nothing"
         Exit Function
     End If
-    Dim arrZaikoField() As String
-    'String配列をシートdicの要素数で初期化
-    ReDim arrZaikoField(dicSHZaikoParts.Count - 1, 1)
     'シートdicでループ処理
-    Dim intArrRowCounter As Integer
-    intArrRowCounter = 0
+'    Dim intArrRowCounter As Integer
+'    intArrRowCounter = 0
+    '結果を一旦Dictionaryに入れて、後で配列に展開する（片方しかデータなかった時のRedimが最終次元しか効かないため）
+    'KeyにMarterPartsを、ValueにSHZaikoを入れる
     Dim varshKey As Variant
+    Dim dicResult As Dictionary
+    Set dicResult = New Dictionary
     For Each varshKey In dicSHZaikoParts
         If dicINVMasterParts.Exists(varshKey) Then
             'シートdicと共通のKeyがDBdicにも存在する時
-            'シートdicとDBdicそれぞれの値をstring配列に入れてやる
+            'シートdicとDBdicそれぞれの値を結果dictionaryに入れてやる
+            dicResult.Add CStr(dicINVMasterParts(varshKey)), CStr(dicSHZaikoParts(varshKey))
             'DBフィールド
-            arrZaikoField(intArrRowCounter, 0) = CStr(dicINVMasterParts(varshKey))
+'            arrstrZaikoField(intArrRowCounter, 0) = CStr(dicINVMasterParts(varshKey))
             'シートフィールド
-            arrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
+'            arrstrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
+            'StringArray行カウンターをインクリメント
+'            intArrRowCounter = intArrRowCounter + 1
         Else
             'シートdicにしかkeyが存在しない場合
             '2次元目の1にシートdicのValueのみを入れてやる、2次元目の0は初期値
             'シートフィールドのみ
-            arrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
+            '共通項目のみ返すよう変更
+'            arrstrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
         End If
-        'StringArray行カウンターをインクリメント
-        intArrRowCounter = intArrRowCounter + 1
+    Next varshKey
+    '結果を配列に格納しなおす
+    Dim arrstrZaikoField() As String
+    'String配列をシートdicの要素数で初期化
+    ReDim arrstrZaikoField(dicResult.Count - 1, 1)
+    Dim intArrayRowCounter
+    intArrayRowCounter = 0
+    For Each varshKey In dicResult
+        'DBフィールド
+        arrstrZaikoField(intArrayRowCounter, 0) = CStr(varshKey)
+        'シートフィールド
+        arrstrZaikoField(intArrayRowCounter, 1) = CStr(dicResult(varshKey))
+        '行カウンタをインクリメント
+        intArrayRowCounter = intArrayRowCounter + 1
     Next varshKey
     '結果を返す
-    GetZaikoFieldNameArrayShandDB = arrZaikoField
+    GetZaikoFieldNameArraySHandDB = arrstrZaikoField
     Exit Function
 End Function

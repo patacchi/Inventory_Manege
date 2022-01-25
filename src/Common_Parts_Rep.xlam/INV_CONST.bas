@@ -49,20 +49,6 @@ Public Enum Enum_INV_M_Parts
     F_Manege_Section_Sub_IMPrt = 20
     F_InputDate_IMPrt = 21
 End Enum
-'棚番マスター
-Public Const T_INV_M_TANA As String = "T_INV_M_Tana"                            '棚番マスターのテーブル名
-'フィールド名定数
-Public Const F_INV_TANA_LOCAL_TEXT As String = "F_INV_Tana_Local_Text"              '表示用などローカルで使用する棚番名 K05G B01
-Public Const F_INV_TANA_SYSTEM_TEXT As String = "F_INV_Tana_System_Text"            'システム側の棚番
-Public Const F_INV_TANA_TIET_DELIVARY As String = "F_INV_TIET_Delivery"                  'TIET出庫の棚かどうか
-'T_M_Tanaフィールド定義Enum
-Public Enum Enum_INV_M_Tana
-    F_INV_TANA_ID_IMT = 1
-    F_INV_Tana_Local_Text_IMT = 2
-    F_INV_Tana_System_Text_IMT = 3
-    F_INV_TIET_Delivary_IMT = 4
-    F_InputDate_IMT = 5
-End Enum
 '在庫情報シートに関する定数
 'Excelファイル名は日付をシリアル値とした文字列を付加するので、毎回変動する
 Public Const INV_SH_ZAIKO_NAME As String = "在庫情報"                       '在庫検索でダウンロードできるExcelファイルの在庫情報シート名
@@ -106,6 +92,20 @@ Public Enum Enum_Sh_Zaiko
     '棚番テキストのみこちらで独自に設定する100番台～
     F_Tana_Text_ShZ = 101
 End Enum
+'棚番マスター
+Public Const T_INV_M_TANA As String = "T_INV_M_Tana"                            '棚番マスターのテーブル名
+'フィールド名定数
+Public Const F_INV_TANA_LOCAL_TEXT As String = "F_INV_Tana_Local_Text"              '表示用などローカルで使用する棚番名 K05G B01
+Public Const F_INV_TANA_SYSTEM_TEXT As String = "F_INV_Tana_System_Text"            'システム側の棚番
+Public Const F_INV_TANA_TIET_DELIVARY As String = "F_INV_TIET_Delivery"                  'TIET出庫の棚かどうか
+'T_M_Tanaフィールド定義Enum
+Public Enum Enum_INV_M_Tana
+    F_INV_TANA_ID_IMT = 1
+    F_INV_Tana_Local_Text_IMT = 2
+    F_INV_Tana_System_Text_IMT = 3
+    F_INV_TIET_Delivary_IMT = 4
+    F_InputDate_IMT = 5
+End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'SQL定義
 '手配コード先頭n文字リスト取得
@@ -115,6 +115,13 @@ Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                      
 Public Const SQL_ALIAS_T_INVDB_Tana As String = "TDBTana"                                           'INV_M_Tanaテーブル別名定義
 Public Const SQL_ALIAS_T_TEMP As String = "TTmp"                                                    '一時テーブル別名定義
 Public Const SQL_ALIAS_T_SH_ZAIKO As String = "TSHZaiko"                                            '在庫情報シートテーブル名別名定義
+'SQLAliasEnum
+Public Enum Enum_SQL_INV_Alias
+    INVDB_Parts_Alias_sia = 1
+    INVDB_Tana_Alias_sia = 2
+    INVDB_Tmp_Alias_sia = 3
+    ZaikoSH_Alias_sia = 4
+End Enum
 Public Const SQL_AFTER_IN_ACCDB_0FullPath As String = "[MS ACCESS;DATABASE={0};]"                   'Select From の IN""句の後に来る文字列accdb
 Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE={0};HDR=Yes;]"     'In xlsm,xlam
 Public Const SQL_AFTER_IN_XLSB_0FullPath As String = "[Excel 12.0;DATABASE={0};HDR=Yes;]"           'IN xlsb

@@ -19,6 +19,14 @@ Public Enum DB_file_exetension
     xls_dext = 6
     csv_dext = 7
 End Enum
+'フィールド抽出条件文字列(SQL)
+Public Const SQL_F_EQUAL As String = " = "                      'SQLのWHERE条件式などでフィールド間を連結する文字列 =
+Public Const SQL_F_NOT_EQUAL As String = " <> "                 '<>
+'抽出条件文字列Enum
+Public Enum Enum_SQL_F_Condition
+    Equal_sfc = 1
+    NOT_Equal_sfc = 2
+End Enum
 '各テーブルにはDefaultとしてInputDateが入る
 Public Const INPUT_DATE As String = "InputDate"
 'Tempデータベース、Excelファイルは一時テーブルに格納した方が上手くいくみたいなので、とりあえず一時テーブルのみを置くデータベースファイル
