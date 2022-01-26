@@ -390,6 +390,10 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
         GoTo CloseAndExit
         Exit Function
     End If
+    '棚番マスターに登録する際に、SELECT DISTINCT ロケーション しないと重複してる時にそのまま登録してしまう、が
+    'DISTINCT等の集計を行ったデータを元にすると、更新可能なクエリであることが・・・と出てしまうので
+    'DISTINCTの結果を一旦テーブルに吐き出さないとダメらしい・・・なんてこと
+    Call SELECT_ToTempTable(INV_CONST.F_SH_ZAIKO_TANA_TEXT, clsADOUpsert)
     'TempTableから本番テーブルに登録する
     'まずは棚番マスターから
     'DBPathを初期値に戻す
@@ -407,7 +411,9 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     '次にPartsMasterを更新する
     'Setの後の文字列を取得
     Dim strSETExp As String
-    strSETExp = sqlBC.ReturnArrayINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, clsEnumUpsert)
+    strSETExp = sqlBC.ReturnINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    Dim strWhereExp As String
+    strWhereExp = sqlBC.ReturnINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumUpsert)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description
@@ -477,6 +483,46 @@ CloseAndExit:
     Set dicReplaceParm = Nothing
     Exit Function
 End Function
+'''Select Distinct した結果を一時テーブルに流し込むメソッド
+'''DBPathはメソッド内で変更した後、デフォルトに戻してしまうので、後でADOHanle使用する際には改めて設定する事
+'''ファイル名、テーブル名はConstで決め打ちしている
+'''args
+'''strargDistinctFieldName              Distinctの対象にしたいフィールド名
+'''clsADODistinct                       インスタンス共有のため
+Private Sub SELECT_ToTempTable(strargDistinctFieldName As String, _
+ByRef clsADODistinct As clsADOHandle)
+    If clsADODistinct Is Nothing Or strargDistinctFieldName = "" Then
+        DebugMsgWithTime "SELECTToTempTable: arg is empty"
+        Exit Sub
+    End If
+    'まずはDBPath等をデフォルトに設定してやる
+    Call clsADODistinct.SetDBPathandFilenameDefault
+    'DBfilenameのみ一時テーブル置き場のものに変える
+    clsADODistinct.DBFileName = TEMP_DB_FILENAME
+    '最初に既存の一時テーブルを削除する
+    Call clsADODistinct.DropTable(INV_CONST.T_INV_SELECT_TEMP)
+    'SQL組立
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
+    'パラメータ埋め込み用Dictionary
+    Dim dicReplaceParm As Dictionary
+    Set dicReplaceParm = New Dictionary
+    dicReplaceParm.Add 0, strargDistinctFieldName
+    clsADODistinct.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName, dicReplaceParm)
+    Call clsADODistinct.Do_SQL_with_NO_Transaction
+    DebugMsgWithTime "SELECT_To_TempTable Affected: " & clsADODistinct.Affected
+    'DBPath等を元に戻してやる
+    clsADODistinct.SetDBPathandFilenameDefault
+    GoTo CloseAndExit
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "SELECT_ToTempTable code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Set sqlBC = Nothing
+    Set dicReplaceParm = Nothing
+    Exit Sub
+End Sub
 '''ExcelファイルフルパスからIN句の後に続く文字列を作成する
 '''戻り値 String        Select FROM の IN句 ""の後に付く文字列ex)[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
 '''args

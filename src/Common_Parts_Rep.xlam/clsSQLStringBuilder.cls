@@ -120,16 +120,77 @@ End Function
 '''PartsPrefix          PartsMasterのフィールドの前に付くプレフィックス
 '''ZaikoSHPrefix        シートフィールド名の前につくプレフィックス、普通はTTmpになる
 '''FieldCondition       フィールド間をつなぐ文字列の列挙隊の数値
+'''ConnectEnum          複数条件時の条件間をつなぐ文字列 OR とか AND とか ,とか
 '''clsEnumCondition     コンストラクタ動作軽量化のためのインスタンス共有
-Public Function ReturnArrayINVPartsandZaikoSHFieldCondition(PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
-ByRef clsEnumCondition As clsEnum) As String
+Public Function ReturnINVPartsandZaikoSHFieldCondition(PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
+ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As String
+    On Error GoTo ErrorCatch
     'クラス変数チェック
     If clsEnumCondition Is Nothing Then
         'Enumが初期化されてなかった
         DebugMsgWithTime "ReturnArrayINVPartsandZaikoSHFieldCondition: Warning!! Enum instance not initialized.will delay..."
         Set clsEnumCondition = CreateclsEnum
     End If
-    'まずはプレフィックスが付かないフィールド一覧を受け取る
+    'まずはノーマルのフィールド一覧を受け取る(TRIM適用済み）x ここでTrimつけるのは早すぎる
     Dim arrstrNormalFields() As String
     arrstrNormalFields = clsEnumCondition.GetZaikoFieldNameArraySHandDB
+    Dim longArrayRowCounter As Long
+    '次に各要素にテーブル名プレフィックスをつける
+    Dim arrstrAppendTablePreFix() As String
+    ReDim arrstrAppendTablePreFix(UBound(arrstrNormalFields), 1)
+    '受け取った配列のサイズ分ループ
+    For longArrayRowCounter = LBound(arrstrNormalFields) To UBound(arrstrNormalFields)
+        '連結用String配列
+        Dim arrstrPrefix(2) As String
+        'DBPartsPrefix
+        arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(PartsPrefix)
+        arrstrPrefix(1) = "."
+        arrstrPrefix(2) = arrstrNormalFields(longArrayRowCounter, 0)
+        arrstrAppendTablePreFix(longArrayRowCounter, 0) = Join(arrstrPrefix, "")
+        'SHPrefix
+        arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(ZaikoSHPrefix)
+        arrstrPrefix(1) = "."
+        arrstrPrefix(2) = arrstrNormalFields(longArrayRowCounter, 1)
+        '条件によってはここでTrimをつけるかどうか判断する
+        If clsEnumCondition.IsNeedTrimZaikoSh(arrstrNormalFields(longArrayRowCounter, 1)) Then
+            'Trimが必要
+            'プレフィックス、サフィックスを付加したものを返す
+            Dim arrstrTrim(2) As String
+            arrstrTrim(0) = clsEnumCondition.SQLFieldCondition(Trim_Prefix_sfc)
+            arrstrTrim(1) = Join(arrstrPrefix, "")
+            arrstrTrim(2) = clsEnumCondition.SQLFieldCondition(Trim_Suffix_sfc)
+            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrTrim, "")
+        Else
+            'Trimは不要
+            'そのまま結合し、結果を返す
+            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrPrefix, "")
+        End If
+    Next longArrayRowCounter
+    '次に演算子を結合する
+    '1次元に集約する
+    Dim arrstrOperatorAdd() As String
+    ReDim arrstrOperatorAdd(UBound(arrstrAppendTablePreFix))
+    For longArrayRowCounter = LBound(arrstrAppendTablePreFix) To UBound(arrstrAppendTablePreFix)
+        Dim arrstrOperator(2) As String
+        arrstrOperator(0) = arrstrAppendTablePreFix(longArrayRowCounter, 0)
+        arrstrOperator(1) = clsEnumCondition.SQLFieldCondition(FieldCondition)
+        arrstrOperator(2) = arrstrAppendTablePreFix(longArrayRowCounter, 1)
+        arrstrOperatorAdd(longArrayRowCounter) = Join(arrstrOperator, "")
+    Next longArrayRowCounter
+    '各条件を結合文字列で区切ってStringとして渡すが、要素が１個しかない時は不要なので処理を分岐させる
+    If (UBound(arrstrOperatorAdd) - LBound(arrstrOperatorAdd)) >= 1 Then
+        '要素数が2個以上ある時
+        '要素を結合文字列で区切って渡す
+        ReturnINVPartsandZaikoSHFieldCondition = Join(arrstrOperatorAdd, clsEnumCondition.SQLFieldCondition(ConnectEnum))
+    Else
+        '要素が1個だけだった場合
+        '最初の要素をそのまま返す
+        ReturnINVPartsandZaikoSHFieldCondition = arrstrOperatorAdd(LBound(arrstrOperatorAdd))
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "ReturnINVPartsAndZaikoSHFieldCondition code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
 End Function

@@ -4,8 +4,10 @@ Option Explicit
 '在庫情報DBに関する定数
 Public Const INV_DB_FILENAME As String = "INV_Manege.accdb"                     '在庫情報のDBファイル名
 Public Const T_INV_TEMP As String = "T_INV_Temp"                                'INVDBの一時テーブル名
+Public Const T_INV_SELECT_TEMP As String = "T_INV_Select_Temp"                  'Selectした結果を格納するテーブル名、一旦テーブルに格納しないと
+                                                                                '更新可能なクエリが・・・とか言われるため
 '部品（手配コード）マスターテーブルの定数
-Public Const T_INV_M_PARTS As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
+Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
 Public Const F_INV_TEHAI_TEXT As String = "F_INV_Tehai_Code"                    '手配コード
 Public Const F_INV_MANEGE_SECTON As String = "F_INV_Manege_Section"             '管理課
@@ -93,7 +95,7 @@ Public Enum Enum_Sh_Zaiko
     F_Tana_Text_ShZ = 101
 End Enum
 '棚番マスター
-Public Const T_INV_M_TANA As String = "T_INV_M_Tana"                            '棚番マスターのテーブル名
+Public Const T_INV_M_Tana As String = "T_INV_M_Tana"                            '棚番マスターのテーブル名
 'フィールド名定数
 Public Const F_INV_TANA_LOCAL_TEXT As String = "F_INV_Tana_Local_Text"              '表示用などローカルで使用する棚番名 K05G B01
 Public Const F_INV_TANA_SYSTEM_TEXT As String = "F_INV_Tana_System_Text"            'システム側の棚番
@@ -105,6 +107,20 @@ Public Enum Enum_INV_M_Tana
     F_INV_Tana_System_Text_IMT = 3
     F_INV_TIET_Delivary_IMT = 4
     F_InputDate_IMT = 5
+End Enum
+'在庫情報シートでUpdate掛ける際にTrim必要なフィールド名を定義
+'_ntrm need trim
+Public Enum Enum_SH_Zaiko_Need_Trim
+    F_Manege_Section_ntrm = Enum_Sh_Zaiko.F_Manege_Section_ShZ
+    F_Tehai_Code_ntrm = Enum_Sh_Zaiko.F_Tehai_Code_ShZ
+    F_System_TanaNO_ntrm = Enum_Sh_Zaiko.F_System_TanaNO_ShZ
+    F_Kishu_ntrm = Enum_Sh_Zaiko.F_kishu_ShZ
+    F_Store_Code_ntrm = Enum_Sh_Zaiko.F_Store_Code_ShZ
+    F_Tana_Text_ntrm = Enum_Sh_Zaiko.F_Tana_Text_ShZ
+    F_System_Name_ntrm = Enum_Sh_Zaiko.F_System_Name_ShZ
+    F_System_Spec_ntrm = Enum_Sh_Zaiko.F_System_Spec_ShZ
+    F_Store_Unit_ntrm = Enum_Sh_Zaiko.F_Store_Unit_ShZ
+    F_Manege_Section_sub_ntrm = Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ
 End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'SQL定義
@@ -149,6 +165,18 @@ Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INT
     "IN """"{1} ) "
 '
 ''------------------------------------------------------------------------------------------
+''どちらも同じDBファイル上にあるので特段IN句の指定の必要なし
+'SELECT * INTO T_INV_Temp_Select
+'FROM (
+'    SELECT DISTINCT ロケーション FROM T_INV_Temp
+')
+'SELECT DISTINCT の結果を一時テーブルに入れる
+'事前にT_INV_SELECT_TEMPの削除が必要
+Public Const SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName As String = "SELECT * INTO " & T_INV_SELECT_TEMP & " " & vbCrLf & _
+"FROM ( " & vbCrLf & _
+    "SELECT DISTINCT {0} FROM " & T_INV_TEMP & vbCrLf & _
+")"
+''------------------------------------------------------------------------------------------
 ''一時テーブルを作成した上でのUpdateは成功
 'UPDATE T_INV_M_Tana AS TDBTana
 'RIGHT JOIN (
@@ -158,11 +186,22 @@ Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INT
 'Set TDBTana.F_INV_Tana_System_Text = TDBTemp.ロケーション,
 'TDBTana.InputDate = "2022-01-25T16.20:00.010"
 'WHERE F_INV_Tana_System_Text Is Null
-Public Const SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec As String = "UPDATE " & T_INV_M_TANA & " AS " & SQL_ALIAS_T_INVDB_Tana & " " & vbCrLf & _
+Public Const SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec As String = "UPDATE " & T_INV_M_Tana & " AS " & SQL_ALIAS_T_INVDB_Tana & " " & vbCrLf & _
 "RIGHT JOIN ( " & vbCrLf & _
-"SELECT * FROM " & T_INV_TEMP & " " & vbCrLf & _
+"SELECT *  FROM " & T_INV_SELECT_TEMP & " " & vbCrLf & _
 "IN """"[MS ACCESS;DATABASE={0};] ) AS " & SQL_ALIAS_T_TEMP & " " & vbCrLf & _
 "ON " & SQL_ALIAS_T_INVDB_Tana & "." & F_INV_TANA_SYSTEM_TEXT & " = " & SQL_ALIAS_T_TEMP & "." & F_SH_ZAIKO_TANA_TEXT & " " & vbCrLf & _
 "Set " & SQL_ALIAS_T_INVDB_Tana & "." & F_INV_TANA_SYSTEM_TEXT & " = " & SQL_ALIAS_T_TEMP & "." & F_SH_ZAIKO_TANA_TEXT & "," & vbCrLf & _
 SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
-"WHERE " & F_INV_TANA_SYSTEM_TEXT & " Is Null"
+"WHERE " & F_INV_TANA_SYSTEM_TEXT & " Is Null"
+''------------------------------------------------------------------------------------------
+'3個のテーブルでJoinしてSelect,動くやつ
+'SELECT TDBTana.*,TTmp.*,TDBTana.*
+'FROM T_INV_M_Parts AS TDBPrts
+'RIGHT JOIN (
+'    T_INV_M_Tana As TDBTana
+'        RIGHT JOIN (
+'        SELECT * FROM  T_INV_Temp
+'        IN ""[MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb;] ) AS TTmp
+'        ON TDBTana.F_INV_Tana_System_Text = TTmp.[ロケーション])
+'    ON TDBPrts.F_INV_Tehai_Code = TTmp.手配コード;

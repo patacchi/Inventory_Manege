@@ -102,6 +102,9 @@ Public Sub btnZaikoSerch_Click()
      Call ShowfrmSQLTest
 #End If
 End Sub
+Public Sub UPSertDBUseCSV()
+    MsgBox "処理件数は: " & CStr(RegistDBbyDailyTanaCSV) & " 件です"
+End Sub
 '''デイリー棚卸CSVからDBに登録する
 '''戻り値 long 処理したファイルの総数
 Public Function RegistDBbyDailyTanaCSV() As Long

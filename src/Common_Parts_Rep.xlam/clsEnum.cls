@@ -24,8 +24,11 @@ Private dicCATTmpField As Dictionary
 Private dicINVMasterParts As Dictionary
 Private dicINVMasterTana As Dictionary
 Private dicSHZaikoParts As Dictionary
+Private dicSHZaikoKeyPartsValueEnum As Dictionary               '在庫情報シートで、Keyがフィールド名、ValueがEnumに逆転してるDictionary
 Private dicSQLFieldCondition As Dictionary
 Private dicSQLINVAlias As Dictionary
+Private dicSHZaikoNeedTrim As Dictionary
+'コンストラクタ
 Private Sub Class_Initialize()
     Call Initial_Valueset
 End Sub
@@ -54,12 +57,22 @@ Private Sub Initial_Valueset()
 'Public Enum_SQL_F_Condition
 '    Equal_sfc = 1
 '    NOT_Equal_sfc = 2
+'    Trim_Prefix_sfc = 3
+'    Trim_Suffix_sfc = 4
+'    Connect_OR_sfc = 5
+'    Connect_AND_sfc = 6
+'    Connect_Comma_sfc = 7
 'End Enum
     If dicSQLFieldCondition Is Nothing Then
         Set dicSQLFieldCondition = New Dictionary
     End If
     dicSQLFieldCondition.Add Enum_SQL_F_Condition.Equal_sfc, SQL_F_EQUAL
     dicSQLFieldCondition.Add Enum_SQL_F_Condition.NOT_Equal_sfc, SQL_F_NOT_EQUAL
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Trim_Prefix_sfc, PublicConst.SQL_F_TRIM_PREFIX
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Trim_Suffix_sfc, PublicConst.SQL_F_TRIM_SUFFIX
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Connect_OR_sfc, PublicConst.SQL_F_CONNECT_OR
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Connect_AND_sfc, PublicConst.SQL_F_CONNECT_AND
+    dicSQLFieldCondition.Add Enum_SQL_F_Condition.Connect_Comma_sfc, PublicConst.SQL_F_CONNECT_COMMA
 'Public Enum ACCDB_Data_Type
 '    [Text] = 1
 '    [INTEGER] = 2
@@ -236,7 +249,7 @@ Private Sub INV_Enum_Initialize()
     If dicINVMasterParts Is Nothing Then
         Set dicINVMasterParts = New Dictionary
     End If
-    dicINVMasterParts.Add Enum_INV_M_Parts.Table_Name_IMPrt, INV_CONST.T_INV_M_PARTS
+    dicINVMasterParts.Add Enum_INV_M_Parts.Table_Name_IMPrt, INV_CONST.T_INV_M_Parts
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_ID_IMPrt, INV_CONST.F_INV_TEHAI_ID
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_Code_IMPrt, INV_CONST.F_INV_TEHAI_TEXT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_IMPrt, INV_CONST.F_INV_MANEGE_SECTON
@@ -331,6 +344,34 @@ End If
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tana_Alias_sia, INV_CONST.SQL_ALIAS_T_INVDB_Tana
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tmp_Alias_sia, INV_CONST.SQL_ALIAS_T_TEMP
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.ZaikoSH_Alias_sia, SQL_ALIAS_T_SH_ZAIKO
+''在庫情報シートでUpdate掛ける際にTrim必要なフィールド名を定義
+''_ntrm need trim
+'Public Enum Enum_SH_Zaiko_Need_Trim
+'    F_Manege_Section_ntrm = Enum_Sh_Zaiko.F_Manege_Section_ShZ
+'    F_Tehai_Code_ntrm = Enum_Sh_Zaiko.F_Tehai_Code_ShZ
+'    F_System_TanaNO_ntrm = Enum_Sh_Zaiko.F_System_TanaNO_ShZ
+'    F_Kishu_ntrm = Enum_Sh_Zaiko.F_kishu_ShZ
+'    F_Store_Code_ntrm = Enum_Sh_Zaiko.F_Store_Code_ShZ
+'    F_Tana_Text_ntrm = Enum_Sh_Zaiko.F_Tana_Text_ShZ
+'    F_System_Name_ntrm = Enum_Sh_Zaiko.F_System_Name_ShZ
+'    F_System_Spec_ntrm = Enum_Sh_Zaiko.F_System_Spec_ShZ
+'    F_Store_Unit_ntrm = Enum_Sh_Zaiko.F_Store_Unit_ShZ
+'    F_Manege_Section_sub_ntrm = Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ
+'End Enum
+    'NeedTrimだけ少し形式が違い、DictionaryにはEnumの定数のみ格納する
+    If dicSHZaikoNeedTrim Is Nothing Then
+        Set dicSHZaikoNeedTrim = New Dictionary
+    End If
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Manege_Section_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Tehai_Code_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_TanaNO_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Kishu_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Store_Code_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Tana_Text_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_Name_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_Spec_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Store_Unit_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Manege_Section_sub_ntrm, Empty
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
@@ -413,6 +454,25 @@ Property Get shZaikoField(ZaikoField As Enum_Sh_Zaiko) As String
     shZaikoField = dicSHZaikoParts(ZaikoField)
     Exit Property
 End Property
+'DicSHZaikoKeyParts
+'SH_ZaikoのKeyとValueが反転したものを返す(KeyがFieldName)
+Property Get Dic_SHZaikoKeyIsParts() As Dictionary
+    If dicSHZaikoKeyPartsValueEnum Is Nothing Then
+        Set dicSHZaikoKeyPartsValueEnum = New Dictionary
+        '反転DicがNothingだった場合、作成してやる
+        Dim varSHKey As Variant
+        For Each varSHKey In dicSHZaikoParts
+            If Not dicSHZaikoKeyPartsValueEnum.Exists(dicSHZaikoParts(varSHKey)) Then
+                '反転Dicに重複するkeyが無い場合のみ追加する
+                'key value 反転
+                dicSHZaikoKeyPartsValueEnum.Add dicSHZaikoParts(varSHKey), varSHKey
+            End If
+        Next varSHKey
+    End If
+    '反転Dicを返してやる
+    Set Dic_SHZaikoKeyIsParts = dicSHZaikoKeyPartsValueEnum
+    Exit Property
+End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'INV_DB
 'INVMasterParts
@@ -432,6 +492,32 @@ Property Get SQL_INV_Alias(SqlAlias As Enum_SQL_INV_Alias) As String
 End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'プロシージャー
+'''Trimが必要なフィールドかどうかを返す
+'''Return   bool                Trim必要なフィールドの時はTrue、それ以外はFalse
+'''args
+'''strargZaikoSHFieldName       外部から使用する必要があるので、引数はフィールド名そのもので受ける
+Public Function IsNeedTrimZaikoSh(strargZaikoSHFieldName As String) As Boolean
+    '引数チェック
+    If strargZaikoSHFieldName = "" Then
+        IsNeedTrimZaikoSh = False
+        Exit Function
+    End If
+    'そもそも在庫情報シートのフィールド名かどうかを確認
+    If Not Me.Dic_SHZaikoKeyIsParts.Exists(strargZaikoSHFieldName) Then
+        '反転dicに引数のフィールド名が見つからなかった
+        DebugMsgWithTime "IsNeedRedim not found field name in SH_Zaiko Dictionary. Field Name: " & strargZaikoSHFieldName
+        IsNeedTrimZaikoSh = False
+        Exit Function
+    End If
+    '反転DicよりEnum数値を取り出し、それがNeedTrim の Dicに存在すればTrimが必要
+    If dicSHZaikoNeedTrim.Exists(Me.Dic_SHZaikoKeyIsParts(strargZaikoSHFieldName)) Then
+        '引数がNeedTrimのKeyに存在したらTrimが必要
+        IsNeedTrimZaikoSh = True
+    Else
+        IsNeedTrimZaikoSh = False
+    End If
+    Exit Function
+End Function
 '''Author Daisuke Oota 2021_01_06
 '''在庫情報シートとT_INV_Master_Partsの共通フィールドをStringの配列にして返す
 '''戻り値 StringArray(n,1),nは共通フィールド数、2次元目は、0がDBフィールド、1がシートのフィールド名
@@ -450,20 +536,35 @@ Public Function GetZaikoFieldNameArraySHandDB() As String()
 '    intArrRowCounter = 0
     '結果を一旦Dictionaryに入れて、後で配列に展開する（片方しかデータなかった時のRedimが最終次元しか効かないため）
     'KeyにMarterPartsを、ValueにSHZaikoを入れる
-    Dim varshKey As Variant
+    Dim varSHKey As Variant
     Dim dicResult As Dictionary
     Set dicResult = New Dictionary
-    For Each varshKey In dicSHZaikoParts
-        If dicINVMasterParts.Exists(varshKey) Then
+    For Each varSHKey In dicSHZaikoParts
+        If dicINVMasterParts.Exists(varSHKey) Then
             'シートdicと共通のKeyがDBdicにも存在する時
             'シートdicとDBdicそれぞれの値を結果dictionaryに入れてやる
-            dicResult.Add CStr(dicINVMasterParts(varshKey)), CStr(dicSHZaikoParts(varshKey))
-            'DBフィールド
-'            arrstrZaikoField(intArrRowCounter, 0) = CStr(dicINVMasterParts(varshKey))
-            'シートフィールド
-'            arrstrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
-            'StringArray行カウンターをインクリメント
-'            intArrRowCounter = intArrRowCounter + 1
+            'DBに格納する時にTRIMが必要なものがあるので、切り分けを行う
+            'ｘここでTrimはNG、後でテーブルエイリアスをプレフィックスでつけた時にダメになっちゃう
+            Dim strPartsField As String
+            Dim strSHField As String
+            'DBPartsMaster
+            strPartsField = dicINVMasterParts(varSHKey)
+            'SHField
+            strSHField = dicSHZaikoParts(varSHKey)
+            'NeedTrimによって処理分岐
+'            If IsNeedTrimZaikoSh(CLng(varshKey)) Then
+'                'TRIM必要
+'                '配列に前後を入れてやり、Joinする
+'                Dim arrstrTrim(2) As String
+'                arrstrTrim(0) = Me.SQLFieldCondition(Trim_Prefix_sfc)
+'                arrstrTrim(1) = dicSHZaikoParts(varshKey)
+'                arrstrTrim(2) = Me.SQLFieldCondition(Trim_Suffix_sfc)
+'                strSHField = Join(arrstrTrim, "")
+'            Else
+'                'そのままでOK
+'                strSHField = dicSHZaikoParts(varshKey)
+'            End If
+            dicResult.Add CStr(strPartsField), CStr(strSHField)
         Else
             'シートdicにしかkeyが存在しない場合
             '2次元目の1にシートdicのValueのみを入れてやる、2次元目の0は初期値
@@ -471,21 +572,21 @@ Public Function GetZaikoFieldNameArraySHandDB() As String()
             '共通項目のみ返すよう変更
 '            arrstrZaikoField(intArrRowCounter, 1) = CStr(dicSHZaikoParts(varshKey))
         End If
-    Next varshKey
+    Next varSHKey
     '結果を配列に格納しなおす
     Dim arrstrZaikoField() As String
     'String配列をシートdicの要素数で初期化
     ReDim arrstrZaikoField(dicResult.Count - 1, 1)
     Dim intArrayRowCounter
     intArrayRowCounter = 0
-    For Each varshKey In dicResult
+    For Each varSHKey In dicResult
         'DBフィールド
-        arrstrZaikoField(intArrayRowCounter, 0) = CStr(varshKey)
+        arrstrZaikoField(intArrayRowCounter, 0) = CStr(varSHKey)
         'シートフィールド
-        arrstrZaikoField(intArrayRowCounter, 1) = CStr(dicResult(varshKey))
+        arrstrZaikoField(intArrayRowCounter, 1) = CStr(dicResult(varSHKey))
         '行カウンタをインクリメント
         intArrayRowCounter = intArrayRowCounter + 1
-    Next varshKey
+    Next varSHKey
     '結果を返す
     GetZaikoFieldNameArraySHandDB = arrstrZaikoField
     Exit Function
