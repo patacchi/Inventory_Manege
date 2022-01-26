@@ -204,4 +204,26 @@ SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 '        SELECT * FROM  T_INV_Temp
 '        IN ""[MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb;] ) AS TTmp
 '        ON TDBTana.F_INV_Tana_System_Text = TTmp.[ロケーション])
-'    ON TDBPrts.F_INV_Tehai_Code = TTmp.手配コード;
+'    ON TDBPrts.F_INV_Tehai_Code = TTmp.手配コード;
+'SELECT {3}.*,{5}.*,{3}.*
+'FROM {0} AS {1}
+'RIGHT JOIN (
+'    {2} As {3}
+'        RIGHT JOIN (
+'        SELECT * FROM  {4}
+'        IN ""[MS ACCESS;DATABASE={6};] ) AS {5}
+'        ON {3}.{7} = {5}.{8})
+'    ON {1}.{9} = {5}.{10};
+'
+'
+'T_INV_M_Parts   {0}
+'TDBPrts {1}
+'T_INV_M_Tana {2}
+'TDBTana     {3}
+'T_INV_Temp  {4}
+'TTmp    {5}
+'C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb    {6}
+'F_INV_Tana_System_Text  {7}
+'ロケーション    {8}
+'F_INV_Tehai_Code    {9}
+'手配コード  {10}
