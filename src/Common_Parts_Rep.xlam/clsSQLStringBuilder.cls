@@ -113,16 +113,18 @@ ErrorCatch:
     DebugMsgWithTime "addQuote Error code: " & Err.Number & "Description: " & Err.Description
 End Function
 '''INVPartMasterテーブルと対応する在庫情報シートのフィールド名から UPDATE の SET パラメータや WHERE パラメータを作成する
+'''対応フィールドを配列引数で受け取るよう変更 2022_01_27 Daisuke Oota
 '''対応するフィールド名を = や <> で連結したStringを返す
 '''各フィールド名の前には、プレフィックスとしてテーブル名の短縮名エイリアスがつく
 '''戻り値 String  ex) "TDBPrts.F_INV_Tehai_Text = TTmp.手配コード,TDBPrts.F_INV_Stock_Amount = TTmp.在庫数量・・・・"
 '''args
+'''arrstrargFieldPair()    対応フィールドの組合せの2次元配列(元フィールド , 対応フィールド)
 '''PartsPrefix          PartsMasterのフィールドの前に付くプレフィックス
 '''ZaikoSHPrefix        シートフィールド名の前につくプレフィックス、普通はTTmpになる
 '''FieldCondition       フィールド間をつなぐ文字列の列挙隊の数値
 '''ConnectEnum          複数条件時の条件間をつなぐ文字列 OR とか AND とか ,とか
 '''clsEnumCondition     コンストラクタ動作軽量化のためのインスタンス共有
-Public Function ReturnINVPartsandZaikoSHFieldCondition(PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
+Public Function ReturnCommonFieldCondition(arrstrargFieldPair() As String, PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
 ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As String
     On Error GoTo ErrorCatch
     'クラス変数チェック
@@ -131,28 +133,34 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
         DebugMsgWithTime "ReturnArrayINVPartsandZaikoSHFieldCondition: Warning!! Enum instance not initialized.will delay..."
         Set clsEnumCondition = CreateclsEnum
     End If
+    If Not IsRedim(arrstrargFieldPair) Then
+        DebugMsgWithTime "ReturnCommonFieldCondition: arrFieldPair is not Initialized or not Array."
+        GoTo CloseAndExit
+        Exit Function
+    End If
     'まずはノーマルのフィールド一覧を受け取る(TRIM適用済み）x ここでTrimつけるのは早すぎる
-    Dim arrstrNormalFields() As String
-    arrstrNormalFields = clsEnumCondition.GetZaikoFieldNameArraySHandDB
+    '引数で受け取るよう変更
+'    Dim arrstrargFieldPair() As String
+'    arrstrargFieldPair = clsEnumCondition.GetUpdateCommonFieldZaikSHandMParts
     Dim longArrayRowCounter As Long
     '次に各要素にテーブル名プレフィックスをつける
     Dim arrstrAppendTablePreFix() As String
-    ReDim arrstrAppendTablePreFix(UBound(arrstrNormalFields), 1)
+    ReDim arrstrAppendTablePreFix(UBound(arrstrargFieldPair), 1)
     '受け取った配列のサイズ分ループ
-    For longArrayRowCounter = LBound(arrstrNormalFields) To UBound(arrstrNormalFields)
+    For longArrayRowCounter = LBound(arrstrargFieldPair) To UBound(arrstrargFieldPair)
         '連結用String配列
         Dim arrstrPrefix(2) As String
         'DBPartsPrefix
         arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(PartsPrefix)
         arrstrPrefix(1) = "."
-        arrstrPrefix(2) = arrstrNormalFields(longArrayRowCounter, 0)
+        arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 0)
         arrstrAppendTablePreFix(longArrayRowCounter, 0) = Join(arrstrPrefix, "")
         'SHPrefix
         arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(ZaikoSHPrefix)
         arrstrPrefix(1) = "."
-        arrstrPrefix(2) = arrstrNormalFields(longArrayRowCounter, 1)
+        arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 1)
         '条件によってはここでTrimをつけるかどうか判断する
-        If clsEnumCondition.IsNeedTrimZaikoSh(arrstrNormalFields(longArrayRowCounter, 1)) Then
+        If clsEnumCondition.IsNeedTrimZaikoSh(arrstrargFieldPair(longArrayRowCounter, 1)) Then
             'Trimが必要
             'プレフィックス、サフィックスを付加したものを返す
             Dim arrstrTrim(2) As String
@@ -162,8 +170,18 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
             arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrTrim, "")
         Else
             'Trimは不要
-            'そのまま結合し、結果を返す
-            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrPrefix, "")
+            'そのまま結合はしない 2022_01_27 Daisuke Oota
+            'Trim不要な列は基本的に数値列で、Nullや空文字のデータがあると、WHEREで「抽出条件のデータ型が・・・」と言われるので
+            'IIFとISNUMERICで数値変換できないデータは明示的に0をいれてやる
+            'IIF 置換用dic
+            Dim dicReplaceCondition As Dictionary
+            If dicReplaceCondition Is Nothing Then
+                '初期化されてなかったら初期化する
+                Set dicReplaceCondition = New Dictionary
+            End If
+            dicReplaceCondition.RemoveAll
+            dicReplaceCondition.Add 0, Join(arrstrPrefix, "")
+            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Me.ReplaceParm(PublicConst.SQL_ISNUMERIC_0FieldName, dicReplaceCondition)
         End If
     Next longArrayRowCounter
     '次に演算子を結合する
@@ -181,15 +199,15 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
     If (UBound(arrstrOperatorAdd) - LBound(arrstrOperatorAdd)) >= 1 Then
         '要素数が2個以上ある時
         '要素を結合文字列で区切って渡す
-        ReturnINVPartsandZaikoSHFieldCondition = Join(arrstrOperatorAdd, clsEnumCondition.SQLFieldCondition(ConnectEnum))
+        ReturnCommonFieldCondition = Join(arrstrOperatorAdd, clsEnumCondition.SQLFieldCondition(ConnectEnum))
     Else
         '要素が1個だけだった場合
         '最初の要素をそのまま返す
-        ReturnINVPartsandZaikoSHFieldCondition = arrstrOperatorAdd(LBound(arrstrOperatorAdd))
+        ReturnCommonFieldCondition = arrstrOperatorAdd(LBound(arrstrOperatorAdd))
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ReturnINVPartsAndZaikoSHFieldCondition code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "ReturnCommonFieldCondition code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function

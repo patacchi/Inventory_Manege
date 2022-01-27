@@ -22,7 +22,8 @@ End Enum
 'フィールド抽出条件文字列(SQL)
 Public Const SQL_F_EQUAL As String = " = "                      'SQLのWHERE条件式などでフィールド間を連結する文字列 =
 Public Const SQL_F_NOT_EQUAL As String = " <> "                 '<>
-Public Const SQL_F_TRIM_PREFIX As String = "TRIM("              'TRIM使う時にフィールドの前に付くプレフィックス
+Public Const SQL_F_TRIM_PREFIX As String = "TRIM("              'TRIM$使う時にフィールドの前に付くプレフィックス
+Public Const SQL_ISNUMERIC_0FieldName As String = "IIF(ISNUMERIC({0}),{0},0)"   '0にフィールド名を入れる
 Public Const SQL_F_TRIM_SUFFIX As String = ")"                  'TRIM使用時のサフィックス
 Public Const SQL_F_CONNECT_OR As String = " OR "                '条件が複数時において、次の条件との間に挟む語句 OR
 Public Const SQL_F_CONNECT_AND As String = " AND "              'AND

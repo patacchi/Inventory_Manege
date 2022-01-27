@@ -409,11 +409,70 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
     Call clsADOUpsert.Do_SQL_with_NO_Transaction
     '次にPartsMasterを更新する
-    'Setの後の文字列を取得
+    '各種結合、抽出条件文字列作成IN句も作るの・・？
+    'IN DB_Temp
+    Dim strINWord As String
+    strINWord = CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumUpsert)
+    'ON Tana and TTmp
+    Dim strON_TanaAndTTemp
+    strON_TanaAndTTemp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetKeyCommonFieldTanaAndZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    'ON Parts and TTmp
+    Dim strON_PartsAndTTmp
+    strON_PartsAndTTmp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetKeyCommonFieldPatsAndZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    'Set Condition
     Dim strSETExp As String
-    strSETExp = sqlBC.ReturnINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    strSETExp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetUpdateCommonFieldZaikSHandMParts, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    'Where Condition
     Dim strWhereExp As String
-    strWhereExp = sqlBC.ReturnINVPartsandZaikoSHFieldCondition(INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumUpsert)
+    strWhereExp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetUpdateCommonFieldZaikSHandMParts, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumUpsert)
+    If dicReplaceParam Is Nothing Then
+        '置換用DictionaryがNothingだったら初期化
+        Set dicReplaceParam = New Dictionary
+    End If
+    '置換用Dic準備（全消去）
+''T_INV_M_Parts                      {0}
+''TDBPrts                            {1}
+''T_INV_M_Tana                       {2}
+''TDBTana                            {3}
+''T_INV_Temp                         {4}
+''TTmp                               {5}
+''(CreateAfterINWord(DB_Temp.accdb)  {6}
+''(ON Condition Tana and TTmp)       {7}
+''(ON Condition Parts and TTmp)      {8}
+''F_INV_Tana_ID                      {9}
+''(SET Condition Parts and TTmp)     {10}
+''(WHERE condition Parts ad TTmp)    {11}
+''F_INV_Tehai_Code                   {12}
+'Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0} AS {1} " & vbCrLf &
+    dicReplaceParam.RemoveAll
+    dicReplaceParam.Add 0, INV_CONST.T_INV_M_Parts
+    dicReplaceParam.Add 1, clsEnumUpsert.SQL_INV_Alias(INVDB_Parts_Alias_sia)
+    dicReplaceParam.Add 2, INV_CONST.T_INV_M_Tana
+    dicReplaceParam.Add 3, clsEnumUpsert.SQL_INV_Alias(INVDB_Tana_Alias_sia)
+    dicReplaceParam.Add 4, INV_CONST.T_INV_TEMP
+    dicReplaceParam.Add 5, clsEnumUpsert.SQL_INV_Alias(INVDB_Tmp_Alias_sia)
+    dicReplaceParam.Add 6, strINWord
+    dicReplaceParam.Add 7, strON_TanaAndTTemp
+    dicReplaceParam.Add 8, strON_PartsAndTTmp
+    dicReplaceParam.Add 9, clsEnumUpsert.INVMasterTana(F_INV_TANA_ID_IMT)
+    dicReplaceParam.Add 10, strSETExp
+    dicReplaceParam.Add 11, strWhereExp
+    dicReplaceParam.Add 12, clsEnumUpsert.INVMasterParts(F_Tehai_Code_IMPrt)
+    'AppendFormatしてSQL作成
+    clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA, dicReplaceParam)
+    'SQL実行
+    Dim isCollect As Boolean
+    isCollect = clsADOUpsert.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: SQL Execute fail"
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    '成功していたらAffecgtedの件数を返して終了
+#If DebugDB Then
+    DebugMsgWithTime "Upsert Affected: " & clsADOUpsert.Affected & " OriginFile: " & strargZaikoSHFullPath
+#End If
+    UpsertINVPartsMasterfromZaikoSH = clsADOUpsert.Affected
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description

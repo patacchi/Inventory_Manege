@@ -357,6 +357,7 @@ End If
 '    F_System_Spec_ntrm = Enum_Sh_Zaiko.F_System_Spec_ShZ
 '    F_Store_Unit_ntrm = Enum_Sh_Zaiko.F_Store_Unit_ShZ
 '    F_Manege_Section_sub_ntrm = Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ
+'    F_System_Description_ntrm = Enum_Sh_Zaiko.F_System_Description_ShZ
 'End Enum
     'NeedTrimだけ少し形式が違い、DictionaryにはEnumの定数のみ格納する
     If dicSHZaikoNeedTrim Is Nothing Then
@@ -372,6 +373,7 @@ End If
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_Spec_ntrm, Empty
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Store_Unit_ntrm, Empty
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Manege_Section_sub_ntrm, Empty
+    dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_Description_ntrm, Empty
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
@@ -524,11 +526,11 @@ End Function
 '''xシートdiにしか無い値（手配コードとか）は2次元目は初期値になるので、受け取り側で判断する
 '''共通項目のみ配列に入れるよう変更 2022_01_25 Patacchi
 '''ex)(0,0) F_INV_Tehai_Code (0,1) 手配コード
-Public Function GetZaikoFieldNameArraySHandDB() As String()
+Public Function GetUpdateCommonFieldZaikSHandMParts() As String()
     If dicINVMasterParts Is Nothing Or dicSHZaikoParts Is Nothing Then
         'DB側のdicかシート側のdicがNothingだった
         '何もせずに抜ける
-        DebugMsgWithTime "GetZaikoFieldArray: member dictionary is nothing"
+        DebugMsgWithTime "GetUpdateCommonFieldZaikSHandMParts: member dictionary is nothing"
         Exit Function
     End If
     'シートdicでループ処理
@@ -551,19 +553,6 @@ Public Function GetZaikoFieldNameArraySHandDB() As String()
             strPartsField = dicINVMasterParts(varSHKey)
             'SHField
             strSHField = dicSHZaikoParts(varSHKey)
-            'NeedTrimによって処理分岐
-'            If IsNeedTrimZaikoSh(CLng(varshKey)) Then
-'                'TRIM必要
-'                '配列に前後を入れてやり、Joinする
-'                Dim arrstrTrim(2) As String
-'                arrstrTrim(0) = Me.SQLFieldCondition(Trim_Prefix_sfc)
-'                arrstrTrim(1) = dicSHZaikoParts(varshKey)
-'                arrstrTrim(2) = Me.SQLFieldCondition(Trim_Suffix_sfc)
-'                strSHField = Join(arrstrTrim, "")
-'            Else
-'                'そのままでOK
-'                strSHField = dicSHZaikoParts(varshKey)
-'            End If
             dicResult.Add CStr(strPartsField), CStr(strSHField)
         Else
             'シートdicにしかkeyが存在しない場合
@@ -588,6 +577,49 @@ Public Function GetZaikoFieldNameArraySHandDB() As String()
         intArrayRowCounter = intArrayRowCounter + 1
     Next varSHKey
     '結果を返す
-    GetZaikoFieldNameArraySHandDB = arrstrZaikoField
+    GetUpdateCommonFieldZaikSHandMParts = arrstrZaikoField
+    Exit Function
+End Function
+'''INV_M_PartsとINV_M_Tanaの共通フィールドの配列を返す
+'''JOINのONの後に続く文字列として使える
+'''Return   String()    (Partsフィールド名,Tanaフィールド名)
+Public Function GetKeyCommonFieldArrayINVPartsandINVTana() As String()
+    'PartsとTanaは共通フィールドが一つしかないのが分かっているので、配列は静的に指定
+    Dim arrstrCommonField(0, 1) As String
+    '共通フィールドはF_INV_Tana_ID
+    'Partテーブル
+    arrstrCommonField(0, 0) = Me.INVMasterParts(F_Tana_ID_IMPrt)
+    'Tanaテーブル
+    arrstrCommonField(0, 1) = Me.INVMasterTana(F_INV_TANA_ID_IMT)
+    GetKeyCommonFieldArrayINVPartsandINVTana = arrstrCommonField
+    Exit Function
+End Function
+'''INV_M_Parts と Zaiko_SHの結合共通フィールドの配列を返す
+'''JOIN の ON の後の文字列として使える
+'''Return   String()    (Partsフィールド名,Zaiko_SHフィールド名)
+Public Function GetKeyCommonFieldPatsAndZaikoSH() As String()
+    '共通フィールドは複数あるが、JOINのKeyとしては手配コードのみを使うので、配列は静的指定
+    Dim arrstrCommonZaikoSH(0, 1) As String
+    '共通フィールドは手配コード
+    'Partsテーブル
+    arrstrCommonZaikoSH(0, 0) = Me.INVMasterParts(F_Tehai_Code_IMPrt)
+    'Zaiko_SHテーブル
+    arrstrCommonZaikoSH(0, 1) = Me.shZaikoField(F_Tehai_Code_ShZ)
+    '結果を返す
+    GetKeyCommonFieldPatsAndZaikoSH = arrstrCommonZaikoSH
+    Exit Function
+End Function
+'''INV_M_Tana と Zaiko_SHの結合共通フィールドの配列を返す
+'''JOIN の ON の後の文字列として使用
+'''Return   String()    (Tanaフィールド,Zaiko_SHフィールド)
+Public Function GetKeyCommonFieldTanaAndZaikoSH() As String()
+    '結合キーフィールドはF_INV_Tana_System_Text
+    Dim arrstrCommonTana(0, 1) As String
+    'Tana
+    arrstrCommonTana(0, 0) = Me.INVMasterTana(F_INV_Tana_System_Text_IMT)
+    'Zako_SH
+    arrstrCommonTana(0, 1) = Me.shZaikoField(F_Tana_Text_ShZ)
+    '結果を返す
+    GetKeyCommonFieldTanaAndZaikoSH = arrstrCommonTana
     Exit Function
 End Function

@@ -102,11 +102,13 @@ Public Const F_INV_TANA_SYSTEM_TEXT As String = "F_INV_Tana_System_Text"        
 Public Const F_INV_TANA_TIET_DELIVARY As String = "F_INV_TIET_Delivery"                  'TIET出庫の棚かどうか
 'T_M_Tanaフィールド定義Enum
 Public Enum Enum_INV_M_Tana
-    F_INV_TANA_ID_IMT = 1
-    F_INV_Tana_Local_Text_IMT = 2
-    F_INV_Tana_System_Text_IMT = 3
-    F_INV_TIET_Delivary_IMT = 4
-    F_InputDate_IMT = 5
+    '共通フィールド
+    F_INV_TANA_ID_IMT = Enum_INV_M_Parts.F_Tana_ID_IMPrt
+    'Tanaテーブルのみにあるのは100番台にする
+    F_INV_Tana_Local_Text_IMT = 102
+    F_INV_Tana_System_Text_IMT = 103
+    F_INV_TIET_Delivary_IMT = 104
+    F_InputDate_IMT = 105
 End Enum
 '在庫情報シートでUpdate掛ける際にTrim必要なフィールド名を定義
 '_ntrm need trim
@@ -121,11 +123,9 @@ Public Enum Enum_SH_Zaiko_Need_Trim
     F_System_Spec_ntrm = Enum_Sh_Zaiko.F_System_Spec_ShZ
     F_Store_Unit_ntrm = Enum_Sh_Zaiko.F_Store_Unit_ShZ
     F_Manege_Section_sub_ntrm = Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ
+    F_System_Description_ntrm = Enum_Sh_Zaiko.F_System_Description_ShZ
 End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
-'SQL定義
-'手配コード先頭n文字リスト取得
-Public Const SQL_INV_TEHAICODE_n_0TableName_1DigitNum As String = "SELECT DISTINCT LEFT(" & F_SH_ZAIKO_TEHAI_TEXT & ",{1}) FROM {0}"             '0にテーブル名を入れる
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
 Public Const SQL_ALIAS_T_INVDB_Tana As String = "TDBTana"                                           'INV_M_Tanaテーブル別名定義
@@ -143,33 +143,23 @@ Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE
 Public Const SQL_AFTER_IN_XLSB_0FullPath As String = "[Excel 12.0;DATABASE={0};HDR=Yes;]"           'IN xlsb
 Public Const SQL_AFTER_IN_XLSX_0FullPath As String = "[Excel 12.0 xml;DATABASE={0};HDR=Yes;]"       'IN xlsx
 Public Const SQL_AFTER_IN_XLS_0FullPath As String = "[Excel 8.0;DATABASE={0};HDR=Yes;]"             'IN xls
+'SQL定義
+'------------------------------------------------------------------------------------------
+'手配コード先頭n文字リスト取得
+Public Const SQL_INV_TEHAICODE_n_0TableName_1DigitNum As String = "SELECT DISTINCT LEFT(" & F_SH_ZAIKO_TEHAI_TEXT & ",{1}) FROM {0}"             '0にテーブル名を入れる
+'------------------------------------------------------------------------------------------
+'SH_ZaikoをT_INV_Tmpに入れる
 '在庫情報シートのみ外部ファイル参照なので、IN句で指定してやる
 'INの後はダブルクォーテーションふたつ、ファイル名に空白があってもエスケープする必要なし?
-'SELECT TSHZaiko.手配コード,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text,TDBTana.F_INV_Tana_System_Text
-'FROM    (
-'    SELECT * FROM T_INV_M_Tana
-'    IN ""[MS ACCESS;DATABASE=R:\Tmp\Patacchi\Test Dir\INV_Manege_Local.accdb;]
-'    ) AS TDBTana
-'RIGHT JOIN (
-'    SELECT * FROM [在庫情報$FilterDatabase]
-'    IN ""[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
-'    ) AS TSHZaiko
-'ON TDBTana.F_INV_Tana_System_Text = TSHZaiko.ロケーション
-'WHERE NOT TDBTana.F_INV_Tana_ID IS NULL;
-''------------------------------------------------------------------------------------------
-''外部データを新規テーブルとしてインポートする
-''T_Tempが存在していたらエラーになるので事前に削除が必要
+'T_INV_Tmpが存在していたらエラーになるので事前に削除が必要
 Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INTO " & T_INV_TEMP & " " & vbCrLf & _
 "FROM " & vbCrLf & _
     "(SELECT * FROM {0} " & vbCrLf & _
     "IN """"{1} ) "
 '
 ''------------------------------------------------------------------------------------------
+'DISTINCT ロケーション した結果を一時テーブルに入れる
 ''どちらも同じDBファイル上にあるので特段IN句の指定の必要なし
-'SELECT * INTO T_INV_Temp_Select
-'FROM (
-'    SELECT DISTINCT ロケーション FROM T_INV_Temp
-')
 'SELECT DISTINCT の結果を一時テーブルに入れる
 '事前にT_INV_SELECT_TEMPの削除が必要
 Public Const SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName As String = "SELECT * INTO " & T_INV_SELECT_TEMP & " " & vbCrLf & _
@@ -177,15 +167,9 @@ Public Const SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName As String = "SELECT
     "SELECT DISTINCT {0} FROM " & T_INV_TEMP & vbCrLf & _
 ")"
 ''------------------------------------------------------------------------------------------
+'一時テーブルのZaikoSHをINV_M_Tanaに入れる
 ''一時テーブルを作成した上でのUpdateは成功
-'UPDATE T_INV_M_Tana AS TDBTana
-'RIGHT JOIN (
-'SELECT * FROM T_INV_Temp
-'IN ""[MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb;] ) AS TDBTemp
-'ON TDBTana.F_INV_Tana_System_Text = TDBTemp.ロケーション
-'Set TDBTana.F_INV_Tana_System_Text = TDBTemp.ロケーション,
-'TDBTana.InputDate = "2022-01-25T16.20:00.010"
-'WHERE F_INV_Tana_System_Text Is Null
+'外部DBを入力元に使う場合は、IN句はFROMの後でなければ動かないようなので、サブクエリで(SELECE * FROM Tname IN・・・) as TAlias としてやらないとダメ
 Public Const SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec As String = "UPDATE " & T_INV_M_Tana & " AS " & SQL_ALIAS_T_INVDB_Tana & " " & vbCrLf & _
 "RIGHT JOIN ( " & vbCrLf & _
 "SELECT *  FROM " & T_INV_SELECT_TEMP & " " & vbCrLf & _
@@ -195,6 +179,7 @@ Public Const SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec As String 
 SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 "WHERE " & F_INV_TANA_SYSTEM_TEXT & " Is Null"
 ''------------------------------------------------------------------------------------------
+'T_INV_M_PartsをUpsertするSQL 入力元は T_INV_Tana と T_INV_Tmp
 '3個のテーブルでJoinしてSelect,動くやつ
 'SELECT TDBTana.*,TTmp.*,TDBTana.*
 'FROM T_INV_M_Parts AS TDBPrts
@@ -205,6 +190,7 @@ SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 '        IN ""[MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb;] ) AS TTmp
 '        ON TDBTana.F_INV_Tana_System_Text = TTmp.[ロケーション])
 '    ON TDBPrts.F_INV_Tehai_Code = TTmp.手配コード;
+'置換サンプル
 'SELECT {3}.*,{5}.*,{3}.*
 'FROM {0} AS {1}
 'RIGHT JOIN (
@@ -215,15 +201,26 @@ SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 '        ON {3}.{7} = {5}.{8})
 '    ON {1}.{9} = {5}.{10};
 '
-'
-'T_INV_M_Parts   {0}
-'TDBPrts {1}
-'T_INV_M_Tana {2}
-'TDBTana     {3}
-'T_INV_Temp  {4}
-'TTmp    {5}
-'C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb    {6}
-'F_INV_Tana_System_Text  {7}
-'ロケーション    {8}
-'F_INV_Tehai_Code    {9}
-'手配コード  {10}
+'T_INV_M_Parts                      {0}
+'TDBPrts                            {1}
+'T_INV_M_Tana                       {2}
+'TDBTana                            {3}
+'T_INV_Temp                         {4}
+'TTmp                               {5}
+'(CreateAfterINWord(DB_Temp.accdb)  {6}
+'(ON Condition Tana and TTmp)       {7}
+'(ON Condition Parts and TTmp)      {8}
+'F_INV_Tana_ID                      {9}
+'(SET Condition Parts and TTmp)     {10}
+'(WHERE condition Parts ad TTmp)    {11}
+'F_INV_Tehai_Code                   {12}
+Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0} AS {1} " & vbCrLf & _
+"RIGHT JOIN ( " & vbCrLf & _
+"   {2} As {3} " & vbCrLf & _
+"   RIGHT JOIN ( " & vbCrLf & _
+"       SELECT * FROM  {4} " & vbCrLf & _
+"       IN """"{6} ) AS {5}" & vbCrLf & _
+"   ON {7} ) " & vbCrLf & _
+"ON {8} " & vbCrLf & _
+"SET {1}.{9} = {3}.{9},{10} " & vbCrLf & _
+"WHERE ISNULL({1}.{12}) OR {11} ;"
