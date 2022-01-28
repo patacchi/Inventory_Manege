@@ -39,38 +39,54 @@ Public Sub btnZaikoSerch_Click()
     Set dicAppendFormat = New Dictionary
     Dim longZaikoLocalSplitCount As Long
     '各ファイル名に対して処理を実行
-    For longZaikoLocalSplitCount = ZAIKO_LOCAL_SPLIT_MIN To ZAIKO_LOCAL_SPLIT_MAX
-        '最初にAppendFormat用のdictionaryをクリア
-        dicAppendFormat.RemoveAll
-        dicAppendFormat.Add 0, CStr(longZaikoLocalSplitCount)
-        Dim fsoLocalZaiko As FileSystemObject
-        Set fsoLocalZaiko = New FileSystemObject
-'        Dim adoLocalZaiko As clsADOHandle
-'        Set adoLocalZaiko = CreateclsADOHandleInstance
-        Dim strLocalZaikoFullPath As String
-        'Local在庫情報フルパス名取得
-        'ディレクトリはclsAdoのデフォルトDBPath、ファイル名は連番のあれ
-        strLocalZaikoFullPath = fsoLocalZaiko.BuildPath(adoUpsert.DBPath, sqlBC.ReplaceParm(LOCAL_XLS_FILENAME, dicAppendFormat))
-        'ファイル存在確認し、ファイルが存在する場合のみdicTehaiShに追加してやる
-        'Local環境の場合は、keyはファイルの偽分割番号を入れる
-        If fsoLocalZaiko.FileExists(strLocalZaikoFullPath) Then
-            'ファイルが存在する場合
-            dicTehaiSh.Add CStr(longZaikoLocalSplitCount), strLocalZaikoFullPath
-        End If
-    Next longZaikoLocalSplitCount
+'    For longZaikoLocalSplitCount = ZAIKO_LOCAL_SPLIT_MIN To ZAIKO_LOCAL_SPLIT_MAX
+'        '最初にAppendFormat用のdictionaryをクリア
+'        dicAppendFormat.RemoveAll
+'        dicAppendFormat.Add 0, CStr(longZaikoLocalSplitCount)
+'        Dim fsoLocalZaiko As FileSystemObject
+'        Set fsoLocalZaiko = New FileSystemObject
+''        Dim adoLocalZaiko As clsADOHandle
+''        Set adoLocalZaiko = CreateclsADOHandleInstance
+'        Dim strLocalZaikoFullPath As String
+'        'Local在庫情報フルパス名取得
+'        'ディレクトリはclsAdoのデフォルトDBPath、ファイル名は連番のあれ
+'        strLocalZaikoFullPath = fsoLocalZaiko.BuildPath(adoUpsert.DBPath, sqlBC.ReplaceParm(LOCAL_XLS_FILENAME, dicAppendFormat))
+'        'ファイル存在確認し、ファイルが存在する場合のみdicTehaiShに追加してやる
+'        'Local環境の場合は、keyはファイルの偽分割番号を入れる
+'        If fsoLocalZaiko.FileExists(strLocalZaikoFullPath) Then
+'            'ファイルが存在する場合
+'            dicTehaiSh.Add CStr(longZaikoLocalSplitCount), strLocalZaikoFullPath
+'        End If
+'    Next longZaikoLocalSplitCount
     '各ファイル（在庫情報）からDBに登録する
     'CommonPartsのclsINVDBにメソッドを追加するのがいいかも
+    'ファイルはダイアログから選択する
+    'ダウンロードディレクトリをカレントにする
+    Call ChCurrentDirW(GetDownloadPath)
+    Dim strDialogFileName As String
+    strDialogFileName = Application.GetOpenFilename
+    If strDialogFileName = "False" Then
+        'キャンセルが押されたら文字列のFalseが帰ってくるらしい・・・
+        Dim clsGetIEZaikoserchTehaiCode As clsGetIE
+        Set clsGetIEZaikoserchTehaiCode = New clsGetIE
+        '手配コード空白でDLし、結果のファイル名をセットする
+        strDialogFileName = modZaikoSerch.ZaikoSerchbyTehaiCode("", clsGetIEZaikoserchTehaiCode)
+        If strDialogFileName = "" Then
+            '帰ってきたファイル名が空だったら抜ける
+            Exit Sub
+        End If
+    End If
+    dicTehaiSh.Add 1, strDialogFileName
     Dim INVTehaiTest As clsINVDB
     Set INVTehaiTest = CreateclsINVDB
     Dim varKey As Variant
     Dim longAffectedRows As Long
     For Each varKey In dicTehaiSh
-        '偽分割ファイルの各ファイルに対して処理を実行する
         'singleTest
-        longAffectedRows = INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert)
+        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert)
         DebugMsgWithTime CStr(longAffectedRows) & " 件更新"
     Next varKey
-    MsgBox "デバッグ実行成功"
+    MsgBox "Updateレコード件数: " & CStr(longAffectedRows)
 #Else
     '本番環境
     '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
@@ -83,7 +99,6 @@ Public Sub btnZaikoSerch_Click()
     End If
     Dim clsGetIEZaikoserchTehaiCode As clsGetIE
     Set clsGetIEZaikoserchTehaiCode = New clsGetIE
-    clsget
      dicTehaiSh.Add strTehaiCode, modZaikoSerch.ZaikoSerchbyTehaiCode(strTehaiCode, clsGetIEZaikoserchTehaiCode)
      Dim INVTehaiTest As clsINVDB
      Set INVTehaiTest = CreateclsINVDB
@@ -103,7 +118,7 @@ Public Sub btnZaikoSerch_Click()
 #End If
 End Sub
 Public Sub UPSertDBUseCSV()
-    MsgBox "処理件数は: " & CStr(RegistDBbyDailyTanaCSV) & " 件です"
+    MsgBox "Update処理レコード総数は: " & CStr(RegistDBbyDailyTanaCSV) & " 件です"
 End Sub
 '''デイリー棚卸CSVからDBに登録する
 '''戻り値 long 処理したファイルの総数
@@ -141,10 +156,12 @@ Public Function RegistDBbyDailyTanaCSV() As Long
         arrstrDownloadFileList(longArrayRowCounter) = ZaikoSerchbyTehaiCode(arrstrTeheiCode4Digit(longArrayRowCounter), clsGetIECSV)
         'DLしたファイルをDBに登録する
         Dim longAffectedRows As Long
-        longAffectedRows = clsINVDBCsv.UpsertINVPartsMasterfromZaikoSH(arrstrDownloadFileList(longArrayRowCounter), clsINVDBCsv, clsADOCsv, clsEnumCSV)
+        'UPSert実行し、処理レコード数の累計に足してやる
+        longAffectedRows = longAffectedRows + clsINVDBCsv.UpsertINVPartsMasterfromZaikoSH(arrstrDownloadFileList(longArrayRowCounter), clsINVDBCsv, clsADOCsv, clsEnumCSV)
     Next longArrayRowCounter
-    '処理したファイルの総数を返す
-    RegistDBbyDailyTanaCSV = UBound(arrstrTeheiCode4Digit) + 1
+    '処理したレコードの総数を返す
+'    RegistDBbyDailyTanaCSV = UBound(arrstrTeheiCode4Digit) + 1
+    RegistDBbyDailyTanaCSV = longAffectedRows
 '    MsgBox "ファイル総数は: " & CStr(UBound(arrstrDownloadFileList) + 1) & " 個です"
     GoTo CloseAndExit
     Exit Function

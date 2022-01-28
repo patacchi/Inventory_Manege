@@ -385,7 +385,7 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
         strargDBFileName = Me.DBFileName
     End If
     '一時テーブル格納DBの存在チェックと作成
-    Call CreateandCheckTempDB(strargDBPath)
+    Call CreateandCheckTempDB
     '接続済みで、クラスのConnectionStringと引数から作成したConnectionStringが違う場合は一旦切断する
     '明示的に指定されたパスとファイル名を優先させるため
     If Me.Connected And Me.ConnectionString <> CreateConnectionString(strargDBPath, strargDBFileName) Then
@@ -1206,8 +1206,8 @@ End Function
 Private Sub CreateandCheckTempDB(Optional strargDBPath As String)
     On Error GoTo ErrorCatch
     If strargDBPath = "" Then
-        'DBPathが指定されていなかったらプロパティから引っ張る
-        strargDBPath = Me.DBPath
+        'DBPathが指定されていなかったら初期値を設定してやる
+        strargDBPath = constDatabasePath
     End If
     Dim fsoTempDB As FileSystemObject
     Set fsoTempDB = New FileSystemObject

@@ -443,6 +443,8 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
 ''(SET Condition Parts and TTmp)     {10}
 ''(WHERE condition Parts ad TTmp)    {11}
 ''F_INV_Tehai_Code                   {12}
+'{13} InputDate
+'{14} (GetLocaltimeWithMilliSec)
 'Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0} AS {1} " & vbCrLf &
     dicReplaceParam.RemoveAll
     dicReplaceParam.Add 0, INV_CONST.T_INV_M_Parts
@@ -458,6 +460,8 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     dicReplaceParam.Add 10, strSETExp
     dicReplaceParam.Add 11, strWhereExp
     dicReplaceParam.Add 12, clsEnumUpsert.INVMasterParts(F_Tehai_Code_IMPrt)
+    dicReplaceParam.Add 13, PublicConst.INPUT_DATE
+    dicReplaceParam.Add 14, GetLocalTimeWithMilliSec
     'AppendFormatしてSQL作成
     clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA, dicReplaceParam)
     'SQL実行
@@ -465,10 +469,14 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     isCollect = clsADOUpsert.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: SQL Execute fail"
+        UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
         Exit Function
     End If
-    '成功していたらAffecgtedの件数を返して終了
+    'Upsert成功
+    'DLした在庫情報ファイル(xls)を削除する
+    Kill strargZaikoSHFullPath
+    '処理件数を返して終了
 #If DebugDB Then
     DebugMsgWithTime "Upsert Affected: " & clsADOUpsert.Affected & " OriginFile: " & strargZaikoSHFullPath
 #End If
@@ -568,6 +576,7 @@ ByRef clsADODistinct As clsADOHandle)
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, strargDistinctFieldName
     clsADODistinct.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName, dicReplaceParm)
+    'SQL実行
     Call clsADODistinct.Do_SQL_with_NO_Transaction
     DebugMsgWithTime "SELECT_To_TempTable Affected: " & clsADODistinct.Affected
     'DBPath等を元に戻してやる

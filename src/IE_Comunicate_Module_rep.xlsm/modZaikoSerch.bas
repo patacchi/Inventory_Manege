@@ -22,11 +22,12 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
         DebugMsgWithTime "ZaikoSerhbyTehaiCode: Warning! clsGetIE instance empy. will delay...."
         Set clsGetieZaikoSerch = New clsGetIE
     End If
-    If strTehaiCode = "" Then
-        '手配コードが指定されていなかったら抜ける
-        MsgBox "ZaikoSerchbyTehaiCode: 手配コードが空でした（必須項目）"
-        Exit Function
-    End If
+    '手配コード空文字はありえるので続行する
+'    If strTehaiCode = "" Then
+'        '手配コードが指定されていなかったら抜ける
+'        MsgBox "ZaikoSerchbyTehaiCode: 手配コードが空でした（必須項目）"
+'        Exit Function
+'    End If
     '在庫情報検索ページを設定
     clsGetieZaikoSerch.URL = zaikoSerchURL
     Dim longDebugFlag As Long                   'デバッグフラグを管理するためのLong変数
@@ -116,7 +117,15 @@ End Function
 Private Sub SetZaikoSerch_TehaiCode(ByRef clsargIE As clsGetIE, strargTeheaiCode As String)
     On Error GoTo ErrorCatch
     If strargTeheaiCode = "" Then
-        Exit Sub
+'        Exit Sub
+        '管理課指定した上での手配コード空白はあり得るので、ダイアログを出して処理を分岐する
+        Dim resultFullDL As VbMsgBoxResult
+        resultFullDL = MsgBox("手配コードが指定されませんでした。全ての手配コードのファイルをDLしますか？", vbYesNo)
+        If resultFullDL = vbNo Then
+            'NO、いいえが押された
+            MsgBox "処理を中断します"
+            Exit Sub
+        End If
     End If
     'IEインスタンス（在庫検索ページ）の管理課に対して「W」を設定してやる
     '現状 Index = 11 が MSブ W なのでそこを選択してやる、画面上の表示は変わっていないが、データ上は反映されている模様

@@ -163,18 +163,29 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
         If clsEnumCondition.IsNeedTrimZaikoSh(arrstrargFieldPair(longArrayRowCounter, 1)) Then
             'Trimが必要
             'プレフィックス、サフィックスを付加したものを返す
+            'Nullデータ排除のため、文字列形式にもIsNullでの処理を入れる 2022_01_28 Daisuke Oota
             Dim arrstrTrim(2) As String
-            arrstrTrim(0) = clsEnumCondition.SQLFieldCondition(Trim_Prefix_sfc)
-            arrstrTrim(1) = Join(arrstrPrefix, "")
-            arrstrTrim(2) = clsEnumCondition.SQLFieldCondition(Trim_Suffix_sfc)
-            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrTrim, "")
+'            arrstrTrim(0) = clsEnumCondition.SQLFieldCondition(Trim_Prefix_sfc)
+'            arrstrTrim(1) = Join(arrstrPrefix, "")
+'            arrstrTrim(2) = clsEnumCondition.SQLFieldCondition(Trim_Suffix_sfc)
+'            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrTrim, "")
+            '置換用Dictionary準備
+            Dim dicReplaceCondition As Dictionary
+            If dicReplaceCondition Is Nothing Then
+                '初期化されてなかったら初期化する
+                Set dicReplaceCondition = New Dictionary
+            End If
+            dicReplaceCondition.RemoveAll
+            'テーブルエイリアスのプレフィックスを付加したフィールド名を置換用Dictionaryにセット
+            dicReplaceCondition.Add 0, Join(arrstrPrefix, "")
+            '以下の置換を実行するとIIF,ISNULL,TRIMが一気に入る
+            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Me.ReplaceParm(PublicConst.SQL_ISNULLTRIM_0FieldName, dicReplaceCondition)
         Else
             'Trimは不要
             'そのまま結合はしない 2022_01_27 Daisuke Oota
             'Trim不要な列は基本的に数値列で、Nullや空文字のデータがあると、WHEREで「抽出条件のデータ型が・・・」と言われるので
             'IIFとISNUMERICで数値変換できないデータは明示的に0をいれてやる
             'IIF 置換用dic
-            Dim dicReplaceCondition As Dictionary
             If dicReplaceCondition Is Nothing Then
                 '初期化されてなかったら初期化する
                 Set dicReplaceCondition = New Dictionary

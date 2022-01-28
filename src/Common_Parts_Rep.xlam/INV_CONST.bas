@@ -164,7 +164,8 @@ Public Const SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword As String = "SELECT * INT
 '事前にT_INV_SELECT_TEMPの削除が必要
 Public Const SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName As String = "SELECT * INTO " & T_INV_SELECT_TEMP & " " & vbCrLf & _
 "FROM ( " & vbCrLf & _
-    "SELECT DISTINCT {0} FROM " & T_INV_TEMP & vbCrLf & _
+    "SELECT DISTINCT TRIM({0}) AS {0} FROM " & T_INV_TEMP & " " & vbCrLf & _
+    "WHERE IIF(ISNULL(TRIM({0})),""NULL_DATA"",TRIM({0})) <> ""NULL_DATA"" AND IIF(ISNULL(TRIM({0})),""NULL_DATA"",TRIM({0})) <>  """"" & vbCrLf & _
 ")"
 ''------------------------------------------------------------------------------------------
 '一時テーブルのZaikoSHをINV_M_Tanaに入れる
@@ -214,6 +215,8 @@ SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 '(SET Condition Parts and TTmp)     {10}
 '(WHERE condition Parts ad TTmp)    {11}
 'F_INV_Tehai_Code                   {12}
+'{13} InputDate
+'{14} (GetLocaltimeWithMilliSec)
 Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0} AS {1} " & vbCrLf & _
 "RIGHT JOIN ( " & vbCrLf & _
 "   {2} As {3} " & vbCrLf & _
@@ -222,5 +225,5 @@ Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0}
 "       IN """"{6} ) AS {5}" & vbCrLf & _
 "   ON {7} ) " & vbCrLf & _
 "ON {8} " & vbCrLf & _
-"SET {1}.{9} = {3}.{9},{10} " & vbCrLf & _
+"SET {1}.{9} = IIF(ISNULL({3}.{9}),{1}.{13} = ""{14}"",-1,{3}.{9}),{10} " & vbCrLf & _
 "WHERE ISNULL({1}.{12}) OR {11} ;"
