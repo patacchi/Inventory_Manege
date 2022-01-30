@@ -95,6 +95,10 @@ Private Sub DoUpdateTable(strargTableName As String)
         'SQL作成
         Dim strSQL_FixDigitOffset As String
         strSQL_FixDigitOffset = strBC.ReplaceParm(CAT_CONST.SQL_FIX_DIGITOFFSET_0_TableName_1_DigitOffset_2_DigitRow_3_DigitUpdate, dicFixDigitOffset)
+        'ConnectModeのWriteフラグの状態を調べる
+        If Not adoFieldUpdate.ConnectMode And adModeWrite Then
+            adoFieldUpdate.ConnectMode = adoFieldUpdate.ConnectMode Or adModeWrite
+        End If
         'SQL実行
         isCollect = adoFieldUpdate.Do_SQL_with_NO_Transaction(strSQL_FixDigitOffset)
         If Not isCollect Then
@@ -136,6 +140,8 @@ Private Sub DoUpdateTable(strargTableName As String)
         strSQL_FixInputDate = strBC.ReplaceParm(CAT_CONST.SQL_FIX_INPUTDATE_0_TableName, dicFixInputDate)
         '修正実行
         Call adoFieldUpdate.Do_SQL_with_NO_Transaction(strSQL_FixInputDate)
+        'Writeフラグを下げる
+        adoFieldUpdate.ConnectMode = adoFieldUpdate.ConnectMode And Not adModeWrite
     End If
     Set clsEnumValue = Nothing
     Set adoFieldUpdate = Nothing

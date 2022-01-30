@@ -16,6 +16,9 @@ Option Explicit
     Const ZAIKO_LOCAL_SPLIT_MIN As Long = 0
     Const ZAIKO_LOCAL_SPLIT_MAX As Long = 3
 #End If
+Public Sub ShowfrmPartMaster()
+    Call ShowfrmInvPartsMaster
+End Sub
 Public Sub btnZaikoSerch_Click()
     '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
     '''dicTehaiSh は key に Tehaicode を Value に シートフルパスを入れる
@@ -61,8 +64,8 @@ Public Sub btnZaikoSerch_Click()
     '各ファイル（在庫情報）からDBに登録する
     'CommonPartsのclsINVDBにメソッドを追加するのがいいかも
     'ファイルはダイアログから選択する
-    'ダウンロードディレクトリをカレントにする
-    Call ChCurrentDirW(GetDownloadPath)
+    'DBディレクトリをカレントにする
+    Call ChCurrentDirW(adoUpsert.DBPath)
     Dim strDialogFileName As String
     strDialogFileName = Application.GetOpenFilename
     If strDialogFileName = "False" Then
@@ -82,8 +85,15 @@ Public Sub btnZaikoSerch_Click()
     Dim varKey As Variant
     Dim longAffectedRows As Long
     For Each varKey In dicTehaiSh
-        'singleTest
-        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert)
+        '在庫情報シート名を引数にとり、その内容でT_INV_M_PartsをUPSertする
+#If DontRemoveZaikoSH Then
+        '試験中でファイル消したくない時
+        '最後の引数にTrueをセットすると引数で指定したファイルを消去しないで残す
+        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert, True)
+#Else
+        '通常時はこっち、指定したファイルは消去する
+        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert, False)
+#End If
         DebugMsgWithTime CStr(longAffectedRows) & " 件更新"
     Next varKey
     MsgBox "Updateレコード件数: " & CStr(longAffectedRows)

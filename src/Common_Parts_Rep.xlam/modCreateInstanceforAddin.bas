@@ -36,6 +36,14 @@ Public Function CreateclsINVDB() As clsINVDB
     Set T = Nothing
     Exit Function
 End Function
+'clsIncrementalSerch
+Public Function CreateclsIncrementalSerch() As clsIncrementalSerch
+    Dim T As clsIncrementalSerch
+    Set T = New clsIncrementalSerch
+    Set CreateclsIncrementalSerch = T
+    Set T = Nothing
+    Exit Function
+End Function
 '''SQLテストフォームを表示する
 Public Sub ShowfrmSQLTest()
     frmSQLTest.Show
@@ -45,4 +53,8 @@ End Sub
 Public Sub ShowfrmFieldChange()
     frmFieldChange.Show
     Exit Sub
+End Sub
+'''INV_M_Partsマスター表示フォームを表示する
+Public Sub ShowfrmInvPartsMaster()
+    frmINV_PartsMaster_List.Show
 End Sub

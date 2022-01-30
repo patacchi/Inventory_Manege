@@ -19,6 +19,7 @@ Const constDBFILENAME               As String = "INV_Manege_Local.accdb"    'İŒ
 '–{”ÔŠÂ‹«
 Const constDBFILENAME               As String = "INV_Manege.accdb"          'İŒÉŠÇ—DB
 #End If
+Const DEFAULT_CONNECTION_MODE       As Long = ConnectModeEnum.adModeRead
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const CONNECTION_STRING_ACCDB_0DBFullPath           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0}"       'Ú‘±•¶š—ñ_accdb
 Const CONNECTION_STRING_XLSM_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 Macro;HDR=Yes;"";"
@@ -40,7 +41,9 @@ Private adoCommand As adodb.Command
 Private adoParameters As adodb.Parameters
 Private rsMyRecord As adodb.Recordset
 Private varMyArray As Variant
-Private longAffected As Long                                            '‰e‹¿‚ğó‚¯‚½s”‚ğŠi”[‚·‚éiUpdate‚Æ‚©Insert‚Æ‚©j
+Private longAffected As Long
+Private conMode As ConnectModeEnum
+'‰e‹¿‚ğó‚¯‚½s”‚ğŠi”[‚·‚éiUpdate‚Æ‚©Insert‚Æ‚©j
 'ƒvƒƒpƒeƒB
 'DBPath
 Property Get DBPath() As String
@@ -175,8 +178,37 @@ Property Get RS() As adodb.Recordset
 End Property
 'RA_Array
 '“Ç‚İæ‚èê—p
-Property Get RS_Array() As Variant
-    RS_Array = varMyArray
+Property Get RS_Array(Optional NoTitle As Boolean = False) As Variant
+    If NoTitle Then
+        'ƒ^ƒCƒgƒ‹–³‚µ‚Ìê‡‚Í2s–Ú‚©‚ç‚Ì”z—ñ‚ğÄì¬‚µA•Ô‚·
+        If Me.RecordCount < 1 Or Not IsRedim(varMyArray) Then
+            'ƒŒƒR[ƒhƒJƒEƒ“ƒg‚ª1–¢–‚Ì‚©A”z—ñ‚ª‰Šú‰»‚³‚ê‚Ä‚¢‚È‚¢‚Æ‚«
+            'ƒf[ƒ^‚È‚µ‚¾‚æ’Ê’m‚ğ‚µ‚ÄI‚í‚è
+            RS_Array = Empty
+            Exit Property
+        End If
+        '2s–Ú‚©‚ç‚Ìƒf[ƒ^ì¬ŠJn
+        Dim longNotitleArrayRowCounter As Long
+        Dim longNotitleArrayColumnCounter As Long
+        'Œ‹‰ÊŠi”[—p”z—ñ’è‹`
+        Dim varResult As Variant
+        ReDim varResult(Me.RecordCount - 1, Me.RS.Fields.Count - 1)
+        's”‚¾‚¯–¾¦“I‚É2s–Ú‚©‚çn‚ß‚é
+        For longNotitleArrayRowCounter = 1 To UBound(varMyArray, 1)
+            'ƒtƒB[ƒ‹ƒh”•ªƒ‹[ƒv
+            For longNotitleArrayColumnCounter = LBound(varMyArray, 2) To UBound(varMyArray, 2)
+                'ArrayRowCounter‚ª1‚©‚çn‚Ü‚Á‚Ä‚é‚Ì‚Å’ˆÓI
+                varResult(longNotitleArrayRowCounter - 1, longNotitleArrayColumnCounter) = varMyArray(longNotitleArrayRowCounter, longNotitleArrayColumnCounter)
+            Next longNotitleArrayColumnCounter
+        Next longNotitleArrayRowCounter
+        'Œ‹‰Ê‚ğ•Ô‚µ‚ÄI—¹
+        RS_Array = varResult
+        Exit Property
+    Else
+        'ƒfƒtƒHƒ‹ƒg‚Í‚±‚Á‚¿Aƒ^ƒCƒgƒ‹•t‚«
+        RS_Array = varMyArray
+        Exit Property
+    End If
 End Property
 'RecordCount
 '“Ç‚İæ‚èê—p
@@ -199,6 +231,45 @@ Property Get Affected() As Long
     If longAffected >= 0 Then
         Affected = longAffected
     End If
+End Property
+'ConnectMode
+Property Get ConnectMode() As ConnectModeEnum
+    If Not adoConnection Is Nothing Then
+        If Me.Connected Then
+            '‰Šú‰»Ï‚İA‚©‚ÂÚ‘±Ï‚İ‚È‚çŒ»İ‚ÌConnectionMode‚ğ•Ô‚·
+            conMode = adoConnection.Mode
+            ConnectMode = conMode
+            Exit Property
+        End If
+    End If
+    If conMode = adModeUnknown Then
+        'ConnectionMode‚ª–¢İ’èiUnKnown)‚Ìê‡‚Í‰Šú’l‚ğİ’è‚µ‚Ä‚â‚é
+        conMode = DEFAULT_CONNECTION_MODE
+        'Œ‹‰Ê‚ğ•Ô‚·
+        ConnectMode = conMode
+        Exit Property
+    Else
+        '‚»‚êˆÈŠO‚Ìê‡‚Íƒƒ“ƒo•Ï”‚Ì’l‚ğ‚»‚Ì‚Ü‚Ü•Ô‚µ‚Ä‚â‚é
+        ConnectMode = conMode
+        Exit Property
+    End If
+End Property
+Property Let ConnectMode(argConnectMode As ConnectModeEnum)
+    If Not adoConnection Is Nothing Then
+        '‰Šú‰»Ï‚İ‚Å
+        If adoConnection.Mode <> argConnectMode And Me.Connected Then
+            'ˆø”‚Åw’è‚³‚ê‚½Mode‚ªˆá‚Á‚½ê‡‚ÅX‚ÉÚ‘±Ï‚İ‚Ìê‡
+            'ˆê’UÚ‘±‚ğØ’f‚µ‚Ä‚â‚éi‘½•ªØ‚è‘Ö‚¦‚éj
+            Me.CloseClassConnection
+        End If
+    Else
+        '‰Šú‰»‚ª‚Ü‚¾‚È‚ç‚±‚±‚ÅV‚µ‚¢ƒCƒ“ƒXƒ^ƒ“ƒX‚ğŠ„‚è“–‚Ä‚é
+        Set adoConnection = New adodb.Connection
+    End If
+    'ƒƒ“ƒo•Ï”‚ÉƒZƒbƒg‚µAConnectionObject‚É‚àƒZƒbƒg‚µ‚Ä‚â‚é
+    conMode = argConnectMode
+    adoConnection.Mode = conMode
+    Exit Property
 End Property
 '''ƒRƒ“ƒXƒgƒ‰ƒNƒ^
 '''ƒNƒ‰ƒX¶¬‚ÉÅ‰‚És‚¤
@@ -266,6 +337,7 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
         'Command‚ª‰Šú‰»‚³‚ê‚Ä‚È‚©‚Á‚½‚ç‚±‚±‚Ås‚¤
         Set adoCommand = New adodb.Command
     End If
+    adoCommand.CommandType = adCmdText
     adoCommand.CommandText = strargSQL
     adoCommand.ActiveConnection = adoConnection
     If rsMyRecord Is Nothing Then
@@ -276,7 +348,7 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     If rsMyRecord.State = adStateClosed Then
         'Recordset‚ª•Â‚¶‚Ä‚¢‚½ê‡
         'DROP TABLE , SELECT INTO ... “™‚ªŠY“–H
-        If Err.Number = 0 Then
+        If err.Number = 0 Then
             '³íI—¹H
             Do_SQL_with_NO_Transaction = True
             ReDim varMyArray(1, 0)
@@ -299,8 +371,8 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     Do_SQL_with_NO_Transaction = True
     Exit Function
 ErrorCatch:
-    MsgBox "Do_SQL_with_NO_Transaction code: " & Err.Number & vbCrLf & "Description: " & Err.Description
-    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & Err.Number & " Description: " & Err.Description
+    MsgBox "Do_SQL_with_NO_Transaction code: " & err.Number & vbCrLf & "Description: " & err.Description
+    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Write Daisuke_Oota
@@ -521,6 +593,8 @@ Private Function OpenConnection(strargConnection As String) As Boolean
     adoConnection.ConnectionString = Me.ConnectionString
     'Connection‚ÌCursorLocation‚ğCliant‚É‚·‚éB‚±‚ê‚ğ‚â‚ç‚È‚¢‚ÆARecorCount‚Æ‚©‚ªæ‚ê‚È‚©‚Á‚½‚è‚·‚é
     adoConnection.CursorLocation = adUseClient
+    'ConnectionMode‚ğw’è‚·‚éBƒfƒtƒHƒ‹ƒg‚ÍReadOnly
+    adoConnection.Mode = Me.ConnectMode
     adoConnection.Open
     If adoConnection.Errors.Count >= 1 Then
         GoTo ErrorCatch
@@ -539,7 +613,7 @@ ErrorCatch:
         OpenConnection = False
         Exit Function
     End If
-    DebugMsgWithTime "OpenConnection code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "OpenConnection code: " & err.Number & " Description: " & err.Description
     OpenConnection = False
     Exit Function
 End Function
@@ -579,8 +653,8 @@ Private Function ChCurrentToDBDirectory(Optional strargDBPath As String = "") As
     ChCurrentToDBDirectory = True
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "ChCurrenttoDB code: " & Err.Number & " Description: " & Err.Description
-    If Err.Number = 76 Then
+    DebugMsgWithTime "ChCurrenttoDB code: " & err.Number & " Description: " & err.Description
+    If err.Number = 76 Then
         'ƒpƒX‚ªŒ©‚Â‚©‚è‚Ü‚¹‚ñAmkdir‚ÅƒGƒ‰[‚ªo‚½ = ƒlƒbƒgƒ[ƒNƒ_ƒ‚È‚ñ‚¾‚Ë
         MsgBox "DBƒfƒBƒŒƒNƒgƒŠì¬¸”si‘½•ªƒlƒbƒgƒ[ƒN–â‘èjˆ—‚ğ’†’f‚µ‚Ü‚·"
     End If
@@ -610,8 +684,8 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     InitialDBCreate = True
     Exit Function
 ErrorCatch:
-    If Err.Number <> 0 Then
-        MsgBox Err.Number & vbCrLf & Err.Description
+    If err.Number <> 0 Then
+        MsgBox err.Number & vbCrLf & err.Description
     End If
     Exit Function
 End Function
@@ -676,8 +750,14 @@ Public Function AppendField(strargTableName As String, strargFieldName As String
     Dim dicAppendField As Dictionary
     Set dicAppendField = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
     strSQL = sqlBC.ReplaceParm(SQL_APPEND_FIELD_0Tableneme_1fieldname_2DataType, dicAppendField)
+    'ConnectMode‚ÌWriteƒtƒ‰ƒO‚Ì’²¸Eİ’è
+    If Not Me.ConnectMode And adModeWrite Then
+        Me.ConnectMode = Me.ConnectMode Or adModeWrite
+    End If
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    'ConnectMode‚ÌWriteƒtƒ‰ƒO‚ğ‰º‚·
+    Me.ConnectMode = Me.ConnectMode And Not (adModeWrite)
     If Not isCollect Then
         'DoSql‚Å¸”s‚µ‚Ä‚é‚æ‚¤‚¾‚Á‚½‚ç”²‚¯‚é
         DebugMsgWithTime "AppendField: fail when Do SQL"
@@ -751,8 +831,14 @@ Public Function DeleteField(strargTableName As String, strargFieldName As String
 '    dicDeleteField.Add 1, strargFieldName
     Set dicDeleteField = GetReplaceParmDic(strargTableName, strargFieldName)
     strSQL = sqlBC.ReplaceParm(SQL_DELETE_FIELD_0Tablename_1Fieldname, dicDeleteField)
+    'ConnectMode‚ÌWriteƒtƒ‰ƒO‚Ì’²¸Eİ’è
+    If Not Me.ConnectMode And adModeWrite Then
+        Me.ConnectMode = Me.ConnectMode Or adModeWrite
+    End If
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    'Writeƒtƒ‰ƒO‚ğ‰º‚·
+    Me.ConnectMode = Me.ConnectMode And Not adModeWrite
     If Not isCollect Then
         'DoSql‚Å¸”s‚µ‚Ä‚é‚æ‚¤‚¾‚Á‚½‚ç”²‚¯‚é
         DebugMsgWithTime "DeleteField: fail when Do SQL"
@@ -830,8 +916,14 @@ Public Function ChangeDataType(strargTableName As String, strargFieldName As Str
     '’uŠ·—p‚Ìƒpƒ‰ƒ[ƒ^‚ÌDictionary‚ğæ“¾‚·‚é
     Set dicChangeDataType = GetReplaceParmDic(strargTableName, strargFieldName, argaccdbType, strargDataSize)
     strSQL = sqlBC.ReplaceParm(SQL_CHANGE_DATATYPE_0Tablename_1Fieldname_2DataType, dicChangeDataType)
+    'ConnectMode‚ÌWriteƒtƒ‰ƒO‚Ì’²¸Eİ’è
+    If Not Me.ConnectMode And adModeWrite Then
+        Me.ConnectMode = Me.ConnectMode Or adModeWrite
+    End If
     Dim isCollect As Boolean
     isCollect = Me.Do_SQL_with_NO_Transaction(strSQL, strargDBPath, strargDBFileName)
+    'wireƒtƒ‰ƒO‚ğ‰º‚·
+    Me.ConnectMode = Me.ConnectMode And Not adModeWrite
     If Not isCollect Then
         'DoSql‚Å¸”s‚µ‚Ä‚é‚æ‚¤‚¾‚Á‚½‚ç”²‚¯‚é
         DebugMsgWithTime "ChangeDataType: fail when Do SQL"
@@ -1010,7 +1102,7 @@ ErrorCatch:
     End If
     Set conTableExists = Nothing
     IsTableExists = False
-    DebugMsgWithTime "IsTableExists code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IsTableExists code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Authour Daisuke Oota 2021_12_16
@@ -1110,7 +1202,7 @@ ErrorCatch:
     End If
     Set conFieldExists = Nothing
     IsFieldExists = False
-    DebugMsgWithTime "IsFielsExists code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IsFielsExists code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Author Patacchi 2022_01_16
@@ -1185,7 +1277,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     GetTableList = arrstrTables
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetTableList code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "GetTableList code: " & err.Number & " Description: " & err.Description
     Dim arrError() As String
     GetTableList = arrError
     GoTo CloseAndExit
@@ -1224,7 +1316,7 @@ Private Sub CreateandCheckTempDB(Optional strargDBPath As String)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "CreateTempDB code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "CreateTempDB code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set adoxTempDB = Nothing
@@ -1258,6 +1350,11 @@ Public Function DropTable(strargTableName As String, Optional strargDBFileName A
         DropTable = True
         GoTo CloseAndExit
         Exit Function
+    End If
+    'Œ»İ‚ÌConnectionMode‚ÅWriteƒtƒ‰ƒO‚ª—§‚Á‚Ä‚¢‚é‚©Šm”F‚·‚é
+    If Not Me.ConnectMode And adModeWrite Then
+        'Writeƒtƒ‰ƒO‚ğ—§‚Ä‚é
+        Me.ConnectMode = Me.ConnectMode Or adModeWrite
     End If
     'ƒe[ƒuƒ‹Á‹Às
     Dim isCollect As Boolean

@@ -202,6 +202,13 @@ Private Sub btnSQLGo_Click()
         Set sqlBC = New clsSQLStringBuilder
         Dim dicParm As Dictionary
         Set dicParm = CreateParmDic
+        If chkBoxIsWriteFlag.Value = True Then
+            'Writeフラグを立てる設定になっていた
+            dbTest.ConnectMode = dbTest.ConnectMode Or adModeWrite
+        Else
+            'それ以外はWriteフラグを下げる
+            dbTest.ConnectMode = dbTest.ConnectMode And Not adModeWrite
+        End If
         isCollect = dbTest.Do_SQL_with_NO_Transaction(sqlBC.ReplaceParm(txtboxSQLText.Text, dicParm))
         Set dicParm = Nothing
         Set sqlBC = Nothing

@@ -61,7 +61,7 @@ Public Function ReplaceParm(strargOriginString As String, dicargParm As Dictiona
     Exit Function
 ErrorCatch:
     Set objBuilder = Nothing
-    DebugMsgWithTime "ReplaceParm code: " & Err.Number & vbCrLf & " Description: " & Err.Description
+    DebugMsgWithTime "ReplaceParm code: " & err.Number & vbCrLf & " Description: " & err.Description
     Exit Function
 End Function
 '''------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ Private Function Append(ByVal strargOrignString As String, ByRef varAryString As
     Append = Join(strarrBuf, strDelimiter)
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "Append Error code: " & Err.Number & "Description: " & Err.Description
+    DebugMsgWithTime "Append Error code: " & err.Number & "Description: " & err.Description
 End Function
 Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal strQuote As String = """") As String
     '与えられた文字列に、エスケープ処理をする
@@ -110,7 +110,7 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     addQuote = Append("", strBuf, "")
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "addQuote Error code: " & Err.Number & "Description: " & Err.Description
+    DebugMsgWithTime "addQuote Error code: " & err.Number & "Description: " & err.Description
 End Function
 '''INVPartMasterテーブルと対応する在庫情報シートのフィールド名から UPDATE の SET パラメータや WHERE パラメータを作成する
 '''対応フィールドを配列引数で受け取るよう変更 2022_01_27 Daisuke Oota
@@ -218,8 +218,28 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ReturnCommonFieldCondition code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "ReturnCommonFieldCondition code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    Exit Function
+End Function
+'''テーブルエイリアスを付加したフィールド名を返す
+'''Return   String      完全修飾フィールド名
+'''args
+'''TableAlias           Enum_SQL_INV_Aliasの定数値
+'''strFieldName         フィルド名
+'''clsEnumField         インスタンス共有変数
+Public Function ReturnTableAliasPlusedFieldName(TableAlias As Enum_SQL_INV_Alias, strargFieldName As String, _
+ByRef clsEnumField As clsEnum) As String
+    If strargFieldName = "" Then
+        'フィールド名が指定されてないなかったら抜ける
+        DebugMsgWithTime "ReturnTahleAliasPlusedFieldName: no field name given"
+        Exit Function
+    End If
+    Dim strField(2) As String
+    strField(0) = clsEnumField.SQL_INV_Alias(TableAlias)
+    strField(1) = "."
+    strField(2) = strargFieldName
+    ReturnTableAliasPlusedFieldName = Join(strField, "")
     Exit Function
 End Function

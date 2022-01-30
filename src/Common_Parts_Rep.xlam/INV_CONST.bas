@@ -125,6 +125,54 @@ Public Enum Enum_SH_Zaiko_Need_Trim
     F_Manege_Section_sub_ntrm = Enum_Sh_Zaiko.F_Manege_Section_Sub_ShZ
     F_System_Description_ntrm = Enum_Sh_Zaiko.F_System_Description_ShZ
 End Enum
+'棚卸CSVファイル
+'T_M_Partsとは別にデータを持つので、それほど気にしなくてもいいかも
+'F_CSV_ID    （オートインクリメント）
+'ＮＯ．         独自
+'棚卸締切日     ローカル
+'管理課記号     共通
+'サブコード
+'手配コード     共通
+'品名
+'型格
+'棚番 共通
+'ロケーション   共通
+'貯蔵記号 共通
+'在庫数
+'現品残         ローカル限定
+'DB格納テーブル名
+Public Const T_INV_CSV As String = "T_INV_CSV"                                                      '棚卸CSVファイルを格納するテーブル名
+Public Const F_INV_CSV_ID As String = "F_CSV_ID"
+Public Const F_INV_CSV_ENDDAY As String = "棚卸締切日"
+Public Const F_INV_CSV_NO As String = "ＮＯ．"
+Public Const F_INV_CSV_MANEGE_SECTION = F_SH_ZAIKO_MANEGE_SECTON
+Public Const F_INV_CSV_MANEGE_SECTION_SUB = "サブコード"
+Public Const F_INV_CSV_TEHAI_TEXT = F_SH_ZAIKO_TEHAI_TEXT
+Public Const F_INV_CSV_SYSTEM_NAME As String = "品名"
+Public Const F_INV_CSV_SYSTEM_SPEC As String = "型格"
+Public Const F_INV_CSV_SYSTEM_TANA_NO = F_SH_ZAIKO_SYSTEM_TANA_NO
+Public Const F_INV_CSV_LOCATION_TEXT = F_SH_ZAIKO_TANA_TEXT
+Public Const F_INV_CSV_STORE_CODE = F_SH_ZAIKO_STORE_CODE
+Public Const F_INV_CSV_STOCK_AMOUNT As String = "在庫数"
+Public Const F_INV_CSV_AVAILABLE_AMOUNT As String = "現品残"
+'CSV Enum Inv CSv file
+'3個以外は共通なので共通(?)
+Public Enum Enum_CSV_Tana_Field
+    F_EndDay_ICS = 100
+    F_CSV_No_ICS = 101
+    F_Available_ICS = 102
+    '以下は共通フィールド
+    F_ManegeSection_ICS = Enum_INV_M_Parts.F_Manege_Section_IMPrt
+    F_ManegeSection_Sub_ICS = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
+    F_Tehai_Code_ICS = Enum_INV_M_Parts.F_Tehai_Code_IMPrt
+    F_System_Name_ICS = Enum_INV_M_Parts.F_System_Name_IMPrt
+    F_System_Spec_ICS = Enum_INV_M_Parts.F_System_Spec_IMPrt
+    F_System_Tana_NO_ICS = Enum_INV_M_Parts.F_System_TanaNo_IMPrt
+    'ロケーションだけメンドウなので独自に番号振る
+    F_Location_Text = 103
+    F_Store_Code = Enum_INV_M_Parts.F_Store_Code_IMPrt
+    F_Stock_Amount = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
+End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -225,5 +273,26 @@ Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0}
 "       IN """"{6} ) AS {5}" & vbCrLf & _
 "   ON {7} ) " & vbCrLf & _
 "ON {8} " & vbCrLf & _
-"SET {1}.{9} = IIF(ISNULL({3}.{9}),{1}.{13} = ""{14}"",-1,{3}.{9}),{10} " & vbCrLf & _
-"WHERE ISNULL({1}.{12}) OR {11} ;"
+"SET {1}.{9} = IIF(ISNULL({3}.{9}),-1,{3}.{9}),{1}.{13} = ""{14}"",{10} " & vbCrLf & _
+"WHERE ISNULL({1}.{12}) OR {11} ;"
+'T_INV_M_TanaとT_INV_M_Parts結合した汎用SELECT SQL、外部DBファイル参照は無いものとする
+'{0}    (SELECT Field)
+'{1}    T_INV_M_Parts
+'{2}    TDBPrts
+'{3}    T_INV_M_Tana
+'{4}    TDBTana
+'{5}    F_INV_Tana_ID
+'{6}    (WHERE condition)無しの場合は空文字 "" でOK
+Public Const SQL_INV_JOIN_TANA_PARTS As String = "SELECT {0} " & vbCrLf & _
+"FROM {1} AS {2} " & vbCrLf & _
+"   LEFT JOIN {3} AS {4} " & vbCrLf & _
+"   ON {2}.{5} = {4}.{5} " & vbCrLf & _
+"WHERE 1=1 {6} ;"
+'Tanaマスターで、Local_textが空欄の物を一括でSystem_Textのものに設定する
+'{0}    T_INV_M_Tana
+'{1}    TDBTana
+'{2}    (SET condition) TDBTana.F_INV_LOCAL_TEXT = TDBTana.F_INV_SYSTEM_Text
+'{3}    (WHERE condition) AND TDBTana.LOCAL_TExt IS NULL
+Public Const SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM As String = "UPDATE {0} AS {1} " & vbCrLf & _
+"SET {2} " & vbCrLf & _
+"WHERE 1=1 {3}"

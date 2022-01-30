@@ -15,5 +15,7 @@ bin/*_Local*
 #説明ファイルは除外設定の例外としてステージング対象とする
 !bin/_Localファイルはgit管理されません.txt
 src/*/*.frx
+#新規フォームは少しの間管理対象とする
+!src/Common_Parts_Rep.xlam/frmINV_PartsMaster_List.*
 TempDB/
 #/x64/

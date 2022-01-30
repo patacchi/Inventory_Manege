@@ -137,14 +137,14 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
             strargSheetName = wkbFilter.Worksheets(1).Name
         End If
         '存在しないシート名を開いた場合はErr.Number = 9 、インデックス外エラーが発生するので、エラートラップを行う
-        Err.Clear
+        err.Clear
         Dim shtFilter As Worksheet
         '在庫情報シートのオブジェクトを取得する、このタイミングでシートが存在しない場合はエラーが発生する
         On Error Resume Next
-        Err.Clear
+        err.Clear
         Set shtFilter = wkbFilter.Worksheets(strargSheetName)
         'Err.Numberが0以外の時は処理を中断
-        If Err.Number <> 0 Then
+        If err.Number <> 0 Then
             DebugMsgWithTime "GetFilterRangeNameFromExcel: sheet not found: " & strargSheetName
             GoTo CloseAndExit
             Exit Function
@@ -152,9 +152,20 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
         On Error GoTo ErrorCatch
         Dim flgSave As Boolean
         flgSave = False
+        'フィルタが既に設定されている場合は、そのファイルに対して編集を行っても自動的にフィルタ範囲が拡大されないので、一旦解除してやる 2022_01_30 Patacchi
+        If shtFilter.AutoFilterMode = True Then
+            Dim rngZaikoInfoColumn As Range
+            Set rngZaikoInfoColumn = shtFilter.Cells.Find(strargKeyFieldName)
+            If Not rngZaikoInfoColumn Is Nothing Then
+                '手配コードの列が見つかった場合
+                '手配コードの列を基準にしてオートフィルタを解除する
+                rngZaikoInfoColumn.AutoFilter
+                'SaveFlagを立てる
+                flgSave = True
+            End If
+        End If
         If shtFilter.AutoFilterMode = False Then
             '在庫情報シートにフィルターが設定されていない場合
-            Dim rngZaikoInfoColumn As Range
             'キーField名を決定する
             If strargKeyFieldName = "" Then
                 '引数でキーフィールド名が指定されていない場合は、手配コードをデフォルトとする
@@ -170,17 +181,17 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
                 flgSave = True
             End If
         End If
-        '名前定義すべてに対してループし、非表示の名前範囲を表示する設定にし
-        'フィルター情報の名前定義を関数の戻り値として設定してやる
-        Dim elmName As Name
-        For Each elmName In shtFilter.Names
-            If elmName.Visible = False Then
-                '名前定義が非表示なっていた場合
-                elmName.Visible = True
-                '保存フラグを立てる
-                flgSave = True
-            End If
-        Next elmName
+'        '名前定義すべてに対してループし、非表示の名前範囲を表示する設定にし
+'        'フィルター情報の名前定義を関数の戻り値として設定してやる
+'        Dim elmName As Name
+'        For Each elmName In shtFilter.Names
+'            If elmName.Visible = False Then
+'                '名前定義が非表示なっていた場合
+'                elmName.Visible = True
+'                '保存フラグを立てる
+'                flgSave = True
+'            End If
+'        Next elmName
         '保存フラグの状態を調べる
         If flgSave Then
             '保存フラグが立っていたらブックを保存する
@@ -225,7 +236,7 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
         GoTo CloseAndExit
     End Select
 ErrorCatch:
-    DebugMsgWithTime "GetFilterRangeNameFromExcel code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "GetFilterRangeNameFromExcel code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
     Exit Function
 CloseAndExit:
@@ -312,7 +323,7 @@ Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As St
     GoTo CloseAndExit
 ErrorCatch:
     CSVFileSaveAsXlsxFileandPasteValues = ""
-    DebugMsgWithTime "CSVFileSaveAsXlsxFileandPasteValues code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "CSVFileSaveAsXlsxFileandPasteValues code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set shXlsx = Nothing
@@ -330,15 +341,17 @@ CloseAndExit:
 End Function
 '''Author Daisuke Oota 2022_01_20
 '''在庫情報シートのフルパスを引数として、INVパーツマスターDBに登録するプロシージャ
+'''戻り値 long      変更があったレコード数を返す。0以下だと何かしらがあった？
 '''args
 '''strargZaikoSHFullPath    在庫情報シートのフルパス
 '''clsADOUpsert             ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
 '''                         DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
 '''clsINVDBUpsert           INVDBクラスのインスタンスを指定する。このメソッド以前に作成していたら再利用する（コンストラクタの動作が重いため）
 '''clsEnumUpsert            Enunクラスのインスタンスを指定する、できれば事前に一度だけ作成したのを使いまわしたい
-'''戻り値 long      変更があったレコード数を返す。0以下だと何かしらがあった？
+'''NotDeleteSHFile          TrueをセットするとUpsert完了後に元データを削除しないで残す、デフォルトはFalse（消去する）
 Public Function UpsertINVPartsMasterfromZaikoSH(strargZaikoSHFullPath As String, _
-ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsEnumUpsert As clsEnum) As Long
+ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsEnumUpsert As clsEnum, _
+Optional NotDeleteSHFile As Boolean = False) As Long
     On Error GoTo ErrorCatch
     'クラスの存在確認
     'clsINVDBUpsert
@@ -393,7 +406,14 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     '棚番マスターに登録する際に、SELECT DISTINCT ロケーション しないと重複してる時にそのまま登録してしまう、が
     'DISTINCT等の集計を行ったデータを元にすると、更新可能なクエリであることが・・・と出てしまうので
     'DISTINCTの結果を一旦テーブルに吐き出さないとダメらしい・・・なんてこと
-    Call SELECT_ToTempTable(INV_CONST.F_SH_ZAIKO_TANA_TEXT, clsADOUpsert)
+    Dim isCollect As Boolean
+    isCollect = SELECT_ToTempTable(INV_CONST.F_SH_ZAIKO_TANA_TEXT, clsADOUpsert)
+    If Not isCollect Then
+        MsgBox "UpsertINVPartsMasterfromZaikoSH で Select結果を一時テーブルに格納時にエラーが発生しました"
+        DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: Select to Temp Table fail"
+        UpsertINVPartsMasterfromZaikoSH = 0
+        Exit Function
+    End If
     'TempTableから本番テーブルに登録する
     'まずは棚番マスターから
     'DBPathを初期値に戻す
@@ -407,6 +427,10 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME)
     dicReplaceParam.Add 1, sqlBC.addQuote(GetLocalTimeWithMilliSec)
     clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
+    'SQL実行前にConnectModeのWriteフラグを調査する
+    If Not clsADOUpsert.ConnectMode And adModeWrite Then
+        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+    End If
     Call clsADOUpsert.Do_SQL_with_NO_Transaction
     '次にPartsMasterを更新する
     '各種結合、抽出条件文字列作成IN句も作るの・・？
@@ -464,18 +488,26 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     dicReplaceParam.Add 14, GetLocalTimeWithMilliSec
     'AppendFormatしてSQL作成
     clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA, dicReplaceParam)
+    'SQL実行前にConnectModeでWriteフラグが立っているか確認する
+    If Not clsADOUpsert.ConnectMode And adModeWrite Then
+        'Writeフラグが立っていなかったので、立てる
+        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+    End If
     'SQL実行
-    Dim isCollect As Boolean
     isCollect = clsADOUpsert.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: SQL Execute fail"
+        MsgBox "UpsertINVPartsMasterfromZaikoSHでT_M_Parts更新時にSQL実行エラーが発生しました"
         UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
         Exit Function
     End If
     'Upsert成功
-    'DLした在庫情報ファイル(xls)を削除する
-    Kill strargZaikoSHFullPath
+    If Not NotDeleteSHFile Then
+        '削除回避フラグが立っていない時
+        'DLした在庫情報ファイル(xls)を削除する
+        Kill strargZaikoSHFullPath
+    End If
     '処理件数を返して終了
 #If DebugDB Then
     DebugMsgWithTime "Upsert Affected: " & clsADOUpsert.Affected & " OriginFile: " & strargZaikoSHFullPath
@@ -483,7 +515,7 @@ ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsE
     UpsertINVPartsMasterfromZaikoSH = clsADOUpsert.Affected
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set fsoUpsertPartsMaster = Nothing
@@ -536,13 +568,18 @@ ByRef clsADOUpsert As clsADOHandle, ByRef EnumUpsert As clsEnum) As Long
     dicReplaceParm.Add 0, strargTableName
     dicReplaceParm.Add 1, CreateAfterIN_WordFromSHFullPath(strargFilterdZaikoSHFullPath, EnumUpsert)
     clsADOUpsert.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword, dicReplaceParm)
+    'SQL実行前にConnectModeでWriteフラグを立てる
+    If Not clsADOUpsert.ConnectMode And adModeWrite Then
+        'Writeフラグが立っていなかったので立てる
+        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+    End If
     'SQL実行、本番ではトランザクション有効にしたほうがいいかも
     Call clsADOUpsert.Do_SQL_with_NO_Transaction
     '結果の件数を返して終わり
     IncludeZaikoSH_to_TempTable = clsADOUpsert.Affected
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "IncludeZaikoSH_to_TempTable code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IncludeZaikoSH_to_TempTable code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
     Exit Function
 CloseAndExit:
@@ -556,11 +593,12 @@ End Function
 '''args
 '''strargDistinctFieldName              Distinctの対象にしたいフィールド名
 '''clsADODistinct                       インスタンス共有のため
-Private Sub SELECT_ToTempTable(strargDistinctFieldName As String, _
-ByRef clsADODistinct As clsADOHandle)
+Public Function SELECT_ToTempTable(strargDistinctFieldName As String, _
+ByRef clsADODistinct As clsADOHandle) As Boolean
     If clsADODistinct Is Nothing Or strargDistinctFieldName = "" Then
         DebugMsgWithTime "SELECTToTempTable: arg is empty"
-        Exit Sub
+        SELECT_ToTempTable = False
+        Exit Function
     End If
     'まずはDBPath等をデフォルトに設定してやる
     Call clsADODistinct.SetDBPathandFilenameDefault
@@ -576,21 +614,33 @@ ByRef clsADODistinct As clsADOHandle)
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, strargDistinctFieldName
     clsADODistinct.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName, dicReplaceParm)
+    'SQL実行前にConnectModeでWriteフラグが立っているか調べ、たっていなかったら立てる
+    If Not clsADODistinct.ConnectMode And adModeWrite Then
+        'Writeフラグが立っていなかったので立てる
+        clsADODistinct.ConnectMode = clsADODistinct.ConnectMode Or adModeWrite
+    End If
     'SQL実行
-    Call clsADODistinct.Do_SQL_with_NO_Transaction
+    Dim isCollect As Boolean
+    isCollect = clsADODistinct.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "SELECT_ToTempTable: Do sql fail..."
+        SELECT_ToTempTable = False
+        Exit Function
+    End If
     DebugMsgWithTime "SELECT_To_TempTable Affected: " & clsADODistinct.Affected
     'DBPath等を元に戻してやる
     clsADODistinct.SetDBPathandFilenameDefault
+    SELECT_ToTempTable = True
     GoTo CloseAndExit
-    Exit Sub
+    Exit Function
 ErrorCatch:
-    DebugMsgWithTime "SELECT_ToTempTable code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "SELECT_ToTempTable code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set sqlBC = Nothing
     Set dicReplaceParm = Nothing
-    Exit Sub
-End Sub
+    Exit Function
+End Function
 '''ExcelファイルフルパスからIN句の後に続く文字列を作成する
 '''戻り値 String        Select FROM の IN句 ""の後に付く文字列ex)[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
 '''args
@@ -633,7 +683,7 @@ Public Function CreateAfterIN_WordFromSHFullPath(strargSHFullPath As String, ByR
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceParm = Nothing
@@ -707,7 +757,7 @@ ByRef clsAdonDigit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEn
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "Return4digitTtehaiCodeFromCSV code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "Return4digitTtehaiCodeFromCSV code: " & err.Number & " Description: " & err.Description
 CloseAndExit:
     Set fso4Digit = Nothing
     Set dicReplaceParm = Nothing

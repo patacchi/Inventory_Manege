@@ -62,7 +62,7 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
     GetColumnWidthString = strWidth
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "GetColumnWidth code: " & Err.Number & " Description :" & Err.Description
+    DebugMsgWithTime "GetColumnWidth code: " & err.Number & " Description :" & err.Description
     GetColumnWidthString = ""
     Exit Function
 End Function
