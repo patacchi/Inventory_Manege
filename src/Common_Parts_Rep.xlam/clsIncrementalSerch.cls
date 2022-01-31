@@ -207,14 +207,14 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
     'ReplaceDicを設定する
     '今回はWhere条件はなし→X
     'Nullを排除しないとめんどうになる
-    Dim strWhereCondition As String
+    Dim strWHEREcondition As String
     Dim strarrWhere(2) As String
     strarrWhere(0) = "AND NOT "
     strarrWhere(1) = Me.dicObjectField(Me.txtBoxRef.Name)
     strarrWhere(2) = " IS NULL"
-    strWhereCondition = Join(strarrWhere, "")
+    strWHEREcondition = Join(strarrWhere, "")
     'ReplaceDicの設定を行う
-    SetReplaceParmDic Me.dicObjectField(Me.txtBoxRef.Name), strWhereCondition
+    SetReplaceParmDic Me.dicObjectField(Me.txtBoxRef.Name), strWHEREcondition
     'SQL組み立て
     Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
     Dim isCollect As Boolean
@@ -361,16 +361,16 @@ Public Function Incremental_LstBox_Click() As Boolean
     '結果を取得
     strResultText = Me.LstBoxRef.List(Me.LstBoxRef.ListIndex)
     'WHERE条件を作成
-    Dim strWhereCondition As String
+    Dim strWHEREcondition As String
     Dim strarrCondition(3) As String
     strarrCondition(0) = "AND "
     strarrCondition(1) = Me.dicObjectField(Me.txtBoxRef.Name)
     strarrCondition(2) = " = "
     strarrCondition(3) = Me.clsSQLBRef.addQuote(strResultText)
-    strWhereCondition = Join(strarrCondition, "")
+    strWHEREcondition = Join(strarrCondition, "")
     'ReplaceDicを設定する
     '今回のSELECTはDicObjctToFieldにある全ての項目を引っ張ってこないとダメ
-    SetReplaceParmDic GetSELECTfieldListFromDicObjctToFieldName, strWhereCondition
+    SetReplaceParmDic GetSELECTfieldListFromDicObjctToFieldName, strWHEREcondition
     'clsADOのプロパティにSQLをセット
     Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
     'SQL実行

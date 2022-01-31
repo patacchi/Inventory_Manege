@@ -309,4 +309,14 @@ Public Const SQL_INV_JOIN_TANA_PARTS As String = "SELECT {0} " & vbCrLf & _
 '{3}    (WHERE condition) AND TDBTana.LOCAL_TExt IS NULL
 Public Const SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM As String = "UPDATE {0} AS {1} " & vbCrLf & _
 "SET {2} " & vbCrLf & _
-"WHERE 1=1 {3}"
+"WHERE 1=1 {3}"
+'------------------------------------------------------------------------------------------------
+'TanaCSVをTTmpに入れて、なおかつ棚卸締切日フィールド追加して、データ入れた後に更新かけるSQLひな形
+'ポイントは、JOIN の ON 条件で ANDで2個指定と、Whereで 左テーブルの棚卸締切日に Is Nullを付けること
+'UPDATE T_INV_CSV AS TCSVTana
+'   RIGHT JOIN (
+'      SELECT * FROM T_INV_Temp
+'         IN ""[MS ACCESS;DATABASE=c:\users\....] ) AS Ttmp
+'   ON TCSVTana.手配コード = Ttmp.手配コード AND TCSVTana.棚卸締切日 = Ttmp.棚卸締切日
+'SET TCSVTana.棚卸締切日 = "2022/02/02",TCSVTana.----
+'WHERE TCSVTana.棚卸締切日 Is Null

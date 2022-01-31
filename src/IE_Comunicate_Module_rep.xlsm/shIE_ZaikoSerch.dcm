@@ -45,7 +45,13 @@ Public Sub TanaCSVtoDB()
     Dim clsSQLBcSahere As clsSQLStringBuilder
     Set clsSQLBcSahere = CreateclsSQLStringBuilder
     Dim strZaikSHFullPath As String
+#If DontRemoveZaikoSH Then
+    'è¡ãéÇµÇ»Ç¢
     Call clsINVDBRegistfrom.UpsertINVPartsMasterfromZaikoSH(strCSVFullPath, objExcelShare, clsINVDBRegistfrom, clsADOShare, clsEnumShare, clsSQLBcSahere, True)
+#Else
+    'è¡ãéÇ∑ÇÈ
+    Call clsINVDBRegistfrom.UpsertINVPartsMasterfromZaikoSH(strCSVFullPath, objExcelShare, clsINVDBRegistfrom, clsADOShare, clsEnumShare, clsSQLBcSahere, False)
+#End If
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOShare Is Nothing Then

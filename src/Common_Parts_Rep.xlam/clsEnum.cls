@@ -29,7 +29,7 @@ Private dicSQLFieldCondition As Dictionary
 Private dicSQLINVAlias As Dictionary
 Private dicCSVTana As Dictionary
 Private dicSHZaikoNeedTrim As Dictionary
-Private dicReverseCSVTana As Dictionary                         '棚卸CSVでkeyとValueが反転したDictonary
+Private dic_ReverseCSVTana As Dictionary                         '棚卸CSVでkeyとValueが反転したDictonary
 Private dicCommonTanaCSV As Dictionary                          '棚卸CSVでDBと共通のフィールドのEnumを格納したDictionary
 Private dicCSVTanaNeedTrim As Dictionary                        '棚卸CSVでTrimが必要なフィールドのEnumを格納したDictionary
 'コンストラクタ
@@ -419,6 +419,7 @@ End If
     If dicCommonTanaCSV Is Nothing Then
         Set dicCommonTanaCSV = New Dictionary
     End If
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_EndDay_ICS, Empty        'AppendFieldで追加するので、EndDayも共通にしていい
     dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_CSV_No_ICS, Empty
     dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_Location_Text_ICS, Empty
     dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_ManegeSection_ICS, Empty
@@ -533,7 +534,7 @@ Property Get shZaikoField(ZaikoField As Enum_Sh_Zaiko) As String
 End Property
 'DicSHZaikoKeyParts
 'SH_ZaikoのKeyとValueが反転したものを返す(KeyがFieldName)
-Property Get Dic_SHZaikoKeyIsParts() As Dictionary
+Property Get Dic_ReverseSHZaiko() As Dictionary
     If dicSHZaikoKeyPartsValueEnum Is Nothing Then
         Set dicSHZaikoKeyPartsValueEnum = New Dictionary
         '反転DicがNothingだった場合、作成してやる
@@ -547,7 +548,7 @@ Property Get Dic_SHZaikoKeyIsParts() As Dictionary
         Next varSHKey
     End If
     '反転Dicを返してやる
-    Set Dic_SHZaikoKeyIsParts = dicSHZaikoKeyPartsValueEnum
+    Set Dic_ReverseSHZaiko = dicSHZaikoKeyPartsValueEnum
     Exit Property
 End Property
 'ZaikoSHNeedTrimDic
@@ -575,23 +576,28 @@ Property Get CSVTanafield(argCSVTanafield As Enum_CSV_Tana_Field) As String
 End Property
 'CSV_でkeyとvalueが反転したDictionaryを返す
 Property Get Dic_Reverse_INV_CSV() As Dictionary
-    If dicReverseCSVTana Is Nothing Then
+    If dic_ReverseCSVTana Is Nothing Then
         '中身が入ってなかったら新たにデータを作成する
-        Set dicReverseCSVTana = New Dictionary
+        Set dic_ReverseCSVTana = New Dictionary
         Dim varKeyNormal As Variant
         For Each varKeyNormal In dicCSVTana
             'キーの重複確認
-            If Not dicReverseCSVTana.Exists(dicCSVTana(varKeyNormal)) Then
-                dicReverseCSVTana.Add dicCSVTana(varKeyNormal), varKeyNormal
+            If Not dic_ReverseCSVTana.Exists(dicCSVTana(varKeyNormal)) Then
+                dic_ReverseCSVTana.Add dicCSVTana(varKeyNormal), varKeyNormal
             End If
         Next varKeyNormal
         '結果を返す
-        Set Dic_Reverse_INV_CSV = dicReverseCSVTana
+        Set Dic_Reverse_INV_CSV = dic_ReverseCSVTana
     Else
         '初期化済みなら中身が入ってるものとしてそのまま返す
-        Set Dic_Reverse_INV_CSV = dicReverseCSVTana
+        Set Dic_Reverse_INV_CSV = dic_ReverseCSVTana
         Exit Property
     End If
+End Property
+'CSVでNeedTrimフィールドのEnumを格納したDictionaryを返す
+Property Get Dic_NeedTrim_CSV() As Dictionary
+    Set Dic_NeedTrim_CSV = dicCSVTanaNeedTrim
+    Exit Property
 End Property
 'SqlINV_Alias
 Property Get SQL_INV_Alias(SqlAlias As Enum_SQL_INV_Alias) As String
@@ -750,6 +756,7 @@ Public Function GetCommonFieldArrayT_INV_CSV_andtemp() As String()
         'フィールド名をセットしていくが、この段階ではどちらも同じフィールド名が入る(DBをCSVのフィールド名で作成したため)
         strarrCommonCSVField(longArrRowCounter, 0) = Me.CSVTanafield(CLng(varKeyCommon))
         strarrCommonCSVField(longArrRowCounter, 1) = Me.CSVTanafield(CLng(varKeyCommon))
+        longArrRowCounter = longArrRowCounter + 1
     Next varKeyCommon
     '得られた配列を結果として返す
     GetCommonFieldArrayT_INV_CSV_andtemp = strarrCommonCSVField

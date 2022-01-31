@@ -53,19 +53,19 @@ Private Sub btnTehai_Text_Local_Set_All_Click()
     strarrSetCondition(2) = clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_System_Text_IMT), clsEnumPMList)
     strSetCondition = Join(strarrSetCondition, "")
     'WHERE
-    Dim strWhereCondition As String
+    Dim strWHEREcondition As String
     Dim strarrWhere(2) As String
     strarrWhere(0) = "AND "
     strarrWhere(1) = clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumPMList)
     strarrWhere(2) = " IS NULL"
-    strWhereCondition = Join(strarrWhere, "")
+    strWHEREcondition = Join(strarrWhere, "")
     '置換用dictionary構築
     Dim dicReplaceWHERE As Dictionary
     Set dicReplaceWHERE = New Dictionary
     dicReplaceWHERE.Add 0, INV_CONST.T_INV_M_Tana
     dicReplaceWHERE.Add 1, clsEnumPMList.SQL_INV_Alias(INVDB_Tana_Alias_sia)
     dicReplaceWHERE.Add 2, strSetCondition
-    dicReplaceWHERE.Add 3, strWhereCondition
+    dicReplaceWHERE.Add 3, strWHEREcondition
     'プロパティにSQL設定
     clsADOfrmPMList.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM, dicReplaceWHERE)
     '実行前にConnectModeにWriteフラグ立てる

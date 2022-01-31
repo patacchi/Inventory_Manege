@@ -12,6 +12,7 @@ Attribute VB_Exposed = True
 Option Explicit
 '定数定義
 Private Const FILTER_NAME_RANGE_PART As String = "FilterDatabase"
+Private Const TANA_CSV_ENDDAY_KEY As String = "棚卸締切日"
 '------------------------------------------------------------------------------------------------------
 'メンバ変数定義
 Private strINVDBFullPath As String                                  'INV_Manege.accdbのフルパス、基本的には未指定でデフォルトの場所を読みに行く
@@ -528,16 +529,16 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     strINWord = clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumRef)
     'ON Tana and TTmp
     Dim strON_TanaAndTTemp
-    strON_TanaAndTTemp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldTanaAndZaikoSH, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+    strON_TanaAndTTemp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldTanaAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'ON Parts and TTmp
     Dim strON_PartsAndTTmp
-    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'Set Condition
     Dim strSETExp As String
-    strSETExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+    strSETExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'Where Condition
     Dim strWhereExp As String
-    strWhereExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumRef)
+    strWhereExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumRef)
     If dicReplaceParam Is Nothing Then
         '置換用DictionaryがNothingだったら初期化
         Set dicReplaceParam = New Dictionary
@@ -651,11 +652,60 @@ Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optiona
         GoTo CloseAndExit
     End If
     'SQL組立のために必要な文字列を取得する
+    'ON
+    Dim strONcondition As String
+    'SET
     Dim strSetCondition As String
+    Dim strSet(4) As String
+    '棚卸CSVの締切日を持ってくる
+    Dim strTanaEndDay As String
+    strTanaEndDay = GetEndDayFromTanaCSV(strargTanaCSVFullPath)
+    '締切日取得出来たらTempテーブルにフィールド追加してやり、値をセットしてしまう
+    strSet(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
+    strSet(1) = " = "
+    strSet(2) = clsSQLBcRef.addQuote(strTanaEndDay)
+    strSet(3) = ","
+    strSet(4) = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetCommonFieldArrayT_INV_CSV_andtemp, clsEnumRef.Dic_Reverse_INV_CSV, clsEnumRef.Dic_NeedTrim_CSV, _
+    TanaCSV_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+    strSetCondition = Join(strSet, "")
+    'WHERE
+    Dim strWHEREcondition As String
+    Dim strWhere(1) As String
+    strWhere(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
+    strWhere(1) = " IS NULL"
+    strWHEREcondition = Join(strWhere, "")
+    GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    Exit Function
+End Function
+'''棚卸CSVから締切日を持ってくる
+'''Return String    締切日をテキスト形式で
+Private Function GetEndDayFromTanaCSV(TanaCSVFullPath As String) As String
+    On Error GoTo ErrorCatch
+    Dim wkbEndDay As Workbook
+    Set wkbEndDay = objExcelRef.Workbooks.Open(TanaCSVFullPath)
+    Dim ShEndDay As Worksheet
+    '開いたブックの1番目（最初）のシートで決め打ちする
+    Set ShEndDay = wkbEndDay.Worksheets(1)
+    Dim rngEndDay As Range
+    '棚卸締切日でセル検索してRangeオブジェクト取得
+    Set rngEndDay = ShEndDay.Cells.Find(TANA_CSV_ENDDAY_KEY)
+    '棚卸締切日のセルの右10文字を返して終了
+    GetEndDayFromTanaCSV = Right(CStr(rngEndDay.Value), 10)
+    GoTo CloseAndExit
+ErrorCatch:
+    GetEndDayFromTanaCSV = ""
+    GoTo CloseAndExit
+CloseAndExit:
+    Set rngEndDay = Nothing
+    Set ShEndDay = Nothing
+    If Not wkbEndDay Is Nothing Then
+        wkbEndDay.Close
+        Set wkbEndDay = Nothing
+    End If
     Exit Function
 End Function
 '''Author Daisuke oota 2022_01_21
