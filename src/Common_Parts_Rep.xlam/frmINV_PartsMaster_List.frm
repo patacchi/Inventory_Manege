@@ -149,6 +149,7 @@ Private Sub lstBox_Incremental_Enter()
 End Sub
 Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     'キーボードの場合はこっち
+    clsIncrementalParts.Incremental_LstBox_Key_UP KeyCode, Shift
 End Sub
 Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     'このイベントがリスト選択直後に発生するのでよさそう

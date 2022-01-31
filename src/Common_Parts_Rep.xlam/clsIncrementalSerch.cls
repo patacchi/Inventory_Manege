@@ -131,9 +131,14 @@ Public Sub Incremental_TextBox_Change()
         Exit Sub
     End If
     If UBound(varArrayFilterd) - LBound(varArrayFilterd) = 0 Then
-        '残り1個になった場合
-        'まずは表示調整をする
-        SetListBoxStyle varArrayFilterd
+        'フィルタ掛けた後の候補が残り1個になった場合
+'        'リストボックスを非表示にして、リストボックスのIndex 0を選択し、Clickイベントを発火させる
+''        'ここで非表示にしてしまうと検索文字列を削除した時にリスト復活しない
+''        Me.LstBoxRef.Visible = False
+'        Me.LstBoxRef.List = varArrayFilterd
+'        Me.LstBoxRef.ListIndex = 0
+'        'まずは表示調整をする
+''        SetListBoxStyle varArrayFilterd
         '確定なので、リストボックスは表示しない→どうしよう?
         '候補1つになった時点で確定すると、次に連続入力したい時に不便
         'テキストボックスの値をリストボックスの値にセットしてやる
@@ -141,7 +146,7 @@ Public Sub Incremental_TextBox_Change()
         'リストボックスのClickイベントを発生させるために選択をしてやる
 '        me.lstboxref.ListIndex = 0
 '        me.lstboxref.Visible = False
-        GoTo CloseAndExit
+'        GoTo CloseAndExit
     End If
     'リストボックスを表示する
     SetListBoxStyle varArrayFilterd
@@ -208,6 +213,7 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
     strarrWhere(1) = Me.dicObjectField(Me.txtBoxRef.Name)
     strarrWhere(2) = " IS NULL"
     strWhereCondition = Join(strarrWhere, "")
+    'ReplaceDicの設定を行う
     SetReplaceParmDic Me.dicObjectField(Me.txtBoxRef.Name), strWhereCondition
     'SQL組み立て
     Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
@@ -239,7 +245,10 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
         '1行目を選択し、本体のフォームでSelectイベントを走らせる
         'その後の処理は各フォームで行うものとする
         Me.LstBoxRef.ListIndex = 0
-        Me.txtBoxRef.Text = varSourceArray(0)
+        'リストボックスを非表示にする
+        Me.LstBoxRef.Height = 0
+        Me.LstBoxRef.Visible = False
+'        Me.txtBoxRef.Text = varSourceArray(0)
         GoTo CloseAndExit
         Exit Sub
     End If
@@ -252,6 +261,7 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
         GoTo CloseAndExit
         Exit Sub
     End If
+    'Enterの段階で既にテキストボックスに文字が入力されていたら
     'ここまでで大元のリストは取得できているので、一旦リスト表示できるように設定してやる
     SetListBoxStyle varSourceArray
     '絞り込みはChangeイベントにて行う
@@ -300,9 +310,9 @@ End Function
 Public Sub Incremental_LstBox_Enter()
     On Error GoTo ErrorCatch
     'インスタンス確認
-    Dim IsInitialized As Boolean
-    IsInitialized = CheckInctance
-    If Not IsInitialized Then
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
         '初期化が未完了？
         DebugMsgWithTime "Incremental_LstBox_Enter : some instance Nothing..."
         GoTo CloseAndExit
@@ -338,9 +348,9 @@ End Sub
 Public Function Incremental_LstBox_Click() As Boolean
     On Error GoTo ErrorCatch
     '引数チェックをする
-    Dim IsInitialized As Boolean
-    IsInitialized = CheckInctance
-    If Not IsInitialized Then
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
         DebugMsgWithTime "Incremental_LstBox_Click : some inctance not initialized"
         Incremental_LstBox_Click = False
         GoTo CloseAndExit
@@ -382,6 +392,40 @@ CloseAndExit:
     Me.StopEvent = False
     Exit Function
 End Function
+'''インクリメンタルリストのKeyUPイベントのイベントハンドラ
+'''KeyUpイベントなので、Clickイベントの後で発生するため自身を非表示にするのが主目的
+'''args
+'''argKeyCode       押されたキーのキーコードが入る
+'''argShift         シフトキーの押下状態?
+Public Sub Incremental_LstBox_Key_UP(argKeyCode As MSForms.ReturnInteger, argShift As Integer)
+    On Error GoTo ErrorCatch
+    'メンバ変数チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
+        DebugMsgWithTime "Incremental_LstBox_Key_UP : Instance check fail"
+        GoTo CloseAndExit
+        Exit Sub
+    End If
+    'イベント受付停止する
+    Me.StopEvent = True
+    'キーコードにより処理を分岐
+    Select Case argKeyCode
+    Case vbKeyEscape
+        'ESCキー
+        'リストを非表示にする
+        Me.LstBoxRef.Visible = False
+        GoTo CloseAndExit
+    Case vbKeyReturn
+    Case vbKeyUp
+    End Select
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
+End Sub
 '''T_INV_M_Tana と T_M_INV_Partsを F_INV_Tana_IDで結合した汎用SQLのRepleceDictionaryを設定するメソッド
 '''args
 '''strargSelectField        SELECT の引数
@@ -423,9 +467,9 @@ End Sub
 Private Function GetSELECTfieldListFromDicObjctToFieldName() As String
     On Error GoTo ErrorCatch
     '引数チェック
-    Dim IsInitialized As Boolean
-    IsInitialized = CheckInctance
-    If Not IsInitialized Then
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
         DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName : not initialized instance var..."
         GetSELECTfieldListFromDicObjctToFieldName = ""
         GoTo CloseAndExit

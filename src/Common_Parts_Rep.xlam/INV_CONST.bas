@@ -169,9 +169,21 @@ Public Enum Enum_CSV_Tana_Field
     F_System_Spec_ICS = Enum_INV_M_Parts.F_System_Spec_IMPrt
     F_System_Tana_NO_ICS = Enum_INV_M_Parts.F_System_TanaNo_IMPrt
     'ロケーションだけメンドウなので独自に番号振る
-    F_Location_Text = 103
-    F_Store_Code = Enum_INV_M_Parts.F_Store_Code_IMPrt
-    F_Stock_Amount = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
+    F_Location_Text_ICS = 103
+    F_Store_Code_ICS = Enum_INV_M_Parts.F_Store_Code_IMPrt
+    F_Stock_Amount_ICS = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
+End Enum
+'棚卸CSVファイルでTrim必要なフィールドの定数を列挙する Csv need TRiM _ctrm
+Public Enum Enum_INV_CSV_Need_Trim
+    F_EndDay_ctrm = Enum_CSV_Tana_Field.F_EndDay_ICS
+    F_Manege_Section_ctrm = Enum_CSV_Tana_Field.F_ManegeSection_ICS
+    F_Manege_Section_Sub_ctrm = Enum_CSV_Tana_Field.F_ManegeSection_Sub_ICS
+    F_Tehai_Code_ctrm = Enum_CSV_Tana_Field.F_Tehai_Code_ICS
+    F_System_Name_ctrm = Enum_CSV_Tana_Field.F_System_Name_ICS
+    F_System_Spec_ctrm = Enum_CSV_Tana_Field.F_System_Spec_ICS
+    F_System_Tana_No_ctrm = Enum_CSV_Tana_Field.F_System_Tana_NO_ICS
+    F_Location_Text_ctrm = Enum_CSV_Tana_Field.F_Location_Text_ICS
+    F_Store_Code_ctrm = Enum_CSV_Tana_Field.F_Store_Code_ICS
 End Enum
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
@@ -179,12 +191,14 @@ Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                      
 Public Const SQL_ALIAS_T_INVDB_Tana As String = "TDBTana"                                           'INV_M_Tanaテーブル別名定義
 Public Const SQL_ALIAS_T_TEMP As String = "TTmp"                                                    '一時テーブル別名定義
 Public Const SQL_ALIAS_T_SH_ZAIKO As String = "TSHZaiko"                                            '在庫情報シートテーブル名別名定義
+Public Const SQL_ALIAS_T_INV_CSV As String = "TCSVTana"                                             '棚卸CSVの別名定義
 'SQLAliasEnum
 Public Enum Enum_SQL_INV_Alias
     INVDB_Parts_Alias_sia = 1
     INVDB_Tana_Alias_sia = 2
     INVDB_Tmp_Alias_sia = 3
     ZaikoSH_Alias_sia = 4
+    TanaCSV_Alias_sia = 5
 End Enum
 Public Const SQL_AFTER_IN_ACCDB_0FullPath As String = "[MS ACCESS;DATABASE={0};]"                   'Select From の IN""句の後に来る文字列accdb
 Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE={0};HDR=Yes;]"     'In xlsm,xlam

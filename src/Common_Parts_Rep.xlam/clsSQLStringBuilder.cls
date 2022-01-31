@@ -119,12 +119,14 @@ End Function
 '''戻り値 String  ex) "TDBPrts.F_INV_Tehai_Text = TTmp.手配コード,TDBPrts.F_INV_Stock_Amount = TTmp.在庫数量・・・・"
 '''args
 '''arrstrargFieldPair()    対応フィールドの組合せの2次元配列(元フィールド , 対応フィールド)
+'''argReverseDic        key valueが反転したEnum Dictionaryを指定
 '''PartsPrefix          PartsMasterのフィールドの前に付くプレフィックス
 '''ZaikoSHPrefix        シートフィールド名の前につくプレフィックス、普通はTTmpになる
-'''FieldCondition       フィールド間をつなぐ文字列の列挙隊の数値
+'''FieldCondition       フィールド間をつなぐ文字列の列挙体の数値
 '''ConnectEnum          複数条件時の条件間をつなぐ文字列 OR とか AND とか ,とか
 '''clsEnumCondition     コンストラクタ動作軽量化のためのインスタンス共有
-Public Function ReturnCommonFieldCondition(arrstrargFieldPair() As String, PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
+Public Function ReturnCommonFieldCondition(arrstrargFieldPair() As String, ByRef argReverseDic As Dictionary, ByRef argNeedtrimDic As Dictionary, _
+PartsPrefix As Enum_SQL_INV_Alias, ZaikoSHPrefix As Enum_SQL_INV_Alias, FieldCondition As Enum_SQL_F_Condition, _
 ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As String
     On Error GoTo ErrorCatch
     'クラス変数チェック
@@ -160,7 +162,7 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
         arrstrPrefix(1) = "."
         arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 1)
         '条件によってはここでTrimをつけるかどうか判断する
-        If clsEnumCondition.IsNeedTrimZaikoSh(arrstrargFieldPair(longArrayRowCounter, 1)) Then
+        If clsEnumCondition.IsNeedTrim(arrstrargFieldPair(longArrayRowCounter, 1), argReverseDic, argNeedtrimDic) Then
             'Trimが必要
             'プレフィックス、サフィックスを付加したものを返す
             'Nullデータ排除のため、文字列形式にもIsNullでの処理を入れる 2022_01_28 Daisuke Oota
@@ -241,5 +243,54 @@ ByRef clsEnumField As clsEnum) As String
     strField(1) = "."
     strField(2) = strargFieldName
     ReturnTableAliasPlusedFieldName = Join(strField, "")
+    Exit Function
+End Function
+'''accdb,ExcelファイルフルパスからIN句の後に続く文字列を作成する
+'''戻り値 String        Select FROM の IN句 ""の後に付く文字列ex)[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
+'''args
+'''EnumINWord          Enumの共有インスタンス
+Public Function CreateAfterIN_WordFromSHFullPath(strargDBFileFullPah As String, ByRef EnumInWord As clsEnum) As String
+    If strargDBFileFullPah = "" Then
+        DebugMsgWithTime "CreateAfterINword: sheet file name empty"
+    End If
+    Dim dicExttoEnumValu As Dictionary
+    '置換用Dic作成
+    Dim dicReplaceParm As Dictionary
+    Set dicReplaceParm = New Dictionary
+    '{0}がファイルフルパスなのは確定してるのでここで入れてしまう
+    dicReplaceParm.Add 0, strargDBFileFullPah
+    'ファイルの拡張子により処理を分岐
+    Dim fsoINWord As FileSystemObject
+    Set fsoINWord = New FileSystemObject
+    Dim sqlBC As clsSQLStringBuilder
+    Set sqlBC = CreateclsSQLStringBuilder
+    Select Case LCase(fsoINWord.GetExtensionName(strargDBFileFullPah))
+    Case EnumInWord.DBFileExetension(accdb_dext)
+        'accdb
+        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_ACCDB_0FullPath, dicReplaceParm)
+    Case EnumInWord.DBFileExetension(xlam_dext), EnumInWord.DBFileExetension(xlsm_dext)
+        'xlsm (xlam・・は使わないと思う)
+        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSM_0FullPath, dicReplaceParm)
+    Case EnumInWord.DBFileExetension(xlsx_dext)
+        'xlsx
+        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSX_0FullPath, dicReplaceParm)
+    Case EnumInWord.DBFileExetension(xlsb_dext)
+        'xlsb
+        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSB_0FullPath, dicReplaceParm)
+    Case EnumInWord.DBFileExetension(xls_dext)
+        'xls
+        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLS_0FullPath, dicReplaceParm)
+    Case Else
+        'それ以外は（CSVも含めて）対応なしの予定
+        DebugMsgWithTime "CreateAfterINWordFromSHFullPath: no support extention: " & LCase(fsoINWord.GetExtensionName(strargDBFileFullPah))
+        CreateAfterIN_WordFromSHFullPath = ""
+    End Select
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Set dicReplaceParm = Nothing
+    Set fsoINWord = Nothing
     Exit Function
 End Function

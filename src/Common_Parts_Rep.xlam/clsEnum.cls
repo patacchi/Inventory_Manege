@@ -27,7 +27,11 @@ Private dicSHZaikoParts As Dictionary
 Private dicSHZaikoKeyPartsValueEnum As Dictionary               '在庫情報シートで、Keyがフィールド名、ValueがEnumに逆転してるDictionary
 Private dicSQLFieldCondition As Dictionary
 Private dicSQLINVAlias As Dictionary
+Private dicCSVTana As Dictionary
 Private dicSHZaikoNeedTrim As Dictionary
+Private dicReverseCSVTana As Dictionary                         '棚卸CSVでkeyとValueが反転したDictonary
+Private dicCommonTanaCSV As Dictionary                          '棚卸CSVでDBと共通のフィールドのEnumを格納したDictionary
+Private dicCSVTanaNeedTrim As Dictionary                        '棚卸CSVでTrimが必要なフィールドのEnumを格納したDictionary
 'コンストラクタ
 Private Sub Class_Initialize()
     Call Initial_Valueset
@@ -221,6 +225,7 @@ Private Sub CAT_Enum_Initialset()
     dicCATTmpField.Add CAT_Tmp.F_Digit_Update_ctm, CAT_CONST.F_DIGIT_UPDATE
 End Sub
 Private Sub INV_Enum_Initialize()
+    On Error GoTo ErrorCatch
     '在庫情報DBのEnumの初期化を行う
 '手配コードマスターのEnum定義
 'Public Enum Enum_INV_M_Parts
@@ -336,6 +341,7 @@ End If
 '    INVDB_Tana_Alias_sia = 2
 '    INVDB_Tmp_Alias_sia = 3
 '    ZaikoSH_Alias_sia = 4
+'    TanaCSV_Alias_sia = 5
 'End Enum
     If dicSQLINVAlias Is Nothing Then
         Set dicSQLINVAlias = New Dictionary
@@ -344,6 +350,7 @@ End If
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tana_Alias_sia, INV_CONST.SQL_ALIAS_T_INVDB_Tana
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.INVDB_Tmp_Alias_sia, INV_CONST.SQL_ALIAS_T_TEMP
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.ZaikoSH_Alias_sia, SQL_ALIAS_T_SH_ZAIKO
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.TanaCSV_Alias_sia, SQL_ALIAS_T_INV_CSV
 ''在庫情報シートでUpdate掛ける際にTrim必要なフィールド名を定義
 ''_ntrm need trim
 'Public Enum Enum_SH_Zaiko_Need_Trim
@@ -374,6 +381,74 @@ End If
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Store_Unit_ntrm, Empty
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_Manege_Section_sub_ntrm, Empty
     dicSHZaikoNeedTrim.Add Enum_SH_Zaiko_Need_Trim.F_System_Description_ntrm, Empty
+''CSV Enum Inv CSv file
+''3個以外は共通なので共通(?)
+'Public Enum Enum_CSV_Tana_Field
+'    F_EndDay_ICS = 100
+'    F_CSV_No_ICS = 101
+'    F_Available_ICS = 102
+'    '以下は共通フィールド
+'    F_ManegeSection_ICS = Enum_INV_M_Parts.F_Manege_Section_IMPrt
+'    F_ManegeSection_Sub_ICS = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
+'    F_Tehai_Code_ICS = Enum_INV_M_Parts.F_Tehai_Code_IMPrt
+'    F_System_Name_ICS = Enum_INV_M_Parts.F_System_Name_IMPrt
+'    F_System_Spec_ICS = Enum_INV_M_Parts.F_System_Spec_IMPrt
+'    F_System_Tana_NO_ICS = Enum_INV_M_Parts.F_System_TanaNo_IMPrt
+'    'ロケーションだけメンドウなので独自に番号振る
+'    F_Location_Text = 103
+'    F_Store_Code = Enum_INV_M_Parts.F_Store_Code_IMPrt
+'    F_Stock_Amount = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
+'End Enum
+    If dicCSVTana Is Nothing Then
+        Set dicCSVTana = New Dictionary
+    End If
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_EndDay_ICS, INV_CONST.F_INV_CSV_ENDDAY
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_CSV_No_ICS, INV_CONST.F_INV_CSV_NO
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Available_ICS, INV_CONST.F_INV_CSV_AVAILABLE_AMOUNT
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_ManegeSection_ICS, INV_CONST.F_INV_CSV_MANEGE_SECTION
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_ManegeSection_Sub_ICS, INV_CONST.F_INV_CSV_MANEGE_SECTION_SUB
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Tehai_Code_ICS, INV_CONST.F_INV_CSV_TEHAI_TEXT
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_System_Name_ICS, INV_CONST.F_INV_CSV_SYSTEM_NAME
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_System_Spec_ICS, INV_CONST.F_INV_CSV_SYSTEM_SPEC
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_System_Tana_NO_ICS, INV_CONST.F_INV_CSV_SYSTEM_TANA_NO
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Location_Text_ICS, INV_CONST.F_INV_CSV_LOCATION_TEXT
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Store_Code_ICS, INV_CONST.F_INV_CSV_STORE_CODE
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Stock_Amount_ICS, INV_CONST.F_INV_CSV_STOCK_AMOUNT
+'dicCommonTanaCSV
+    '特殊パターン、Tana_CSVファイルとDBのテーブルで共通の項目のEnumを格納したDictionary
+    If dicCommonTanaCSV Is Nothing Then
+        Set dicCommonTanaCSV = New Dictionary
+    End If
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_CSV_No_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_Location_Text_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_ManegeSection_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_ManegeSection_Sub_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_Stock_Amount_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_Store_Code_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_System_Name_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_System_Spec_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_System_Tana_NO_ICS, Empty
+    dicCommonTanaCSV.Add Enum_CSV_Tana_Field.F_Tehai_Code_ICS, Empty
+'dicCSVTanaNeedTrim
+    '特殊パターン、CSVにおいてtrimが必要なフィールドのEnumを格納する
+    If dicCSVTanaNeedTrim Is Nothing Then
+        Set dicCSVTanaNeedTrim = New Dictionary
+    End If
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_EndDay_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_Location_Text_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_Manege_Section_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_Manege_Section_Sub_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_Store_Code_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_System_Name_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_System_Spec_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_System_Tana_No_ctrm, Empty
+    dicCSVTanaNeedTrim.Add Enum_INV_CSV_Need_Trim.F_Tehai_Code_ctrm, Empty
+    GoTo CloseAndExit
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "INV_Enum_Initialize code: " & err.Number & " Description: " & err.Description
+CloseAndExit:
+    Exit Sub
 End Sub
 'DBExetension
 Property Get DBFileExetension(DBext As DB_file_exetension) As String
@@ -475,6 +550,12 @@ Property Get Dic_SHZaikoKeyIsParts() As Dictionary
     Set Dic_SHZaikoKeyIsParts = dicSHZaikoKeyPartsValueEnum
     Exit Property
 End Property
+'ZaikoSHNeedTrimDic
+'在庫情報シートでTrimが必要なフィールドのEnumが入ったDictionaryを返す
+Property Get Dic_NeedTrim_ZaikoSH() As Dictionary
+    Set Dic_NeedTrim_ZaikoSH = dicSHZaikoNeedTrim
+    Exit Property
+End Property
 '-----------------------------------------------------------------------------------------------------------------------------
 'INV_DB
 'INVMasterParts
@@ -487,6 +568,31 @@ Property Get INVMasterTana(MasterTana As Enum_INV_M_Tana) As String
     INVMasterTana = dicINVMasterTana(MasterTana)
     Exit Property
 End Property
+'T_INV_CSV
+Property Get CSVTanafield(argCSVTanafield As Enum_CSV_Tana_Field) As String
+    CSVTanafield = dicCSVTana(argCSVTanafield)
+    Exit Property
+End Property
+'CSV_でkeyとvalueが反転したDictionaryを返す
+Property Get Dic_Reverse_INV_CSV() As Dictionary
+    If dicReverseCSVTana Is Nothing Then
+        '中身が入ってなかったら新たにデータを作成する
+        Set dicReverseCSVTana = New Dictionary
+        Dim varKeyNormal As Variant
+        For Each varKeyNormal In dicCSVTana
+            'キーの重複確認
+            If Not dicReverseCSVTana.Exists(dicCSVTana(varKeyNormal)) Then
+                dicReverseCSVTana.Add dicCSVTana(varKeyNormal), varKeyNormal
+            End If
+        Next varKeyNormal
+        '結果を返す
+        Set Dic_Reverse_INV_CSV = dicReverseCSVTana
+    Else
+        '初期化済みなら中身が入ってるものとしてそのまま返す
+        Set Dic_Reverse_INV_CSV = dicReverseCSVTana
+        Exit Property
+    End If
+End Property
 'SqlINV_Alias
 Property Get SQL_INV_Alias(SqlAlias As Enum_SQL_INV_Alias) As String
     SQL_INV_Alias = dicSQLINVAlias(SqlAlias)
@@ -498,25 +604,30 @@ End Property
 '''Return   bool                Trim必要なフィールドの時はTrue、それ以外はFalse
 '''args
 '''strargZaikoSHFieldName       外部から使用する必要があるので、引数はフィールド名そのもので受ける
-Public Function IsNeedTrimZaikoSh(strargZaikoSHFieldName As String) As Boolean
+'''argReversDic                 EnumのKey、Valueが反転したDictionaryを指定する（テーブル毎に存在）
+Public Function IsNeedTrim(strargZaikoSHFieldName As String, ByRef argReversDic As Dictionary, ByRef argNeedtrimDic As Dictionary) As Boolean
     '引数チェック
     If strargZaikoSHFieldName = "" Then
-        IsNeedTrimZaikoSh = False
+        IsNeedTrim = False
         Exit Function
     End If
-    'そもそも在庫情報シートのフィールド名かどうかを確認
-    If Not Me.Dic_SHZaikoKeyIsParts.Exists(strargZaikoSHFieldName) Then
+    If argReversDic Is Nothing Or argNeedtrimDic Is Nothing Then
+        DebugMsgWithTime "IsNeedTrim: Reverse Dictionary empty"
+        IsNeedTrim = False
+    End If
+    'そもそも指定シートのフィールド名かどうかを確認
+    If Not argReversDic.Exists(strargZaikoSHFieldName) Then
         '反転dicに引数のフィールド名が見つからなかった
         DebugMsgWithTime "IsNeedRedim not found field name in SH_Zaiko Dictionary. Field Name: " & strargZaikoSHFieldName
-        IsNeedTrimZaikoSh = False
+        IsNeedTrim = False
         Exit Function
     End If
     '反転DicよりEnum数値を取り出し、それがNeedTrim の Dicに存在すればTrimが必要
-    If dicSHZaikoNeedTrim.Exists(Me.Dic_SHZaikoKeyIsParts(strargZaikoSHFieldName)) Then
+    If argNeedtrimDic.Exists(argReversDic(strargZaikoSHFieldName)) Then
         '引数がNeedTrimのKeyに存在したらTrimが必要
-        IsNeedTrimZaikoSh = True
+        IsNeedTrim = True
     Else
-        IsNeedTrimZaikoSh = False
+        IsNeedTrim = False
     End If
     Exit Function
 End Function
@@ -621,5 +732,26 @@ Public Function GetKeyCommonFieldTanaAndZaikoSH() As String()
     arrstrCommonTana(0, 1) = Me.shZaikoField(F_Tana_Text_ShZ)
     '結果を返す
     GetKeyCommonFieldTanaAndZaikoSH = arrstrCommonTana
+    Exit Function
+End Function
+'''T_INV_CSVと一時テーブルの対応テーブル配列を返す関数
+'''Return   string()    2次元配列(DBフィールド名,Tempテーブルフィールド名)
+'''でも棚CSVはテーブルとCSVファイルでフィールド名を共通にしたので、同じ文字が入るはず・・・・
+'''プレフィックスはSQLSBクラスのメソッドで付加
+'''共通フィールドのみ返す
+Public Function GetCommonFieldArrayT_INV_CSV_andtemp() As String()
+    'dicCommonTanaCSVに共通のフィールドのEnumが入ってるのでそれで・・・
+    Dim strarrCommonCSVField() As String
+    ReDim strarrCommonCSVField(dicCommonTanaCSV.Count - 1, 1)
+    Dim varKeyCommon As Variant
+    Dim longArrRowCounter As Long
+    longArrRowCounter = 0
+    For Each varKeyCommon In dicCommonTanaCSV
+        'フィールド名をセットしていくが、この段階ではどちらも同じフィールド名が入る(DBをCSVのフィールド名で作成したため)
+        strarrCommonCSVField(longArrRowCounter, 0) = Me.CSVTanafield(CLng(varKeyCommon))
+        strarrCommonCSVField(longArrRowCounter, 1) = Me.CSVTanafield(CLng(varKeyCommon))
+    Next varKeyCommon
+    '得られた配列を結果として返す
+    GetCommonFieldArrayT_INV_CSV_andtemp = strarrCommonCSVField
     Exit Function
 End Function

@@ -19,6 +19,50 @@ Option Explicit
 Public Sub ShowfrmPartMaster()
     Call ShowfrmInvPartsMaster
 End Sub
+Public Sub TanaCSVtoDB()
+    '最初にCSVファイルを選択してもらう
+    Dim strCSVFullPath As String
+    'カレントディレクトリをダウンロードディレクトリに変更する
+    Call ChCurrentDirW(GetDownloadPath)
+    MsgBox "デイリー棚卸でダウンロードしたCSVファイルを選択して下さい"
+    strCSVFullPath = CStr(Application.GetOpenFilename("CSVファイル,*.csv", 1, "デイリー棚卸でダウンロードしたCSVファイルを選択して下さい"))
+    If strCSVFullPath = "False" Then
+        'キャンセルボタンが押された
+        MsgBox "キャンセルしました"
+        Exit Sub
+    End If
+    Dim clsINVDBRegistfrom As clsINVDB
+    Set clsINVDBRegistfrom = CreateclsINVDB
+    Dim clsGetIERegistfrom As clsGetIE
+    Set clsGetIERegistfrom = New clsGetIE
+    '以下、インスタンス共有のための変数宣言
+    Dim objExcelShare As Excel.Application
+    Set objExcelShare = New Excel.Application
+    Dim clsADOShare As clsADOHandle
+    Set clsADOShare = CreateclsADOHandleInstance
+    Dim clsEnumShare As clsEnum
+    Set clsEnumShare = CreateclsEnum
+    Dim clsSQLBcSahere As clsSQLStringBuilder
+    Set clsSQLBcSahere = CreateclsSQLStringBuilder
+    Dim strZaikSHFullPath As String
+    Call clsINVDBRegistfrom.UpsertINVPartsMasterfromZaikoSH(strCSVFullPath, objExcelShare, clsINVDBRegistfrom, clsADOShare, clsEnumShare, clsSQLBcSahere, True)
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOShare Is Nothing Then
+        clsADOShare.CloseClassConnection
+        Set clsADOShare = Nothing
+    End If
+    If Not objExcelShare Is Nothing Then
+        objExcelShare.Quit
+        Set objExcelShare = Nothing
+    End If
+    If Not clsGetIERegistfrom Is Nothing Then
+        Set clsGetIERegistfrom = Nothing
+    End If
+    Set clsINVDBRegistfrom = Nothing
+    Set clsEnumShare = Nothing
+    Set clsSQLBcSahere = Nothing
+End Sub
 Public Sub btnZaikoSerch_Click()
     '''手配コードを指定して在庫情報シートをDLし、その情報をDictionaryに格納
     '''dicTehaiSh は key に Tehaicode を Value に シートフルパスを入れる
@@ -84,15 +128,20 @@ Public Sub btnZaikoSerch_Click()
     Set INVTehaiTest = CreateclsINVDB
     Dim varKey As Variant
     Dim longAffectedRows As Long
+    'インスタンス共有のため宣言
+    Dim objExcelShare As Excel.Application
+    Set objExcelShare = New Excel.Application
+    Dim clsSqlBCShare As clsSQLStringBuilder
+    Set clsSqlBCShare = CreateclsSQLStringBuilder
     For Each varKey In dicTehaiSh
         '在庫情報シート名を引数にとり、その内容でT_INV_M_PartsをUPSertする
 #If DontRemoveZaikoSH Then
         '試験中でファイル消したくない時
         '最後の引数にTrueをセットすると引数で指定したファイルを消去しないで残す
-        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert, True)
+        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), objExcelShare, INVTehaiTest, adoUpsert, EnumUpsert, clsSqlBCShare, True)
 #Else
         '通常時はこっち、指定したファイルは消去する
-        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), INVTehaiTest, adoUpsert, EnumUpsert, False)
+        longAffectedRows = longAffectedRows + INVTehaiTest.UpsertINVPartsMasterfromZaikoSH(dicTehaiSh(varKey), objExcelShare, INVTehaiTest, adoUpsert, EnumUpsert, clsSqlBCShare, False)
 #End If
         DebugMsgWithTime CStr(longAffectedRows) & " 件更新"
     Next varKey
@@ -127,64 +176,102 @@ Public Sub btnZaikoSerch_Click()
      Call ShowfrmSQLTest
 #End If
 End Sub
-Public Sub UPSertDBUseCSV()
+Public Sub UPSertDBUseFromZaikoSH()
     MsgBox "Update処理レコード総数は: " & CStr(RegistDBbyDailyTanaCSV) & " 件です"
 End Sub
 '''デイリー棚卸CSVからDBに登録する
 '''戻り値 long 処理したファイルの総数
 Public Function RegistDBbyDailyTanaCSV() As Long
-#If DebugDB Then
-    MsgBox "DebugDB = 1"
-#End If
-    '棚卸CSVを指定し、手配コード先頭n文字のリストを受け取る
-    '当面の間はCSVファイルを手動で選択する
-    Dim arrstrTeheiCode4Digit() As String
-    Dim clsINVDBCsv As clsINVDB
-    Set clsINVDBCsv = CreateclsINVDB
-    '共有インスタンスのためにクラス変数定義
-    Dim clsADOCsv As clsADOHandle
-    Set clsADOCsv = CreateclsADOHandleInstance
-    Dim clsEnumCSV As clsEnum
-    Set clsEnumCSV = CreateclsEnum
-    Dim clsGetIECSV As clsGetIE
-    Set clsGetIECSV = New clsGetIE
-    '先頭n文字のリスト取得
-    arrstrTeheiCode4Digit = clsINVDBCsv.ReturnNdigitTehaiCodeFromCSV("", 1, clsADOCsv, clsINVDBCsv, clsEnumCSV)
-    If Not IsRedim(arrstrTeheiCode4Digit) Then
-        '初期化されていない配列が帰ってきた
-        DebugMsgWithTime "RegistDBbyDailyTanaCSV: Return tehai 4digit array not initialized"
-        GoTo CloseAndExit
-        Exit Function
-    End If
-    Dim longArrayRowCounter As Long
-    Dim arrstrDownloadFileList() As String
-    ReDim arrstrDownloadFileList(UBound(arrstrTeheiCode4Digit))
-    For longArrayRowCounter = 0 To UBound(arrstrTeheiCode4Digit)
-        'StatusBarのプレフィックスに作業中ファイルの数を表示してやる
-        clsGetIECSV.PrefixStatusBar = "残りファイル数: " & CStr(longArrayRowCounter + 1) & " / " & CStr(UBound(arrstrTeheiCode4Digit) + 1)
-        '先頭2文字の手配コードについて在庫情報シートをダウンロードし、ファイル名を配列に格納する
-        arrstrDownloadFileList(longArrayRowCounter) = ZaikoSerchbyTehaiCode(arrstrTeheiCode4Digit(longArrayRowCounter), clsGetIECSV)
-        'DLしたファイルをDBに登録する
-        Dim longAffectedRows As Long
-        'UPSert実行し、処理レコード数の累計に足してやる
-        longAffectedRows = longAffectedRows + clsINVDBCsv.UpsertINVPartsMasterfromZaikoSH(arrstrDownloadFileList(longArrayRowCounter), clsINVDBCsv, clsADOCsv, clsEnumCSV)
-    Next longArrayRowCounter
-    '処理したレコードの総数を返す
-'    RegistDBbyDailyTanaCSV = UBound(arrstrTeheiCode4Digit) + 1
-    RegistDBbyDailyTanaCSV = longAffectedRows
-'    MsgBox "ファイル総数は: " & CStr(UBound(arrstrDownloadFileList) + 1) & " 個です"
-    GoTo CloseAndExit
-    Exit Function
+    Dim clsINVDBRegistfrom As clsINVDB
+    Set clsINVDBRegistfrom = CreateclsINVDB
+    Dim clsGetIERegistfrom As clsGetIE
+    Set clsGetIERegistfrom = New clsGetIE
+    '以下、インスタンス共有のための変数宣言
+    Dim objExcelShare As Excel.Application
+    Set objExcelShare = New Excel.Application
+    Dim clsADOShare As clsADOHandle
+    Set clsADOShare = CreateclsADOHandleInstance
+    Dim clsEnumShare As clsEnum
+    Set clsEnumShare = CreateclsEnum
+    Dim clsSQLBcSahere As clsSQLStringBuilder
+    Set clsSQLBcSahere = CreateclsSQLStringBuilder
+    Dim strZaikSHFullPath As String
+    '手配コードを指定せずに全件の在庫情報シートをDLし、フルパスを取得する
+    strZaikSHFullPath = modZaikoSerch.ZaikoSerchbyTehaiCode("", clsGetIERegistfrom)
+    '指定の在庫情報ファイルでDB PartsMasterをUPdateし、処理レコード数を受け取る
+    RegistDBbyDailyTanaCSV = clsINVDBRegistfrom.UpsertINVPartsMasterfromZaikoSH(strZaikSHFullPath, objExcelShare, clsINVDBRegistfrom, clsADOShare, clsEnumShare, clsSQLBcSahere)
+'管理課を指定した上で在庫情報を一括DLすると、サイズ的に問題なくなったためこちらの方法を標準とする
+'clsINVDBのUpsertメソッドにファイル選択機能を付加し、代用とする
+'#If DebugDB Then
+'    MsgBox "DebugDB = 1"
+'#End If
+'    '棚卸CSVを指定し、手配コード先頭n文字のリストを受け取る
+'    '当面の間はCSVファイルを手動で選択する
+'
+'    Dim arrstrTeheiCode4Digit() As String
+'    Dim clsINVDBCsv As clsINVDB
+'    Set clsINVDBCsv = CreateclsINVDB
+'    Dim clsSqlBCCSV As clsSQLStringBuilder
+'    Set clsSqlBCCSV = CreateclsSQLStringBuilder
+'    '共有インスタンスのためにクラス変数定義
+'    Dim clsADOCsv As clsADOHandle
+'    Set clsADOCsv = CreateclsADOHandleInstance
+'    Dim clsEnumCSV As clsEnum
+'    Set clsEnumCSV = CreateclsEnum
+'    Dim clsGetIECSV As clsGetIE
+'    Set clsGetIECSV = New clsGetIE
+'    '先頭n文字のリスト取得
+'    arrstrTeheiCode4Digit = clsSqlBCCSV.ReturnNdigitTehaiCodeFromCSV("", 1, clsADOCsv, clsINVDBCsv, clsEnumCSV)
+'    If Not IsRedim(arrstrTeheiCode4Digit) Then
+'        '初期化されていない配列が帰ってきた
+'        DebugMsgWithTime "RegistDBbyDailyTanaCSV: Return tehai 4digit array not initialized"
+'        GoTo CloseAndExit
+'        Exit Function
+'    End If
+'    Dim longArrayRowCounter As Long
+'    Dim arrstrDownloadFileList() As String
+'    ReDim arrstrDownloadFileList(UBound(arrstrTeheiCode4Digit))
+'    For longArrayRowCounter = 0 To UBound(arrstrTeheiCode4Digit)
+'        'StatusBarのプレフィックスに作業中ファイルの数を表示してやる
+'        clsGetIECSV.PrefixStatusBar = "残りファイル数: " & CStr(longArrayRowCounter + 1) & " / " & CStr(UBound(arrstrTeheiCode4Digit) + 1)
+'        '先頭2文字の手配コードについて在庫情報シートをダウンロードし、ファイル名を配列に格納する
+'        arrstrDownloadFileList(longArrayRowCounter) = ZaikoSerchbyTehaiCode(arrstrTeheiCode4Digit(longArrayRowCounter), clsGetIECSV)
+'        'DLしたファイルをDBに登録する
+'        Dim longAffectedRows As Long
+'        'UPSert実行し、処理レコード数の累計に足してやる
+'        longAffectedRows = longAffectedRows + clsINVDBCsv.UpsertINVPartsMasterfromZaikoSH(arrstrDownloadFileList(longArrayRowCounter), clsINVDBCsv, clsADOCsv, clsEnumCSV)
+'    Next longArrayRowCounter
+'    '処理したレコードの総数を返す
+''    RegistDBbyDailyTanaCSV = UBound(arrstrTeheiCode4Digit) + 1
+'    RegistDBbyDailyTanaCSV = longAffectedRows
+''    MsgBox "ファイル総数は: " & CStr(UBound(arrstrDownloadFileList) + 1) & " 個です"
+'    GoTo CloseAndExit
+'    Exit Function
+'CloseAndExit:
+'    If Not clsADOCsv Is Nothing Then
+'        clsADOCsv.CloseClassConnection
+'        Set clsADOCsv = Nothing
+'    End If
+'    If Not clsGetIECSV Is Nothing Then
+'        'GetIE
+'        Set clsGetIECSV = Nothing
+'    End If
+'    Set clsINVDBCsv = Nothing
+'    Set clsEnumCSV = Nothing
+'    Exit Function
 CloseAndExit:
-    If Not clsADOCsv Is Nothing Then
-        clsADOCsv.CloseClassConnection
-        Set clsADOCsv = Nothing
+    If Not clsADOShare Is Nothing Then
+        clsADOShare.CloseClassConnection
+        Set clsADOShare = Nothing
     End If
-    If Not clsGetIECSV Is Nothing Then
-        'GetIE
-        Set clsGetIECSV = Nothing
+    If Not objExcelShare Is Nothing Then
+        objExcelShare.Quit
+        Set objExcelShare = Nothing
     End If
-    Set clsINVDBCsv = Nothing
-    Set clsEnumCSV = Nothing
-    Exit Function
+    If Not clsGetIERegistfrom Is Nothing Then
+        Set clsGetIERegistfrom = Nothing
+    End If
+    Set clsINVDBRegistfrom = Nothing
+    Set clsEnumShare = Nothing
+    Set clsSQLBcSahere = Nothing
 End Function

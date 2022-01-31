@@ -14,13 +14,18 @@ Option Explicit
 Private Const FILTER_NAME_RANGE_PART As String = "FilterDatabase"
 '------------------------------------------------------------------------------------------------------
 'メンバ変数定義
-Private objExcel As Excel.Application
 Private strINVDBFullPath As String                                  'INV_Manege.accdbのフルパス、基本的には未指定でデフォルトの場所を読みに行く
 Private strBKZaikoInfoFullPath As String                            '在庫情報のExcelファイルのフルパス、毎回ファイル名が変動するのでデフォルト値は無し
+'インスタンス共有クラスメンバ変数
+Private objExcel As Excel.Application
+Private clsADOINVDB As clsADOHandle
+Private clsINVDBShare As clsINVDB
+Private clsEnumINVDB     As clsEnum
+Private clsSQLBcINVDB As clsSQLStringBuilder
 '------------------------------------------------------------------------------------------------------
 'プロパティ
 'INVDBFullPath
-Property Get INVDBFullPath() As String
+Private Property Get INVDBFullPath() As String
     If strINVDBFullPath <> "" Then
         'メンバ変数に既にINVDBが入っていたらそのまま返す
         INVDBFullPath = strINVDBFullPath
@@ -37,7 +42,7 @@ Property Get INVDBFullPath() As String
     Set fsoINVDBFullPath = Nothing
     Exit Property
 End Property
-Property Let INVDBFullPath(strargINVDBFullPath As String)
+Private Property Let INVDBFullPath(strargINVDBFullPath As String)
     If strargINVDBFullPath = "" Then
         '引数が空の時は抜ける
         DebugMsgWithTime "Property let INVDBFullPath:arg empty"
@@ -46,6 +51,61 @@ Property Let INVDBFullPath(strargINVDBFullPath As String)
     'メンバ変数にセットしてやる
     strINVDBFullPath = strargINVDBFullPath
     Exit Property
+End Property
+'objExcel As Excel.Application
+Private Property Get objExcelRef() As Excel.Application
+    Set objExcelRef = objExcel
+    Exit Property
+End Property
+Private Property Set objExcelRef(argobjExcel As Excel.Application)
+    If Not argobjExcel Is Nothing Then
+        Set objExcel = argobjExcel
+        Exit Property
+    End If
+End Property
+'clsADOINVDB As clsADOHandle
+Private Property Get clsADORef() As clsADOHandle
+    Set clsADORef = clsADOINVDB
+    Exit Property
+End Property
+Private Property Set clsADORef(argclsADO As clsADOHandle)
+    If Not argclsADO Is Nothing Then
+        Set clsADOINVDB = argclsADO
+        Exit Property
+    End If
+End Property
+'Private clsINVDBShare As clsINVDB
+Private Property Get clsINVDBRef() As clsINVDB
+    Set clsINVDBRef = clsINVDBShare
+    Exit Property
+End Property
+Private Property Set clsINVDBRef(argclsINVDB As clsINVDB)
+    If Not argclsINVDB Is Nothing Then
+        Set clsINVDBShare = argclsINVDB
+        Exit Property
+    End If
+End Property
+'Private clsEnumINVDB     As clsEnum
+Private Property Get clsEnumRef() As clsEnum
+    Set clsEnumRef = clsEnumINVDB
+    Exit Property
+End Property
+Private Property Set clsEnumRef(argclsEnum As clsEnum)
+    If Not argclsEnum Is Nothing Then
+        Set clsEnumINVDB = argclsEnum
+        Exit Property
+    End If
+End Property
+'Private clsSQLBc As clsSQLStringBuilder
+Private Property Get clsSQLBcRef() As clsSQLStringBuilder
+    Set clsSQLBcRef = clsSQLBcINVDB
+    Exit Property
+End Property
+Private Property Set clsSQLBcRef(argclsSQLBc As clsSQLStringBuilder)
+    If Not argclsSQLBc Is Nothing Then
+        Set clsSQLBcINVDB = argclsSQLBc
+        Exit Property
+    End If
 End Property
 'BKZaikoInfoFullPath
 Property Get BKZAikoInfoFullPath() As String
@@ -86,6 +146,18 @@ Private Sub Class_Terminate()
 End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
+'''インスタンス共有変数の初期化状態を調べる関数
+'''戻り値   Bool    全ての変数がNothingじゃなかったら True それ以外は False
+Private Function CheckInstance() As Boolean
+    If objExcelRef Is Nothing Or clsADORef Is Nothing Or clsEnumRef Is Nothing Or clsINVDBRef Is Nothing Or clsSQLBcRef Is Nothing Then
+        'どれか一つでもNothingだった
+        CheckInstance = False
+        Exit Function
+    End If
+    '全ての変数が初期化済み
+    CheckInstance = True
+    Exit Function
+End Function
 '''Author Patacchi 2022_01_16
 '''Excel関連ファイルにオートフィルタを設定し、フィルタ範囲の名前を返す（Select の From の引数になる）
 '''戻り値 string配列 1次元目はファイルのフルパス、2次元目がTable名
@@ -93,7 +165,15 @@ End Sub
 '''optional strargExceFileFullpath          Excelファイルのフルパスを指定する、未指定の場合はクラスのBKZAikoInfoFullPathプロパティを設定
 '''optional strargSheetName                 フィルタ設定するシート名を指定する、未指定の場合は最初のシートを対象とする
 '''Optional strargKeyFieldName              フィルタ設定する際の基準フィールド名、未指定の場合手配コードとする
-Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As String, Optional strargSheetName As String, Optional strargKeyFieldName As String) As String()
+Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As String, Optional strargSheetName As String, Optional strargKeyFieldName As String) As String()
+    'インスタンス共有変数の初期化状況のチェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "GetFilterRangeNameFromExcel : some instance not initialized"
+        GoTo CloseAndExit
+        Exit Function
+    End If
     'Excelファイルが指定されなかった場合はクラスのプロパティから引っ張る
     If strargExcelFileFullpath = "" Then
         strargExcelFileFullpath = Me.BKZAikoInfoFullPath
@@ -112,20 +192,14 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
         DebugMsgWithTime "GetFilterRangeNameFromExcel: file not found: " & strargExcelFileFullpath
         GoTo CloseAndExit
     End If
-    Dim EnumValue As clsEnum
-    Set EnumValue = CreateclsEnum
     Select Case LCase(fsoFilterRange.GetExtensionName(strargExcelFileFullpath))
-    Case EnumValue.DBFileExetension(xlam_dext), EnumValue.DBFileExetension(xlsm_dext), _
-    EnumValue.DBFileExetension(xls_dext), EnumValue.DBFileExetension(xlsb_dext), EnumValue.DBFileExetension(xlsx_dext)
+    Case clsEnumRef.DBFileExetension(xlam_dext), clsEnumRef.DBFileExetension(xlsm_dext), _
+    clsEnumRef.DBFileExetension(xls_dext), clsEnumRef.DBFileExetension(xlsb_dext), clsEnumRef.DBFileExetension(xlsx_dext)
         'エクセル関連ファイルの時
         '非表示で処理するために、ApplicationオブジェクトとWorkbookオブジェクトを別に定義する
-        If objExcel Is Nothing Then
-            'クラスのobjExcelが初期化されていなかったらここで行う
-            Set objExcel = New Excel.Application
-        End If
         Dim wkbFilter As Workbook
         'workbookオブジェクトを取得
-        Set wkbFilter = objExcel.Workbooks.Open(strargExcelFileFullpath)
+        Set wkbFilter = objExcelRef.Workbooks.Open(strargExcelFileFullpath)
         If wkbFilter.Worksheets.Count < 1 Then
             'シート数が1未満だった場合は抜ける
             DebugMsgWithTime "GetFilterRangeNameFromExcel: Sheet count under 1"
@@ -169,7 +243,7 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
             'キーField名を決定する
             If strargKeyFieldName = "" Then
                 '引数でキーフィールド名が指定されていない場合は、手配コードをデフォルトとする
-                strargKeyFieldName = EnumValue.shZaikoField(F_Tehai_Code_ShZ)
+                strargKeyFieldName = clsEnumRef.shZaikoField(F_Tehai_Code_ShZ)
             End If
             '在庫情報の列名のうち一つを検索し、Rangeオブジェクトを得る
             Set rngZaikoInfoColumn = shtFilter.Cells.Find(strargKeyFieldName)
@@ -201,12 +275,10 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
         wkbFilter.Close
         Set wkbFilter = Nothing
         '処理完了したExcelファイルのテーブル一覧を取得し、フィルター識別文字列の入っているテーブル名が見つかったらそれを返す
-        Dim dbGetTableList As clsADOHandle
-        Set dbGetTableList = CreateclsADOHandleInstance
-        dbGetTableList.DBFileName = fsoFilterRange.GetFileName(strargExcelFileFullpath)
-        dbGetTableList.DBPath = fsoFilterRange.GetParentFolderName(strargExcelFileFullpath)
+        clsADORef.DBFileName = fsoFilterRange.GetFileName(strargExcelFileFullpath)
+        clsADORef.DBPath = fsoFilterRange.GetParentFolderName(strargExcelFileFullpath)
         Dim arrstrFilterTables() As String
-        arrstrFilterTables = dbGetTableList.GetTableList
+        arrstrFilterTables = clsADORef.GetTableList
         Dim arrstrResult() As String
         arrstrResult = Filter(arrstrFilterTables, FILTER_NAME_RANGE_PART)
         If UBound(arrstrResult) = 0 Then
@@ -218,14 +290,14 @@ Public Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As 
            GoTo CloseAndExit
            Exit Function
         End If
-    Case EnumValue.DBFileExetension(csv_dext)
+    Case clsEnumRef.DBFileExetension(csv_dext)
         'CSVファイルだった場合
         '一連の処理を行い、xlsxファイルにした後、そのファイル名で自信を再帰呼び出しする
         Dim strResultxlsxFileName As String
         strResultxlsxFileName = CSVFileSaveAsXlsxFileandPasteValues(strargExcelFileFullpath)
         '自身を再起呼び出し
         Dim arrstrRangeTableName() As String
-        arrstrRangeTableName = Me.GetFilterRangeNameFromExcel(strResultxlsxFileName)
+        arrstrRangeTableName = GetFilterRangeNameFromExcel(strResultxlsxFileName)
         '帰ってきたテーブル名を結果として返す
         GetFilterRangeNameFromExcel = arrstrRangeTableName
         GoTo CloseAndExit
@@ -246,8 +318,6 @@ CloseAndExit:
         wkbFilter.Close
         Set wkbFilter = Nothing
     End If
-    Set dbGetTableList = Nothing
-    Set EnumValue = Nothing
     Set fsoFilterRange = Nothing
     Exit Function
 End Function
@@ -255,6 +325,14 @@ End Function
 '''CSVファイルをxlsxファイルに保存し、かつ全範囲値貼り付け状態にし保存したファイル名を返す
 '''戻り値 string 保存後のxlsxファイル名のフルパスを返す
 Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As String) As String
+    'インスタンス変数初期化チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "CSVFileSaveAsXlsxFileandPasteValues : Share Instance not initialized"
+        GoTo CloseAndExit
+        Exit Function
+    End If
     On Error GoTo ErrorCatch
     If strargCSVFileFullPath = "" Then
         DebugMsgWithTime "CSVFileSaveAsxlsx: arg csv file name empty"
@@ -269,25 +347,19 @@ Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As St
         Exit Function
     End If
     '拡張子確認
-    Dim EnumValue As clsEnum
-    Set EnumValue = CreateclsEnum
-    If Not LCase(fsoCSV.GetExtensionName(strargCSVFileFullPath)) = EnumValue.DBFileExetension(csv_dext) Then
+    If Not LCase(fsoCSV.GetExtensionName(strargCSVFileFullPath)) = clsEnumRef.DBFileExetension(csv_dext) Then
         '拡張子がcsvじゃなかった
         DebugMsgWithTime "CSVFileSaveAsxlsx: not csv files (extention)"
         GoTo CloseAndExit
         Exit Function
     End If
     'CSVファイルを開き、xlsx形式で保存する
-    If objExcel Is Nothing Then
-        'クラスのobjExcelが初期化されていなかったらここで初期化する
-        Set objExcel = New Excel.Application
-    End If
     Dim wkbCSV As Workbook
     'workbookオブジェクトを取得
-    Set wkbCSV = objExcel.Workbooks.Open(strargCSVFileFullPath)
+    Set wkbCSV = objExcelRef.Workbooks.Open(strargCSVFileFullPath)
     'とりあえずそのままxlsxとして保存する
     Dim strxlsxFileName As String
-    strxlsxFileName = strargCSVFileFullPath & "." & EnumValue.DBFileExetension(xlsx_dext)
+    strxlsxFileName = strargCSVFileFullPath & "." & clsEnumRef.DBFileExetension(xlsx_dext)
     If fsoCSV.FileExists(strxlsxFileName) Then
         '保存先のファイル名があった場合は消去する
         fsoCSV.DeleteFile strxlsxFileName, True
@@ -297,7 +369,7 @@ Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As St
     Set wkbCSV = Nothing
     '今度は保存したxlsxファイルに対して、全データ値貼り付けの処理を行う
     Dim wkbXlsx As Workbook
-    Set wkbXlsx = objExcel.Workbooks.Open(strxlsxFileName)
+    Set wkbXlsx = objExcelRef.Workbooks.Open(strxlsxFileName)
     If wkbXlsx.Worksheets.Count < 1 Then
         'ワークシートの数が1未満だったら抜けるよ
         DebugMsgWithTime "CSVFileSaveAsXlsx: no contents"
@@ -314,7 +386,7 @@ Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As St
     DoEvents
     shXlsx.Range(shXlsx.Cells(1, 1), shXlsx.Cells.SpecialCells(xlCellTypeLastCell)).PasteSpecial Paste:=xlPasteValues
     'コピーモード解除
-    objExcel.CutCopyMode = False
+    objExcelRef.CutCopyMode = False
     '改めてxlsxファイルを保存
     wkbXlsx.Save
     wkbXlsx.Close
@@ -335,42 +407,55 @@ CloseAndExit:
         wkbCSV.Close
         Set wkbCSV = Nothing
     End If
-    Set EnumValue = Nothing
     Set fsoCSV = Nothing
     Exit Function
 End Function
 '''Author Daisuke Oota 2022_01_20
 '''在庫情報シートのフルパスを引数として、INVパーツマスターDBに登録するプロシージャ
+'''棚卸CSVファイルをT_INV_CSVにする機能も一緒にした、拡張子で処理を分岐する
 '''戻り値 long      変更があったレコード数を返す。0以下だと何かしらがあった？
 '''args
 '''strargZaikoSHFullPath    在庫情報シートのフルパス
-'''clsADOUpsert             ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
+'''clsADORef             ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
 '''                         DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
 '''clsINVDBUpsert           INVDBクラスのインスタンスを指定する。このメソッド以前に作成していたら再利用する（コンストラクタの動作が重いため）
-'''clsEnumUpsert            Enunクラスのインスタンスを指定する、できれば事前に一度だけ作成したのを使いまわしたい
+'''clsEnumRef            Enunクラスのインスタンスを指定する、できれば事前に一度だけ作成したのを使いまわしたい
+'''objExcel                 objExcelのインスタンス共有のための・・・
 '''NotDeleteSHFile          TrueをセットするとUpsert完了後に元データを削除しないで残す、デフォルトはFalse（消去する）
 Public Function UpsertINVPartsMasterfromZaikoSH(strargZaikoSHFullPath As String, _
-ByRef clsINVDBUpsert As clsINVDB, ByRef clsADOUpsert As clsADOHandle, ByRef clsEnumUpsert As clsEnum, _
+ByRef objargExcel As Excel.Application, ByRef clsargINVDB As clsINVDB, ByRef clsargADO As clsADOHandle, ByRef clsargEnum As clsEnum, ByRef clsargclsSQLBcRef As clsSQLStringBuilder, _
 Optional NotDeleteSHFile As Boolean = False) As Long
     On Error GoTo ErrorCatch
-    'クラスの存在確認
+    'インスタンス変数がNothingじゃなかったら、とりあえずクラスのプロパティにセットしてやる
+    'objExcel
+    If Not objargExcel Is Nothing And objExcelRef Is Nothing Then
+        Set objExcelRef = objargExcel
+    End If
     'clsINVDBUpsert
-    If clsINVDBUpsert Is Nothing Then
-        '初期化されてないクラスインスタンスが渡された
-        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH: Class instance is nothing"
-        UpsertINVPartsMasterfromZaikoSH = 0
-        GoTo CloseAndExit
-        Exit Function
+    If Not clsargINVDB Is Nothing And clsINVDBRef Is Nothing Then
+        Set clsINVDBRef = clsargINVDB
     End If
     'clsADOHandle
-    If clsADOUpsert Is Nothing Then
-        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH: warning! ADOUpsert instance is nothing.will delay..."
-        Set clsADOUpsert = CreateclsADOHandleInstance
+    If Not clsargADO Is Nothing And clsADORef Is Nothing Then
+        Set clsADORef = clsargADO
+'        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH: warning! ADOUpsert instance is nothing.will delay..."
+'        Set clsADORef = CreateclsADOHandleInstance
     End If
     'clsEnum
-    If clsEnumUpsert Is Nothing Then
-        DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: warning! Enum instance is nothing.will delay..."
-        Set clsEnumUpsert = CreateclsEnum
+    If Not clsargEnum Is Nothing And clsEnumRef Is Nothing Then
+        Set clsEnumRef = clsargEnum
+    End If
+    'clsclsSQLBcRef
+    If Not clsargclsSQLBcRef Is Nothing And clsSQLBcRef Is Nothing Then
+        Set clsSQLBcRef = clsargclsSQLBcRef
+    End If
+    'インスタンス変数の初期化確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH : Instance not Initialized"
+        GoTo CloseAndExit
+        Exit Function
     End If
     'ファイルの存在確認
     Dim fsoUpsertPartsMaster As FileSystemObject
@@ -381,9 +466,15 @@ Optional NotDeleteSHFile As Boolean = False) As Long
         UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
     End If
+    'この時、拡張子がcsvだったらT_INV_CSV登録メソッドへ分岐する（帰ってこない）
+    If fsoUpsertPartsMaster.GetExtensionName(strargZaikoSHFullPath) = clsEnumRef.DBFileExetension(csv_dext) Then
+        '拡張子がCSVだった
+        MsgBox TanaCSVFileToT_INV_CSV(strargZaikoSHFullPath, NotDeleteSHFile)
+        GoTo CloseAndExit
+    End If
     Dim strFilterdZaikoSh() As String
     'フィルタ処理後のファイル名を受け取る。この時、シート名を明示的にINT_CONSTから引っ張り指定してやる
-    strFilterdZaikoSh = clsINVDBUpsert.GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME)
+    strFilterdZaikoSh = GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME)
     '処理後に初期化されていない配列が帰ってきたら、在庫情報シートが存在しない可能性が高いので処理を中断する
     If Not IsRedim(strFilterdZaikoSh) Then
         DebugMsgWithTime "UpserINVPartsMaster: not found zaiko_info sheets origin file: " & strargZaikoSHFullPath
@@ -393,9 +484,9 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     'ここまでで在庫情報シートが確定したので、在庫情報からDBに登録するメソッドで処理を行う
     Dim longResultAffected As Long
     '棚卸CSVから在庫情報シートを取得した場合、AdoHandleのDBPathが変更されているので、明示的にデフォルトに戻す
-    clsADOUpsert.SetDBPathandFilenameDefault
+    clsADORef.SetDBPathandFilenameDefault
     'まずは在庫情報シートをTempTableに格納する（直接Excelファイル参照だとうまくいかなかった）
-    longResultAffected = IncludeZaikoSH_to_TempTable(strFilterdZaikoSh(0, 0), strFilterdZaikoSh(0, 1), clsADOUpsert, clsEnumUpsert)
+    longResultAffected = IncludeZaikoSH_to_TempTable(strFilterdZaikoSh(0, 0), strFilterdZaikoSh(0, 1))
     UpsertINVPartsMasterfromZaikoSH = longResultAffected
     If longResultAffected < 1 Then
         '件数が1件未満だった場合は抜ける
@@ -407,7 +498,7 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     'DISTINCT等の集計を行ったデータを元にすると、更新可能なクエリであることが・・・と出てしまうので
     'DISTINCTの結果を一旦テーブルに吐き出さないとダメらしい・・・なんてこと
     Dim isCollect As Boolean
-    isCollect = SELECT_ToTempTable(INV_CONST.F_SH_ZAIKO_TANA_TEXT, clsADOUpsert)
+    isCollect = SELECT_ToTempTable(INV_CONST.F_SH_ZAIKO_TANA_TEXT)
     If Not isCollect Then
         MsgBox "UpsertINVPartsMasterfromZaikoSH で Select結果を一時テーブルに格納時にエラーが発生しました"
         DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: Select to Temp Table fail"
@@ -417,38 +508,36 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     'TempTableから本番テーブルに登録する
     'まずは棚番マスターから
     'DBPathを初期値に戻す
-    clsADOUpsert.SetDBPathandFilenameDefault
+    clsADORef.SetDBPathandFilenameDefault
     'SQL作成
     '置換用dic
     Dim dicReplaceParam As Dictionary
     Set dicReplaceParam = New Dictionary
-    Dim sqlBC As clsSQLStringBuilder
-    Set sqlBC = CreateclsSQLStringBuilder
-    dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME)
-    dicReplaceParam.Add 1, sqlBC.addQuote(GetLocalTimeWithMilliSec)
-    clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
+    dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME)
+    dicReplaceParam.Add 1, clsSQLBcRef.addQuote(GetLocalTimeWithMilliSec)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
     'SQL実行前にConnectModeのWriteフラグを調査する
-    If Not clsADOUpsert.ConnectMode And adModeWrite Then
-        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+    If Not clsADORef.ConnectMode And adModeWrite Then
+        clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
-    Call clsADOUpsert.Do_SQL_with_NO_Transaction
+    Call clsADORef.Do_SQL_with_NO_Transaction
     '次にPartsMasterを更新する
     '各種結合、抽出条件文字列作成IN句も作るの・・？
     'IN DB_Temp
     Dim strINWord As String
-    strINWord = CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADOUpsert.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumUpsert)
+    strINWord = clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumRef)
     'ON Tana and TTmp
     Dim strON_TanaAndTTemp
-    strON_TanaAndTTemp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetKeyCommonFieldTanaAndZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    strON_TanaAndTTemp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldTanaAndZaikoSH, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'ON Parts and TTmp
     Dim strON_PartsAndTTmp
-    strON_PartsAndTTmp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetKeyCommonFieldPatsAndZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'Set Condition
     Dim strSETExp As String
-    strSETExp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetUpdateCommonFieldZaikSHandMParts, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumUpsert)
+    strSETExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'Where Condition
     Dim strWhereExp As String
-    strWhereExp = sqlBC.ReturnCommonFieldCondition(clsEnumUpsert.GetUpdateCommonFieldZaikSHandMParts, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumUpsert)
+    strWhereExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_SHZaikoKeyIsParts, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, NOT_Equal_sfc, Connect_OR_sfc, clsEnumRef)
     If dicReplaceParam Is Nothing Then
         '置換用DictionaryがNothingだったら初期化
         Set dicReplaceParam = New Dictionary
@@ -472,29 +561,29 @@ Optional NotDeleteSHFile As Boolean = False) As Long
 'Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0} AS {1} " & vbCrLf &
     dicReplaceParam.RemoveAll
     dicReplaceParam.Add 0, INV_CONST.T_INV_M_Parts
-    dicReplaceParam.Add 1, clsEnumUpsert.SQL_INV_Alias(INVDB_Parts_Alias_sia)
+    dicReplaceParam.Add 1, clsEnumRef.SQL_INV_Alias(INVDB_Parts_Alias_sia)
     dicReplaceParam.Add 2, INV_CONST.T_INV_M_Tana
-    dicReplaceParam.Add 3, clsEnumUpsert.SQL_INV_Alias(INVDB_Tana_Alias_sia)
+    dicReplaceParam.Add 3, clsEnumRef.SQL_INV_Alias(INVDB_Tana_Alias_sia)
     dicReplaceParam.Add 4, INV_CONST.T_INV_TEMP
-    dicReplaceParam.Add 5, clsEnumUpsert.SQL_INV_Alias(INVDB_Tmp_Alias_sia)
+    dicReplaceParam.Add 5, clsEnumRef.SQL_INV_Alias(INVDB_Tmp_Alias_sia)
     dicReplaceParam.Add 6, strINWord
     dicReplaceParam.Add 7, strON_TanaAndTTemp
     dicReplaceParam.Add 8, strON_PartsAndTTmp
-    dicReplaceParam.Add 9, clsEnumUpsert.INVMasterTana(F_INV_TANA_ID_IMT)
+    dicReplaceParam.Add 9, clsEnumRef.INVMasterTana(F_INV_TANA_ID_IMT)
     dicReplaceParam.Add 10, strSETExp
     dicReplaceParam.Add 11, strWhereExp
-    dicReplaceParam.Add 12, clsEnumUpsert.INVMasterParts(F_Tehai_Code_IMPrt)
+    dicReplaceParam.Add 12, clsEnumRef.INVMasterParts(F_Tehai_Code_IMPrt)
     dicReplaceParam.Add 13, PublicConst.INPUT_DATE
     dicReplaceParam.Add 14, GetLocalTimeWithMilliSec
     'AppendFormatしてSQL作成
-    clsADOUpsert.SQL = sqlBC.ReplaceParm(SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA, dicReplaceParam)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA, dicReplaceParam)
     'SQL実行前にConnectModeでWriteフラグが立っているか確認する
-    If Not clsADOUpsert.ConnectMode And adModeWrite Then
+    If Not clsADORef.ConnectMode And adModeWrite Then
         'Writeフラグが立っていなかったので、立てる
-        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+        clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
     'SQL実行
-    isCollect = clsADOUpsert.Do_SQL_with_NO_Transaction
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: SQL Execute fail"
         MsgBox "UpsertINVPartsMasterfromZaikoSHでT_M_Parts更新時にSQL実行エラーが発生しました"
@@ -510,9 +599,9 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     End If
     '処理件数を返して終了
 #If DebugDB Then
-    DebugMsgWithTime "Upsert Affected: " & clsADOUpsert.Affected & " OriginFile: " & strargZaikoSHFullPath
+    DebugMsgWithTime "Upsert Affected: " & clsADORef.Affected & " OriginFile: " & strargZaikoSHFullPath
 #End If
-    UpsertINVPartsMasterfromZaikoSH = clsADOUpsert.Affected
+    UpsertINVPartsMasterfromZaikoSH = clsADORef.Affected
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & err.Number & " Description: " & err.Description
@@ -520,7 +609,6 @@ ErrorCatch:
 CloseAndExit:
     Set fsoUpsertPartsMaster = Nothing
     Set dicReplaceParam = Nothing
-    Set sqlBC = Nothing
     'INVDBインスタンスはByRefで他の物を再利用しているので解放禁止
 '    If Not INVDBupsertINVPartMaster Is Nothing Then
 '        'INVDB変数がNothingだった場合
@@ -528,27 +616,68 @@ CloseAndExit:
 '    End If
     Exit Function
 End Function
+'''棚卸CSVファイルからDBに登録するメソッド
+'''Return   string  登録件数を文字列として返す ex)棚卸CSVよりDBに tt日分として xx 件追加しました
+'''args
+'''strargTanaCSVFullPath    棚卸CSVのフルパス
+'''NoFileDelete             Trueにセットすると引数のファイルを消去せずに残す、デフォルトはFalse（消去する）
+Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optional NoFileDelete As Boolean = False) As String
+    On Error GoTo ErrorCatch
+    'インスタンス変数の初期化状況確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "TanaCSVFileToT_INV_CSV : instance not Initialized"
+        TanaCSVFileToT_INV_CSV = "インスタンス初期化チェックエラーです。"
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'CSVファイルにフィルタ処理し、ファイル名を受け取る
+    Dim strFilteredSHFile() As String
+    strFilteredSHFile = GetFilterRangeNameFromExcel(strargTanaCSVFullPath)
+    '戻り値の配列が初期化されていなかったら失敗してるので抜ける
+    If Not IsRedim(strFilteredSHFile) Then
+        DebugMsgWithTime "TanaCSVFileToT_INV_CSV : Filter Range fail"
+        TanaCSVFileToT_INV_CSV = "CSVファイルを変換する際にエラーが発生しました。処理を中断します"
+        GoTo CloseAndExit
+    End If
+    'フィルタ処理後CSVファイルを一時テーブルに流し込む
+    Dim longAffected As Long
+    longAffected = IncludeZaikoSH_to_TempTable(strFilteredSHFile(0, 0), strFilteredSHFile(0, 1))
+    If longAffected < 1 Then
+        '在庫情報シートから一時テーブルに登録した件数が1件未満だった
+        DebugMsgWithTime "TanaCSVFileToT_INV_CSV: Tana CSV have no data found"
+        TanaCSVFileToT_INV_CSV = "棚卸CSVからのデータ取得に失敗しました"
+        GoTo CloseAndExit
+    End If
+    'SQL組立のために必要な文字列を取得する
+    Dim strSetCondition As String
+ErrorCatch:
+    DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
+End Function
 '''Author Daisuke oota 2022_01_21
 '''在庫情報シートのフルパスを引数として、DBの一時テーブルに登録するメソッド
 '''args
 '''strargFilterdZaikoSHFullPath         フィルタ処理済みのブック名のフルパス
 '''strargTableName                      在庫情報シートのSelect 文 Fromに入るテーブル名
-'''clsADOUpsert                         ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
-'''                                     DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
 '''戻り値 long      影響のあった行数を返す
-Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As String, strargTableName As String, _
-ByRef clsADOUpsert As clsADOHandle, ByRef EnumUpsert As clsEnum) As Long
+Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As String, strargTableName As String) As Long
     On Error GoTo ErrorCatch
-    'AdoHandleのクラス初期化状況を確認
-    If clsADOUpsert Is Nothing Then
-        DebugMsgWithTime "IncludeZaikoSH_to_TempTable: warning! clsADOHandle instance Nothing. will delay cause create new class"
-        Set clsADOUpsert = CreateclsADOHandleInstance
-        IncludeZaikoSH_to_TempTable = 0
+    'インスタンス変数の初期化状況の確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "IncludeZaikoSH_to_TempTable : instance not Initialized"
         GoTo CloseAndExit
         Exit Function
     End If
+    'DBPathをデフォルトに戻す、一時ファイル格納DBも保存場所はデフォルトPathのため
+    clsADORef.SetDBPathandFilenameDefault
     'このメソッドでは一時テーブルDBを扱うので、明示的にファイルを指定してやる
-    clsADOUpsert.DBFileName = PublicConst.TEMP_DB_FILENAME
+    clsADORef.DBFileName = PublicConst.TEMP_DB_FILENAME
     'ファイル、テーブルの空データチェック
     If strargFilterdZaikoSHFullPath = "" Or strargTableName = "" Then
         DebugMsgWithTime "IncludeZaikoSH_to_TempTable: Zaiko sheet filename or table name is empty"
@@ -558,32 +687,29 @@ ByRef clsADOUpsert As clsADOHandle, ByRef EnumUpsert As clsEnum) As Long
     End If
     '在庫情報シートの内容を一時テーブルに格納する
     'まずは最初に一時テーブルを消去してやる
-    Call clsADOUpsert.DropTable(INV_CONST.T_INV_TEMP, PublicConst.TEMP_DB_FILENAME)
+    Call clsADORef.DropTable(INV_CONST.T_INV_TEMP, PublicConst.TEMP_DB_FILENAME)
     'SQL文の組み立て
     'INV_CONST.SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword
-    Dim sqlBC As clsSQLStringBuilder
-    Set sqlBC = CreateclsSQLStringBuilder
     Dim dicReplaceParm As Dictionary
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, strargTableName
-    dicReplaceParm.Add 1, CreateAfterIN_WordFromSHFullPath(strargFilterdZaikoSHFullPath, EnumUpsert)
-    clsADOUpsert.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword, dicReplaceParm)
+    dicReplaceParm.Add 1, clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(strargFilterdZaikoSHFullPath, clsEnumRef)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword, dicReplaceParm)
     'SQL実行前にConnectModeでWriteフラグを立てる
-    If Not clsADOUpsert.ConnectMode And adModeWrite Then
+    If Not clsADORef.ConnectMode And adModeWrite Then
         'Writeフラグが立っていなかったので立てる
-        clsADOUpsert.ConnectMode = clsADOUpsert.ConnectMode Or adModeWrite
+        clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
     'SQL実行、本番ではトランザクション有効にしたほうがいいかも
-    Call clsADOUpsert.Do_SQL_with_NO_Transaction
+    Call clsADORef.Do_SQL_with_NO_Transaction
     '結果の件数を返して終わり
-    IncludeZaikoSH_to_TempTable = clsADOUpsert.Affected
+    IncludeZaikoSH_to_TempTable = clsADORef.Affected
     Exit Function
 ErrorCatch:
     DebugMsgWithTime "IncludeZaikoSH_to_TempTable code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
     Exit Function
 CloseAndExit:
-    Set sqlBC = Nothing
     Set dicReplaceParm = Nothing
     Exit Function
 End Function
@@ -592,44 +718,45 @@ End Function
 '''ファイル名、テーブル名はConstで決め打ちしている
 '''args
 '''strargDistinctFieldName              Distinctの対象にしたいフィールド名
-'''clsADODistinct                       インスタンス共有のため
-Public Function SELECT_ToTempTable(strargDistinctFieldName As String, _
-ByRef clsADODistinct As clsADOHandle) As Boolean
-    If clsADODistinct Is Nothing Or strargDistinctFieldName = "" Then
-        DebugMsgWithTime "SELECTToTempTable: arg is empty"
+Private Function SELECT_ToTempTable(strargDistinctFieldName As String) As Boolean
+    On Error GoTo ErrorCatch
+    'インスタンス変数の初期化状況のチェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "SELECT_ToTempTable : inctance not Initialized"
+        GoTo CloseAndExit
         SELECT_ToTempTable = False
         Exit Function
     End If
     'まずはDBPath等をデフォルトに設定してやる
-    Call clsADODistinct.SetDBPathandFilenameDefault
+    Call clsADORef.SetDBPathandFilenameDefault
     'DBfilenameのみ一時テーブル置き場のものに変える
-    clsADODistinct.DBFileName = TEMP_DB_FILENAME
+    clsADORef.DBFileName = TEMP_DB_FILENAME
     '最初に既存の一時テーブルを削除する
-    Call clsADODistinct.DropTable(INV_CONST.T_INV_SELECT_TEMP)
+    Call clsADORef.DropTable(INV_CONST.T_INV_SELECT_TEMP)
     'SQL組立
-    Dim sqlBC As clsSQLStringBuilder
-    Set sqlBC = CreateclsSQLStringBuilder
     'パラメータ埋め込み用Dictionary
     Dim dicReplaceParm As Dictionary
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, strargDistinctFieldName
-    clsADODistinct.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName, dicReplaceParm)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName, dicReplaceParm)
     'SQL実行前にConnectModeでWriteフラグが立っているか調べ、たっていなかったら立てる
-    If Not clsADODistinct.ConnectMode And adModeWrite Then
+    If Not clsADORef.ConnectMode And adModeWrite Then
         'Writeフラグが立っていなかったので立てる
-        clsADODistinct.ConnectMode = clsADODistinct.ConnectMode Or adModeWrite
+        clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
     'SQL実行
     Dim isCollect As Boolean
-    isCollect = clsADODistinct.Do_SQL_with_NO_Transaction
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         DebugMsgWithTime "SELECT_ToTempTable: Do sql fail..."
         SELECT_ToTempTable = False
         Exit Function
     End If
-    DebugMsgWithTime "SELECT_To_TempTable Affected: " & clsADODistinct.Affected
+    DebugMsgWithTime "SELECT_To_TempTable Affected: " & clsADORef.Affected
     'DBPath等を元に戻してやる
-    clsADODistinct.SetDBPathandFilenameDefault
+    clsADORef.SetDBPathandFilenameDefault
     SELECT_ToTempTable = True
     GoTo CloseAndExit
     Exit Function
@@ -637,57 +764,7 @@ ErrorCatch:
     DebugMsgWithTime "SELECT_ToTempTable code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
-    Set sqlBC = Nothing
     Set dicReplaceParm = Nothing
-    Exit Function
-End Function
-'''ExcelファイルフルパスからIN句の後に続く文字列を作成する
-'''戻り値 String        Select FROM の IN句 ""の後に付く文字列ex)[Excel 12.0;DATABASE=R:\Tmp\Patacchi\Test Dir\Zaiko_0_Local.xls;]
-'''args
-'''EnumINWord          Enumの共有インスタンス
-Public Function CreateAfterIN_WordFromSHFullPath(strargSHFullPath As String, ByRef EnumInWord As clsEnum) As String
-    If strargSHFullPath = "" Then
-        DebugMsgWithTime "CreateAfterINword: sheet file name empty"
-    End If
-    Dim dicExttoEnumValu As Dictionary
-    '置換用Dic作成
-    Dim dicReplaceParm As Dictionary
-    Set dicReplaceParm = New Dictionary
-    '{0}がファイルフルパスなのは確定してるのでここで入れてしまう
-    dicReplaceParm.Add 0, strargSHFullPath
-    'ファイルの拡張子により処理を分岐
-    Dim fsoINWord As FileSystemObject
-    Set fsoINWord = New FileSystemObject
-    Dim sqlBC As clsSQLStringBuilder
-    Set sqlBC = CreateclsSQLStringBuilder
-    Select Case LCase(fsoINWord.GetExtensionName(strargSHFullPath))
-    Case EnumInWord.DBFileExetension(accdb_dext)
-        'accdb
-        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_ACCDB_0FullPath, dicReplaceParm)
-    Case EnumInWord.DBFileExetension(xlam_dext), EnumInWord.DBFileExetension(xlsm_dext)
-        'xlsm (xlam・・は使わないと思う)
-        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSM_0FullPath, dicReplaceParm)
-    Case EnumInWord.DBFileExetension(xlsx_dext)
-        'xlsx
-        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSX_0FullPath, dicReplaceParm)
-    Case EnumInWord.DBFileExetension(xlsb_dext)
-        'xlsb
-        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLSB_0FullPath, dicReplaceParm)
-    Case EnumInWord.DBFileExetension(xls_dext)
-        'xls
-        CreateAfterIN_WordFromSHFullPath = sqlBC.ReplaceParm(INV_CONST.SQL_AFTER_IN_XLS_0FullPath, dicReplaceParm)
-    Case Else
-        'それ以外は（CSVも含めて）対応なしの予定
-        DebugMsgWithTime "CreateAfterINWordFromSHFullPath: no support extention: " & LCase(fsoINWord.GetExtensionName(strargSHFullPath))
-        CreateAfterIN_WordFromSHFullPath = ""
-    End Select
-    GoTo CloseAndExit
-ErrorCatch:
-    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & err.Number & " Description: " & err.Description
-    GoTo CloseAndExit
-CloseAndExit:
-    Set dicReplaceParm = Nothing
-    Set fsoINWord = Nothing
     Exit Function
 End Function
 '''デイリー棚卸のCSVファイルから重複なしの手配コード先頭n文字のリストを受け取る関数
@@ -695,12 +772,17 @@ End Function
 '''args
 '''strargDailyTanaCSVFullPath           デイリー棚卸のCSVファイルのフルパスを渡す。IEの解析が済むまではダイアログを表示し、選択する
 '''longargDigitNum                      LeftN文字の文字数を設定、1以上
-'''clsAdonDigit                         この3個はインスタンスをプロシージャ間で共有し、コンストラクタの動作を少しでも軽量化したい
-'''clsINVDBdigit
-'''clsEnumDigit
-Public Function ReturnNdigitTehaiCodeFromCSV(strargDailyTanaCSVFullPath As String, longargDigitNum As Long, _
-ByRef clsAdonDigit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEnumDigit As clsEnum) As String()
+Private Function ReturnNdigitTehaiCodeFromCSV(strargDailyTanaCSVFullPath As String, longargDigitNum As Long) As String()
     On Error GoTo ErrorCatch
+    'インスタンス変数初期化状況チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "ReturnNdigitTehaiCodeFromCSV : instance not Initialized"
+        ReturnNdigitTehaiCodeFromCSV = Array("")
+        GoTo CloseAndExit
+        Exit Function
+    End If
     '桁数チェック
     If longargDigitNum < 1 Then
         '桁数が1未満
@@ -717,40 +799,39 @@ ByRef clsAdonDigit As clsADOHandle, ByRef clsINVDBdigit As clsINVDB, ByRef clsEn
     End If
     'CSVファイルにフィルタ処理かけた後のファイル名とテーブル名を受け取る
     Dim arrstrFilterdFileandTableName() As String
-    arrstrFilterdFileandTableName = Me.GetFilterRangeNameFromExcel(strargDailyTanaCSVFullPath)
+    arrstrFilterdFileandTableName = GetFilterRangeNameFromExcel(strargDailyTanaCSVFullPath)
     '置換用Dic作成
     Dim dicReplaceParm As Dictionary
     Set dicReplaceParm = New Dictionary
     dicReplaceParm.Add 0, arrstrFilterdFileandTableName(0, 1)
     dicReplaceParm.Add 1, CStr(longargDigitNum)
-    Dim sqlBC As clsSQLStringBuilder
-    Set sqlBC = CreateclsSQLStringBuilder
     'SQL文作成
-    clsAdonDigit.SQL = sqlBC.ReplaceParm(INV_CONST.SQL_INV_TEHAICODE_n_0TableName_1DigitNum, dicReplaceParm)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_TEHAICODE_n_0TableName_1DigitNum, dicReplaceParm)
     'AdoのクラスのプロパティにCSVのパスとファイル名を設定
     Dim fso4Digit As FileSystemObject
     Set fso4Digit = New FileSystemObject
-    clsAdonDigit.DBPath = fso4Digit.GetParentFolderName(arrstrFilterdFileandTableName(0, 0))
-    clsAdonDigit.DBFileName = fso4Digit.GetFileName(arrstrFilterdFileandTableName(0, 0))
+    clsADORef.DBPath = fso4Digit.GetParentFolderName(arrstrFilterdFileandTableName(0, 0))
+    clsADORef.DBFileName = fso4Digit.GetFileName(arrstrFilterdFileandTableName(0, 0))
     'SQL実行
-    Call clsAdonDigit.Do_SQL_with_NO_Transaction
-    If clsAdonDigit.RecordCount <= 0 Then
+    Call clsADORef.Do_SQL_with_NO_Transaction
+    If clsADORef.RecordCount <= 0 Then
         '結果が0件だったにょ
         DebugMsgWithTime "ReturnNdigitTehaiCodeFromCSV: no entry found"
         GoTo CloseAndExit
         Exit Function
     End If
     Dim arrstr4Digit() As String
-    ReDim arrstr4Digit(clsAdonDigit.RecordCount - 1)
-    clsAdonDigit.RS.MoveFirst
+    ReDim arrstr4Digit(clsADORef.RecordCount - 1)
+    clsADORef.RS.MoveFirst
     Dim longArrayRowCounter As Long
     longArrayRowCounter = 0
-    Do Until clsAdonDigit.RS.EOF = True
-        arrstr4Digit(longArrayRowCounter) = CStr(clsAdonDigit.RS.Fields(0).Value)
-        clsAdonDigit.RS.MoveNext
+    Do Until clsADORef.RS.EOF = True
+        arrstr4Digit(longArrayRowCounter) = CStr(clsADORef.RS.Fields(0).Value)
+        clsADORef.RS.MoveNext
         longArrayRowCounter = longArrayRowCounter + 1
     Loop
-    Call clsAdonDigit.CloseClassConnection
+    'ADOHandleの接続を切断しないとファイル削除が失敗してしまう
+    Call clsADORef.CloseClassConnection
     '変換後のファイルを削除
     Kill arrstrFilterdFileandTableName(0, 0)
     ReturnNdigitTehaiCodeFromCSV = arrstr4Digit
@@ -761,6 +842,5 @@ ErrorCatch:
 CloseAndExit:
     Set fso4Digit = Nothing
     Set dicReplaceParm = Nothing
-    Set sqlBC = Nothing
     Exit Function
 End Function
