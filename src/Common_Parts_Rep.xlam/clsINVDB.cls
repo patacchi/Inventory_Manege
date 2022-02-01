@@ -659,32 +659,80 @@ Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optiona
     'SQL組立のために必要な文字列を取得する
     'ON
     Dim strONcondition As String
-    'SET
-    Dim strSetCondition As String
-    Dim strSet(4) As String
     '棚卸CSVの締切日を持ってくる
     Dim strTanaEndDay As String
     strTanaEndDay = GetEndDayFromTanaCSV(strargTanaCSVFullPath)
     '締切日取得出来たらTempテーブルにフィールド追加してやり、値をセットしてしまう
-    AddEndDayFieldAndInputDate strTanaEndDay
-    strSet(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
-    strSet(1) = " = "
-    strSet(2) = clsSQLBcRef.addQuote(strTanaEndDay)
-    strSet(3) = ","
-    strSet(4) = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetCommonFieldArrayT_INV_CSV_andtemp, clsEnumRef.Dic_Reverse_INV_CSV, clsEnumRef.Dic_NeedTrim_CSV, _
+    If Not AddEndDayFieldAndInputDate(strTanaEndDay) Then
+        'フィールド追加失敗
+        DebugMsgWithTime "TanaCSVFileToINV_CSV : fail append and select INTO Tmp table"
+        TanaCSVFileToT_INV_CSV = "CSVファイルから一時テーブルに登録する際にエラーが発生しました"
+        clsADORef.CloseClassConnection
+        GoTo CloseAndExit
+    End If
+    'AfterIn
+    'DBPathを標準に戻す
+    clsADORef.SetDBPathandFilenameDefault
+    Dim fsoTanaCSV As FileSystemObject
+    Set fsoTanaCSV = New FileSystemObject
+    Dim strAfterIN As String
+    strAfterIN = clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoTanaCSV.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumRef)
+    'SET
+    Dim strSetCondition As String
+    strSetCondition = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetCommonFieldArrayT_INV_CSV_andtemp, clsEnumRef.Dic_Reverse_INV_CSV, clsEnumRef.Dic_NeedTrim_CSV, _
     TanaCSV_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
-    strSetCondition = Join(strSet, "")
-    'WHERE
-    Dim strWHEREcondition As String
-    Dim strWhere(1) As String
-    strWhere(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
-    strWhere(1) = " IS NULL"
-    strWHEREcondition = Join(strWhere, "")
+''{0}    T_INV_CSV
+''{1}    TCSVTana
+''{2}    T_INV_Temp
+''{3}    (After IN Word) Temp_DB
+''{4]    Ttmp
+''{5}    手配コード
+''{6]    (SET condition)
+''{7}    棚卸締切日
+'Public Const SQL_INV_TMP_TO_CSVTANA As String = "UPDATE {0} AS {1} " & vbCrLf & _
+    '置換用Dictionary定義、構築
+    Dim dicReplaceINVCSV As Dictionary
+    Set dicReplaceINVCSV = New Dictionary
+    dicReplaceINVCSV.Add 0, INV_CONST.T_INV_CSV
+    dicReplaceINVCSV.Add 1, clsEnumRef.SQL_INV_Alias(TanaCSV_Alias_sia)
+    dicReplaceINVCSV.Add 2, INV_CONST.T_INV_TEMP
+    dicReplaceINVCSV.Add 3, strAfterIN
+    dicReplaceINVCSV.Add 4, clsEnumRef.SQL_INV_Alias(INVDB_Tmp_Alias_sia)
+    dicReplaceINVCSV.Add 5, clsEnumRef.CSVTanafield(F_Tehai_Code_ICS)
+    dicReplaceINVCSV.Add 6, strSetCondition
+    dicReplaceINVCSV.Add 7, clsEnumRef.CSVTanafield(F_EndDay_ICS)
+    'Replace実行し、SQLを得る
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_TMP_TO_CSVTANA, dicReplaceINVCSV)
+    'SQL実行
+    Dim isCollect As Boolean
+    '一旦明示的に接続を切断してやる
+    clsADORef.CloseClassConnection
+    'Writeフラグ立てる
+    clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    'Writeフラグを下げる
+    clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
+    If Not isCollect Then
+        DebugMsgWithTime "TanaCSVFileToT_INV_CSV : Do sql fail... "
+        TanaCSVFileToT_INV_CSV = "TanaCSVFileToT_INV_CSVでSQL実行時にエラーが発生しました。"
+        GoTo CloseAndExit
+    End If
+    TanaCSVFileToT_INV_CSV = "棚卸CSVから 棚卸締切日： " & strTanaEndDay & " 分として " & clsADORef.Affected & " 件のデータを追加しました"
+'    Dim strSet(4) As String
+'    strSet(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
+'    strSet(1) = " = "
+'    strSet(2) = clsSQLBcRef.addQuote(strTanaEndDay)
+'    strSet(3) = ","
+'    strSet(4) = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetCommonFieldArrayT_INV_CSV_andtemp, clsEnumRef.Dic_Reverse_INV_CSV, clsEnumRef.Dic_NeedTrim_CSV, _
+'    TanaCSV_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+'    strSetCondition = Join(strSet, "")
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    Set fsoTanaCSV = Nothing
+    Set dicReplaceINVCSV = Nothing
     Exit Function
 End Function
 '''棚卸CSVから締切日を持ってくる
@@ -715,9 +763,10 @@ CloseAndExit:
     Exit Function
 End Function
 '''Tempテーブルに棚卸締切日フィールドを追加し、引数で指定された締切日を入力してしまうメソッド
+'''Return Bool      成功したらTrueを返す、それ以外はFalse
 '''args
 '''strargEndDay     締切日を10桁のstring形式で
-Private Sub AddEndDayFieldAndInputDate(strargEndDay As String)
+Private Function AddEndDayFieldAndInputDate(strargEndDay As String) As Boolean
     On Error GoTo ErrorCatch
     '引数チェック
     If Len(strargEndDay) > 10 Then
@@ -733,11 +782,11 @@ Private Sub AddEndDayFieldAndInputDate(strargEndDay As String)
     'Writeフラグを立てる
     clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     'フィールド追加実行
-    isCollect = clsADORef.AppendField(INV_CONST.T_INV_TEMP, clsEnumRef.CSVTanafield(F_EndDay_ICS), Text_typ, " 10", PublicConst.TEMP_DB_FILENAME)
+    isCollect = clsADORef.AppendField(INV_CONST.T_INV_TEMP, clsEnumRef.CSVTanafield(F_EndDay_ICS), Char_ShortText_typ, "(10)", PublicConst.TEMP_DB_FILENAME)
     If Not isCollect Then
         DebugMsgWithTime "AddEndDayFieldAndInputDate : fail append Field."
         GoTo CloseAndExit
-        Exit Sub
+        Exit Function
     End If
     '次に棚卸締切日に値をセットしてしまう
 '{0}    T_INV_CSV
@@ -756,23 +805,30 @@ Private Sub AddEndDayFieldAndInputDate(strargEndDay As String)
     '日付はクォートしないと日付シリアルに変換しようとしてしまう
     dicReplaceAppend.Add 3, clsSQLBcRef.addQuote(strargEndDay)
     clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INPUT_ENDDAY, dicReplaceAppend)
+    '一旦接続を閉じる
+    clsADORef.CloseClassConnection
+    'Writeフラグを立てる
+    clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     'SQL実行
     isCollect = clsADORef.Do_SQL_with_NO_Transaction
     'Writeフラグ下げる
     clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
     If Not isCollect Then
         DebugMsgWithTime "AddEndDayFieldAndInputDate : fail do sql"
+        AddEndDayFieldAndInputDate = False
         GoTo CloseAndExit
     End If
+    AddEndDayFieldAndInputDate = True
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "AddEndDayFieldAndInputDate code: " & err.Number & " Description: " & err.Description
+    AddEndDayFieldAndInputDate = False
     GoTo CloseAndExit
 CloseAndExit:
     'Writeフラグを下げる
     clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
-    Exit Sub
-End Sub
+    Exit Function
+End Function
 '''Author Daisuke oota 2022_01_21
 '''在庫情報シートのフルパスを引数として、DBの一時テーブルに登録するメソッド
 '''args
@@ -802,7 +858,13 @@ Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As Str
     End If
     '在庫情報シートの内容を一時テーブルに格納する
     'まずは最初に一時テーブルを消去してやる
-    Call clsADORef.DropTable(INV_CONST.T_INV_TEMP, PublicConst.TEMP_DB_FILENAME)
+    Dim isCollect As Boolean
+    isCollect = clsADORef.DropTable(INV_CONST.T_INV_TEMP, PublicConst.TEMP_DB_FILENAME)
+    If Not isCollect Then
+        DebugMsgWithTime "IncludeZaikoSH_to_TempTable: Do sql fail..."
+        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & err.Description
+        GoTo CloseAndExit
+    End If
     'SQL文の組み立て
     'INV_CONST.SQL_INV_SH_TO_DB_TEMPTABLE_0Table_1INword
     Dim dicReplaceParm As Dictionary
@@ -816,7 +878,12 @@ Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As Str
         clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
     'SQL実行、本番ではトランザクション有効にしたほうがいいかも
-    Call clsADORef.Do_SQL_with_NO_Transaction
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "IncludeZaikoSH_to_TempTable: Do sql fail..."
+        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & err.Description
+        GoTo CloseAndExit
+    End If
     '結果の件数を返して終わり
     IncludeZaikoSH_to_TempTable = clsADORef.Affected
     Exit Function

@@ -119,6 +119,7 @@ End Function
 '''戻り値 String  ex) "TDBPrts.F_INV_Tehai_Text = TTmp.手配コード,TDBPrts.F_INV_Stock_Amount = TTmp.在庫数量・・・・"
 '''args
 '''arrstrargFieldPair()    対応フィールドの組合せの2次元配列(元フィールド , 対応フィールド)
+'''                         両方のフィールド名が同じ（テーブルプレフィックスが違う）場合は、1次元配列も指定可能
 '''argReverseDic        key valueが反転したEnum Dictionaryを指定
 '''PartsPrefix          PartsMasterのフィールドの前に付くプレフィックス
 '''ZaikoSHPrefix        シートフィールド名の前につくプレフィックス、普通はTTmpになる
@@ -146,6 +147,9 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
 '    arrstrargFieldPair = clsEnumCondition.GetUpdateCommonFieldZaikSHandMParts
     Dim longArrayRowCounter As Long
     '次に各要素にテーブル名プレフィックスをつける
+    Dim bytArgArrayDimention As Byte
+    '引数の配列の次元数を取得
+    bytArgArrayDimention = PublicModule.getArryDimmensions(arrstrargFieldPair)
     Dim arrstrAppendTablePreFix() As String
     ReDim arrstrAppendTablePreFix(UBound(arrstrargFieldPair), 1)
     '受け取った配列のサイズ分ループ
@@ -155,23 +159,36 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
         'DBPartsPrefix
         arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(PartsPrefix)
         arrstrPrefix(1) = "."
-        arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 0)
+        '配列の次元数により処理を分岐
+        Select Case bytArgArrayDimention
+        Case 2
+            '引数が2次元だった
+            arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 0)
+        Case 1
+            '引数が1次元だった場合
+            arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter)
+        End Select
         arrstrAppendTablePreFix(longArrayRowCounter, 0) = Join(arrstrPrefix, "")
         'SHPrefix
         arrstrPrefix(0) = clsEnumCondition.SQL_INV_Alias(ZaikoSHPrefix)
         arrstrPrefix(1) = "."
-        arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 1)
+        '配列の次元数により処理を分岐
+        Select Case bytArgArrayDimention
+        Case 2
+            '2次元
+            arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter, 1)
+        Case 1
+            '1次元
+            '1次元の場合は演算子の前後でフィールド名は共通とする
+            arrstrPrefix(2) = arrstrargFieldPair(longArrayRowCounter)
+        End Select
         '条件によってはここでTrimをつけるかどうか判断する
-        If clsEnumCondition.IsNeedTrim(arrstrargFieldPair(longArrayRowCounter, 1), argReverseDic, argNeedtrimDic) Then
+'        If clsEnumCondition.IsNeedTrim(arrstrargFieldPair(longArrayRowCounter, 1), argReverseDic, argNeedtrimDic) Then
+        If clsEnumCondition.IsNeedTrim(arrstrPrefix(2), argReverseDic, argNeedtrimDic) Then
             'Trimが必要
             'プレフィックス、サフィックスを付加したものを返す
             'Nullデータ排除のため、文字列形式にもIsNullでの処理を入れる 2022_01_28 Daisuke Oota
             Dim arrstrTrim(2) As String
-'            arrstrTrim(0) = clsEnumCondition.SQLFieldCondition(Trim_Prefix_sfc)
-'            arrstrTrim(1) = Join(arrstrPrefix, "")
-'            arrstrTrim(2) = clsEnumCondition.SQLFieldCondition(Trim_Suffix_sfc)
-'            arrstrAppendTablePreFix(longArrayRowCounter, 1) = Join(arrstrTrim, "")
-            '置換用Dictionary準備
             Dim dicReplaceCondition As Dictionary
             If dicReplaceCondition Is Nothing Then
                 '初期化されてなかったら初期化する

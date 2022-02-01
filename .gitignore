@@ -17,5 +17,6 @@ bin/*_Local*
 src/*/*.frx
 #新規フォームは少しの間管理対象とする
 #!src/Common_Parts_Rep.xlam/frmINV_PartsMaster_List.*
+!src/Common_Parts_Rep.xlam/frmTanaBincard.*
 TempDB/
 #/x64/

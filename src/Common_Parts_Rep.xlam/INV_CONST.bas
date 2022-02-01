@@ -319,4 +319,19 @@ Public Const SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM As String = "UPDATE {0} AS {1
 '         IN ""[MS ACCESS;DATABASE=c:\users\....] ) AS Ttmp
 '   ON TCSVTana.手配コード = Ttmp.手配コード AND TCSVTana.棚卸締切日 = Ttmp.棚卸締切日
 'SET TCSVTana.棚卸締切日 = "2022/02/02",TCSVTana.----
-'WHERE TCSVTana.棚卸締切日 Is Null
+'WHERE TCSVTana.棚卸締切日 Is Null
+'{0}    T_INV_CSV
+'{1}    TCSVTana
+'{2}    T_INV_Temp
+'{3}    (After IN Word)
+'{4]    Ttmp
+'{5}    手配コード
+'{6]    (SET condition)
+'{7}    棚卸締切日
+Public Const SQL_INV_TMP_TO_CSVTANA As String = "UPDATE {0} AS {1} " & vbCrLf & _
+"   RIGHT JOIN (" & vbCrLf & _
+"       SELECT * FROM {2} " & vbCrLf & _
+"           IN """"{3} ) AS {4} " & vbCrLf & _
+"   ON {1}.{5} = {4}.{5} AND {1}.{7} = {4}.{7} " & vbCrLf & _
+"SET {6} " & vbCrLf & _
+"WHERE {1}.{7} Is Null"
