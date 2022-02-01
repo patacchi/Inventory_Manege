@@ -255,6 +255,11 @@ Property Get ConnectMode() As ConnectModeEnum
     End If
 End Property
 Property Let ConnectMode(argConnectMode As ConnectModeEnum)
+    If adoConnection.Mode = argConnectMode Then
+        '既にコネクションモードが同じだったら何もする必要なし
+        DebugMsgWithTime "ConnectMode Let: Already connection mode set to: " & argConnectMode
+        Exit Property
+    End If
     If Not adoConnection Is Nothing Then
         '初期化済みで
         If adoConnection.Mode <> argConnectMode And Me.Connected Then
@@ -1056,7 +1061,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
         Else
             '未接続ならクラスの接続メソッドを利用して接続する
             Dim isCollecte As Boolean
-            isCollecte = DBReady()
+            isCollecte = DBReady(strargDBPath, strargDBFileName)
             If Not isCollecte Then
                 '接続失敗したっぽい
                 GoTo ErrorCatch

@@ -13,6 +13,11 @@ Option Explicit
 '定数定義
 Private Const FILTER_NAME_RANGE_PART As String = "FilterDatabase"
 Private Const TANA_CSV_ENDDAY_KEY As String = "棚卸締切日"
+'{0}    T_INV_CSV
+'{1}    (afterIN word)
+'{2}    F_EndDay
+'{3}    (End Day String)
+Private Const SQL_INPUT_ENDDAY As String = "UPDATE {0} IN""""{1} SET {2} = {3} WHERE {2} IS NULL OR {2} = """""
 '------------------------------------------------------------------------------------------------------
 'メンバ変数定義
 Private strINVDBFullPath As String                                  'INV_Manege.accdbのフルパス、基本的には未指定でデフォルトの場所を読みに行く
@@ -661,6 +666,7 @@ Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optiona
     Dim strTanaEndDay As String
     strTanaEndDay = GetEndDayFromTanaCSV(strargTanaCSVFullPath)
     '締切日取得出来たらTempテーブルにフィールド追加してやり、値をセットしてしまう
+    AddEndDayFieldAndInputDate strTanaEndDay
     strSet(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
     strSet(1) = " = "
     strSet(2) = clsSQLBcRef.addQuote(strTanaEndDay)
@@ -708,6 +714,65 @@ CloseAndExit:
     End If
     Exit Function
 End Function
+'''Tempテーブルに棚卸締切日フィールドを追加し、引数で指定された締切日を入力してしまうメソッド
+'''args
+'''strargEndDay     締切日を10桁のstring形式で
+Private Sub AddEndDayFieldAndInputDate(strargEndDay As String)
+    On Error GoTo ErrorCatch
+    '引数チェック
+    If Len(strargEndDay) > 10 Then
+        '10文字超えてたら右側10文字だけ採用する
+        strargEndDay = Right(strargEndDay, 10)
+    End If
+    'まずはTempテーブルにフィールドを追加してやる
+    'DBpathをデフォルトにする
+    clsADORef.SetDBPathandFilenameDefault
+    'DBFilename に 一時DBファイル名を指定する
+    clsADORef.DBFileName = PublicConst.TEMP_DB_FILENAME
+    Dim isCollect As Boolean
+    'Writeフラグを立てる
+    clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
+    'フィールド追加実行
+    isCollect = clsADORef.AppendField(INV_CONST.T_INV_TEMP, clsEnumRef.CSVTanafield(F_EndDay_ICS), Text_typ, " 10", PublicConst.TEMP_DB_FILENAME)
+    If Not isCollect Then
+        DebugMsgWithTime "AddEndDayFieldAndInputDate : fail append Field."
+        GoTo CloseAndExit
+        Exit Sub
+    End If
+    '次に棚卸締切日に値をセットしてしまう
+'{0}    T_INV_CSV
+''{1}    (afterIN word)
+''{2}    F_EndDay
+''{3}    (End Day String)
+'Private Const SQL_INPUT_ENDDAY As String = "UPDATE {0} IN""{1} SET {2} = {3} WHERE {2} IS NULL"
+    '置換用Dic準備
+    Dim dicReplaceAppend As Dictionary
+    Set dicReplaceAppend = New Dictionary
+    Dim fsoReplaceAppend As FileSystemObject
+    Set fsoReplaceAppend = New FileSystemObject
+    dicReplaceAppend.Add 0, INV_CONST.T_INV_TEMP
+    dicReplaceAppend.Add 1, clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoReplaceAppend.BuildPath(clsADORef.DBPath, clsADORef.DBFileName), clsEnumRef)
+    dicReplaceAppend.Add 2, clsEnumINVDB.CSVTanafield(F_EndDay_ICS)
+    '日付はクォートしないと日付シリアルに変換しようとしてしまう
+    dicReplaceAppend.Add 3, clsSQLBcRef.addQuote(strargEndDay)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INPUT_ENDDAY, dicReplaceAppend)
+    'SQL実行
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    'Writeフラグ下げる
+    clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
+    If Not isCollect Then
+        DebugMsgWithTime "AddEndDayFieldAndInputDate : fail do sql"
+        GoTo CloseAndExit
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "AddEndDayFieldAndInputDate code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'Writeフラグを下げる
+    clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
+    Exit Sub
+End Sub
 '''Author Daisuke oota 2022_01_21
 '''在庫情報シートのフルパスを引数として、DBの一時テーブルに登録するメソッド
 '''args
