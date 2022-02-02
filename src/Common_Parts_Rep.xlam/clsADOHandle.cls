@@ -19,7 +19,7 @@ Const constDBFILENAME               As String = "INV_Manege_Local.accdb"    'ç›å
 'ñ{î‘ä¬ã´
 Const constDBFILENAME               As String = "INV_Manege.accdb"          'ç›å…ä«óùDB
 #End If
-Const DEFAULT_CONNECTION_MODE       As Long = ConnectModeEnum.adModeRead
+Const DEFAULT_CONNECTION_MODE       As Long = ConnectModeEnum.adModeRead Or ConnectModeEnum.adModeShareDenyNone
 Const constDBPROVIDER_Pri           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source="
 Const CONNECTION_STRING_ACCDB_0DBFullPath           As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0}"       'ê⁄ë±ï∂éöóÒ_accdb
 Const CONNECTION_STRING_XLSM_0DBFullPath            As String = "Provider = Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties=""Excel 12.0 Macro;HDR=Yes;"";"
