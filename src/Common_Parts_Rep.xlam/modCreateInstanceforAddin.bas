@@ -44,6 +44,14 @@ Public Function CreateclsIncrementalSerch() As clsIncrementalSerch
     Set T = Nothing
     Exit Function
 End Function
+'clsGetIE
+Public Function CreateclsGetIE() As clsGetIE
+    Dim T As clsGetIE
+    Set T = New clsGetIE
+    Set CreateclsGetIE = T
+    Set T = Nothing
+    Exit Function
+End Function
 '''SQLテストフォームを表示する
 Public Sub ShowfrmSQLTest()
     frmSQLTest.Show

@@ -154,7 +154,7 @@ Public Sub Incremental_TextBox_Change()
     Me.StopEvent = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Change code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_TextBox_Change code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
@@ -269,7 +269,7 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
     Me.StopEvent = False
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
@@ -299,7 +299,7 @@ Private Function SQLResutArrayto1Dimmention(varargArr2Demmention As Variant) As 
     SQLResutArrayto1Dimmention = vararr1Dimmention
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -385,7 +385,7 @@ Public Function Incremental_LstBox_Click() As Boolean
     Incremental_LstBox_Click = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremantal_LstBox_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremantal_LstBox_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開
@@ -421,7 +421,7 @@ Public Sub Incremental_LstBox_Key_UP(argKeyCode As MSForms.ReturnInteger, argShi
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -496,7 +496,7 @@ Private Function GetSELECTfieldListFromDicObjctToFieldName() As String
     GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
+    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & Err.Number & " Descriptoin: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -534,7 +534,7 @@ Private Sub SetListBoxStyle(varArrayList As Variant)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "SetListStyle code: " & err.Number & " Description : " & err.Description
+    DebugMsgWithTime "SetListStyle code: " & Err.Number & " Description : " & Err.Description
     Exit Sub
 CloseAndExit:
 End Sub

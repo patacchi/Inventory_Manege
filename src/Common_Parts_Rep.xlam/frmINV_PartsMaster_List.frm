@@ -21,6 +21,8 @@ Private clsINVDBfrmPMList As clsINVDB
 Private clsEnumPMList As clsEnum
 Private clsSQLBc As clsSQLStringBuilder
 Private clsIncrementalParts As clsIncrementalSerch
+Private clsGetIEfrmPMList As clsGetIE
+Private objExxelfrmPMList As Excel.Application
 'keyがオブジェクト名で、値がテーブルエイリアス付きのフィールド名
 Private dicObjNameToFieldName As Dictionary
 '定数定義
@@ -87,6 +89,37 @@ Private Sub btnTehai_Text_Local_Set_All_Click()
 ErrorCatch:
 CloseAndExit:
 End Sub
+'''手配コードテキストボックスに入っている物をデータDLし、更新する
+Private Sub btnUpdateOriginData_Click()
+    'イベント停止する
+    clsIncrementalParts.StopEvent = True
+    '現在の手配コードボックスの値を退避する
+    Dim strOldTehaiCode As String
+    strOldTehaiCode = txtBox_F_INV_Tehai_Code.Text
+    '全項目消去
+    ClearAllTextBoxAndLabel
+    '手配コードを指定せずに全件の在庫情報シートをDLし、フルパスを取得する
+    Dim strZaikoSHFullPath As String
+    strZaikoSHFullPath = modZaikoSerch.ZaikoSerchbyTehaiCode(strOldTehaiCode, clsGetIEfrmPMList)
+    '指定の在庫情報ファイルでDB PartsMasterをUPdateし、処理レコード数を受け取る
+    Dim longAffected As Long
+    If objExxelfrmPMList Is Nothing Then
+        'クラス変数が初期化されていなかったら初期化する
+        Set objExxelfrmPMList = New Excel.Application
+    End If
+#If DontRemoveZaikoSH Then
+    'ファイル残すとき
+    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExxelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, True)
+#Else
+    'ファイル削除するとき
+    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExxelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, False)
+#End If
+    MsgBox longAffected & " 件のデータを更新しました。"
+    'イベント再開
+    clsIncrementalParts.StopEvent = False
+    '手配コードを戻してやる
+    txtBox_F_INV_Tehai_Code.Text = strOldTehaiCode
+End Sub
 Private Sub lstBox_Incremental_Click()
     'インクリメンタルリストが選択された
     'SQLごーしちゃっていいと思う
@@ -139,7 +172,7 @@ Private Sub lstBox_Incremental_Click()
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "IncremantalList_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "IncremantalList_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
