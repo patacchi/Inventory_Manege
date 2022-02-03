@@ -98,9 +98,17 @@ Private Sub btnUpdateOriginData_Click()
     strOldTehaiCode = txtBox_F_INV_Tehai_Code.Text
     '全項目消去
     ClearAllTextBoxAndLabel
-    '手配コードを指定せずに全件の在庫情報シートをDLし、フルパスを取得する
+    '手配コードを指定し、在庫情報シートをDLしフルパスを取得する
     Dim strZaikoSHFullPath As String
+#If NoIEConnect Then
+    'ローカルテストファイル環境の時
+    'ファイル選択してもらう、ディレクトリはデータベースディレクトリ
+    Call ChCurrentDirW(clsADOfrmPMList.DBPath)
+    strZaikoSHFullPath = Application.GetOpenFilename
+#Else
+    'Webから情報取得できる環境の時
     strZaikoSHFullPath = modZaikoSerch.ZaikoSerchbyTehaiCode(strOldTehaiCode, clsGetIEfrmPMList)
+#End If
     '指定の在庫情報ファイルでDB PartsMasterをUPdateし、処理レコード数を受け取る
     Dim longAffected As Long
     If objExxelfrmPMList Is Nothing Then
@@ -172,7 +180,7 @@ Private Sub lstBox_Incremental_Click()
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "IncremantalList_Click code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IncremantalList_Click code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub

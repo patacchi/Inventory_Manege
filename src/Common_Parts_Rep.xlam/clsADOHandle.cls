@@ -36,10 +36,10 @@ Private strDBFileName As String
 Private strConnection As String
 Private isConnected As Boolean
 Private strSQL As String
-Private adoConnection As adodb.Connection
-Private adoCommand As adodb.Command
-Private adoParameters As adodb.Parameters
-Private rsMyRecord As adodb.Recordset
+Private adoConnection As ADODB.Connection
+Private adoCommand As ADODB.Command
+Private adoParameters As ADODB.Parameters
+Private rsMyRecord As ADODB.Recordset
 Private varMyArray As Variant
 Private longAffected As Long
 Private conMode As ConnectModeEnum
@@ -173,7 +173,7 @@ Property Let SQL(ByVal strargSQL As String)
 End Property
 'RecordSet
 '読み取り専用？
-Property Get RS() As adodb.Recordset
+Property Get RS() As ADODB.Recordset
     Set RS = rsMyRecord
 End Property
 'RA_Array
@@ -269,7 +269,7 @@ Property Let ConnectMode(argConnectMode As ConnectModeEnum)
         End If
     Else
         '初期化がまだならここで新しいインスタンスを割り当てる
-        Set adoConnection = New adodb.Connection
+        Set adoConnection = New ADODB.Connection
     End If
     'メンバ変数にセットし、ConnectionObjectにもセットしてやる
     conMode = argConnectMode
@@ -340,20 +340,20 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     On Error GoTo ErrorCatch
     If adoCommand Is Nothing Then
         'Commandが初期化されてなかったらここで行う
-        Set adoCommand = New adodb.Command
+        Set adoCommand = New ADODB.Command
     End If
     adoCommand.CommandType = adCmdText
     adoCommand.CommandText = strargSQL
     adoCommand.ActiveConnection = adoConnection
     If rsMyRecord Is Nothing Then
         '結果格納用Recordsetの初期化
-        Set rsMyRecord = New adodb.Recordset
+        Set rsMyRecord = New ADODB.Recordset
     End If
     Set rsMyRecord = adoCommand.Execute(longAffected)
     If rsMyRecord.State = adStateClosed Then
         'Recordsetが閉じていた場合
         'DROP TABLE , SELECT INTO ... 等が該当？
-        If Err.Number = 0 Then
+        If err.Number = 0 Then
             '正常終了？
             Do_SQL_with_NO_Transaction = True
             ReDim varMyArray(1, 0)
@@ -376,15 +376,15 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     Do_SQL_with_NO_Transaction = True
     Exit Function
 ErrorCatch:
-    MsgBox "Do_SQL_with_NO_Transaction code: " & Err.Number & vbCrLf & "Description: " & Err.Description
-    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & Err.Number & " Description: " & Err.Description
+    MsgBox "Do_SQL_with_NO_Transaction code: " & err.Number & vbCrLf & "Description: " & err.Description
+    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Write Daisuke_Oota
 '''RecordSetを二次元配列に書き出す
 '''結果はVariant型の配列として書き出す
 '''1行目（インデックス0）はタイトル列（もしくはエラーメッセージ？）とする
-Private Function RecordSet_to_2DArray(ByRef argRS As adodb.Recordset) As Boolean
+Private Function RecordSet_to_2DArray(ByRef argRS As ADODB.Recordset) As Boolean
     If Me.RecordCount < 0 And Me.Affected < 0 Then
         'RecordCountとAffectedが0未満の時は何かしらのエラーがあった時なのでエラーがありましたメッセージを返す
         ReDim varMyArray(0, 0)
@@ -593,7 +593,7 @@ Private Function OpenConnection(strargConnection As String) As Boolean
     On Error GoTo ErrorCatch
     If adoConnection Is Nothing Then
         'クラスのメンバ変数が初期化されてなかったら初期化する
-       Set adoConnection = New adodb.Connection
+       Set adoConnection = New ADODB.Connection
     End If
     adoConnection.ConnectionString = Me.ConnectionString
     'ConnectionのCursorLocationをCliantにする。これをやらないと、RecorCountとかが取れなかったりする
@@ -618,7 +618,7 @@ ErrorCatch:
         OpenConnection = False
         Exit Function
     End If
-    DebugMsgWithTime "OpenConnection code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "OpenConnection code: " & err.Number & " Description: " & err.Description
     OpenConnection = False
     Exit Function
 End Function
@@ -658,8 +658,8 @@ Private Function ChCurrentToDBDirectory(Optional strargDBPath As String = "") As
     ChCurrentToDBDirectory = True
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "ChCurrenttoDB code: " & Err.Number & " Description: " & Err.Description
-    If Err.Number = 76 Then
+    DebugMsgWithTime "ChCurrenttoDB code: " & err.Number & " Description: " & err.Description
+    If err.Number = 76 Then
         'パスが見つかりません、mkdirでエラーが出た = ネットワークダメなんだね
         MsgBox "DBディレクトリ作成失敗（多分ネットワーク問題）処理を中断します"
     End If
@@ -689,8 +689,8 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     InitialDBCreate = True
     Exit Function
 ErrorCatch:
-    If Err.Number <> 0 Then
-        MsgBox Err.Number & vbCrLf & Err.Description
+    If err.Number <> 0 Then
+        MsgBox err.Number & vbCrLf & err.Description
     End If
     Exit Function
 End Function
@@ -1052,7 +1052,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     'テーブル一覧を取得
     'Connectionオブジェクトの作成、接続
     '接続文字列がクラスのプロパティと引数で与えられたのが一緒で、かつConnectedがTrueになってたら接続を再利用する
-    Dim conTableExists As adodb.Connection
+    Dim conTableExists As ADODB.Connection
     If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
         If Me.Connected Then
@@ -1070,7 +1070,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
         End If
     Else
         '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
-        Set conTableExists = New adodb.Connection
+        Set conTableExists = New ADODB.Connection
         conTableExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
         conTableExists.CursorLocation = adUseClient
         conTableExists.Open
@@ -1080,7 +1080,7 @@ Public Function IsTableExists(strargTableName As String, Optional strargDBFileNa
     '制約列(条件にArrayで与える)
     'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,TABLE_TYPE
     'Array(Empty,Empty,TableName,"TABLE")
-    Dim rsTableExists As adodb.Recordset
+    Dim rsTableExists As ADODB.Recordset
     Set rsTableExists = conTableExists.OpenSchema(adSchemaTables, Array(Empty, Empty, strargTableName, "TABLE"))
     If rsTableExists.RecordCount <= 0 Then
         'Recordcountが0以下ならないのが確定
@@ -1107,7 +1107,7 @@ ErrorCatch:
     End If
     Set conTableExists = Nothing
     IsTableExists = False
-    DebugMsgWithTime "IsTableExists code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IsTableExists code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Authour Daisuke Oota 2021_12_16
@@ -1153,7 +1153,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     End If
     'Connectionオブジェクトのopwnschemaメソッドでスキーマ情報を取得し、フィールドの有無をチェックする
     'Connecvtionオブジェクトの作成と接続を行う
-    Dim conFieldExists As adodb.Connection
+    Dim conFieldExists As ADODB.Connection
     If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
         If Me.Connected Then
@@ -1171,7 +1171,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
         End If
     Else
         '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
-        Set conFieldExists = New adodb.Connection
+        Set conFieldExists = New ADODB.Connection
         conFieldExists.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
         conFieldExists.CursorLocation = adUseClient
         conFieldExists.Open
@@ -1180,7 +1180,7 @@ Public Function IsFieldExists(strargTableName As String, strargFieldName As Stri
     'adSchemaColumns
     'TABLE_CATALOG,TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME
     'array(empty,empty,strargTableName,strargFieldName)
-    Dim rsFieldExists As adodb.Recordset
+    Dim rsFieldExists As ADODB.Recordset
     Set rsFieldExists = conFieldExists.OpenSchema(adSchemaColumns, Array(Empty, Empty, strargTableName, strargFieldName))
     If rsFieldExists.RecordCount <= 0 Then
         'RecordCountが0以下なら指定のフィールドはない
@@ -1207,7 +1207,7 @@ ErrorCatch:
     End If
     Set conFieldExists = Nothing
     IsFieldExists = False
-    DebugMsgWithTime "IsFielsExists code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "IsFielsExists code: " & err.Number & " Description: " & err.Description
     Exit Function
 End Function
 '''Author Patacchi 2022_01_16
@@ -1241,7 +1241,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     End If
     'Connectionオブジェクトの作成、接続
     '接続文字列がクラスのプロパティと引数で与えられたのが一緒で、かつConnectedがTrueになってたら接続を再利用する
-    Dim conGetTableList As adodb.Connection
+    Dim conGetTableList As ADODB.Connection
     If Me.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName) Then
         '接続文字列が一致する場合は、connectedプロパティを調べて、接続されてなかったら接続してやる
         If Me.Connected Then
@@ -1259,7 +1259,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
         End If
     Else
         '接続文字列が一致しない場合は新規にConnectionオブジェクトを定義して接続してやる
-        Set conGetTableList = New adodb.Connection
+        Set conGetTableList = New ADODB.Connection
         conGetTableList.ConnectionString = CreateConnectionString(strargDBPath, strargDBFileName)
         conGetTableList.CursorLocation = adUseClient
         conGetTableList.Open
@@ -1282,7 +1282,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     GetTableList = arrstrTables
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetTableList code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "GetTableList code: " & err.Number & " Description: " & err.Description
     Dim arrError() As String
     GetTableList = arrError
     GoTo CloseAndExit
@@ -1321,7 +1321,7 @@ Private Sub CreateandCheckTempDB(Optional strargDBPath As String)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "CreateTempDB code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "CreateTempDB code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set adoxTempDB = Nothing

@@ -154,7 +154,7 @@ Public Sub Incremental_TextBox_Change()
     Me.StopEvent = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Change code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "Incremental_TextBox_Change code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
@@ -237,7 +237,7 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
         Exit Sub
     End If
     '1次元配列に変換し、メンバ変数にセット
-    varSourceArray = SQLResutArrayto1Dimmention(vararr2Dimention)
+    varSourceArray = clsSQLBRef.SQLResutArrayto1Dimmention(vararr2Dimention)
     '候補が一つの場合は直接テキストボックスに値を設定してやり、リストボックス自体は非表示のままにする
     If UBound(varSourceArray) - LBound(varSourceArray) = 0 Then
         Me.LstBoxRef.Visible = False
@@ -269,41 +269,12 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
     Me.StopEvent = False
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
     Exit Sub
 End Sub
-'''AdoHandleより返された2次元配列を1次元配列に置き換えて返す
-Private Function SQLResutArrayto1Dimmention(varargArr2Demmention As Variant) As Variant
-    On Error GoTo ErrorCatch
-    If Not IsRedim(varargArr2Demmention) Or getArryDimmensions(varargArr2Demmention) <> 2 Then
-        DebugMsgWithTime "arg array not AdoHandle Return array"
-        GoTo CloseAndExit
-    End If
-    If UBound(varargArr2Demmention, 2) - LBound(varargArr2Demmention, 2) <> 0 Then
-        '2次元目の要素数が1個以外だった
-        DebugMsgWithTime "SWLResultArrayto1Dimmention: Dimmention 2 have not 1 elements"
-        GoTo CloseAndExit
-    End If
-    '配列の要素数分ループ
-    Dim vararr1Dimmention As Variant
-    '配列のサイズを初期化
-    ReDim vararr1Dimmention(UBound(varargArr2Demmention, 1))
-    Dim longArrayRowCounter As Long
-    For longArrayRowCounter = LBound(varargArr2Demmention, 1) To UBound(varargArr2Demmention, 1)
-        vararr1Dimmention(longArrayRowCounter) = varargArr2Demmention(longArrayRowCounter, 0)
-    Next longArrayRowCounter
-    '結果を返す
-    SQLResutArrayto1Dimmention = vararr1Dimmention
-    GoTo CloseAndExit
-ErrorCatch:
-    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & Err.Number & " Description: " & Err.Description
-    GoTo CloseAndExit
-CloseAndExit:
-    Exit Function
-End Function
 '''リストボックス(インクリメンタルリスト) Enterイベント
 '''Enterした時の処理。残り1個だったらくりこ確定しちゃう位？
 '''
@@ -385,7 +356,7 @@ Public Function Incremental_LstBox_Click() As Boolean
     Incremental_LstBox_Click = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremantal_LstBox_Click code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "Incremantal_LstBox_Click code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開
@@ -421,7 +392,7 @@ Public Sub Incremental_LstBox_Key_UP(argKeyCode As MSForms.ReturnInteger, argShi
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -496,7 +467,7 @@ Private Function GetSELECTfieldListFromDicObjctToFieldName() As String
     GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & Err.Number & " Descriptoin: " & Err.Description
+    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -534,7 +505,7 @@ Private Sub SetListBoxStyle(varArrayList As Variant)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "SetListStyle code: " & Err.Number & " Description : " & Err.Description
+    DebugMsgWithTime "SetListStyle code: " & err.Number & " Description : " & err.Description
     Exit Sub
 CloseAndExit:
 End Sub

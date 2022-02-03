@@ -46,9 +46,9 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
     End If
     '指定したURLより全フレームのHTMLDocを取得する Dictionary形式
     Set dicReturnHTMLDoc = clsGetieZaikoSerch.ResultHTMLDoc
-    If Err.Number <> 0 Then
+    If err.Number <> 0 Then
         'エラー発生してたらとりあえずここに来てみる
-        DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & Err.Number & " Description: " & Err.Description
+        DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & err.Number & " Description: " & err.Description
     End If
     On Error GoTo ErrorCatch
     '検索する手配コードをセットしてやる
@@ -104,7 +104,7 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
 '    Set clsGetieZaikoSerch = Nothing
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "ZaikoSerchbyTehaiCode code: " & err.Number & " Description: " & err.Description
     'クラス変数はインスタンスを共有するので個別に解放はNG
 '    If Not clsGetieZaikoSerch Is Nothing Then
 '        Set clsGetieZaikoSerch = Nothing
@@ -138,6 +138,6 @@ Private Sub SetZaikoSerch_TehaiCode(ByRef clsargIE As clsGetIE, strargTeheaiCode
 #End If
 Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "SetZaikoSerch_TehaiCode: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "SetZaikoSerch_TehaiCode: " & err.Number & " Description: " & err.Description
     Exit Sub
 End Sub

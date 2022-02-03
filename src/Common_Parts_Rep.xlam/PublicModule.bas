@@ -41,12 +41,12 @@ Public Function getArryDimmensions(ByRef varArry As Variant) As Byte
     End If
     byteLocalCounter = 0
     On Error Resume Next
-    Do While Err.Number = 0
+    Do While err.Number = 0
         byteLocalCounter = byteLocalCounter + 1
         longRows = UBound(varArry, byteLocalCounter)
     Loop
     byteLocalCounter = byteLocalCounter - 1
-    Err.Clear
+    err.Clear
     getArryDimmensions = byteLocalCounter
     Exit Function
  End Function
@@ -95,7 +95,7 @@ End Function
 Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal strargFilePath As String, Optional ByVal strargFileEncoding As String = "UTF-8")
     '二次元配列をCSVに吐き出す
     Dim byteDimentions As Byte
-    Dim objFileStream As adodb.Stream
+    Dim objFileStream As ADODB.Stream
     Dim longRowCounter As Long
     Dim longFieldCounter As Long
     Dim strarrField() As String
@@ -107,7 +107,7 @@ Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal s
         DebugMsgWithTime "OutputArrayToCSV : Not 2 Dimension Array"
         Exit Sub
     End If
-    Set objFileStream = New adodb.Stream
+    Set objFileStream = New ADODB.Stream
     With objFileStream
         'エンコード指定
         .Charset = strargFileEncoding
@@ -138,7 +138,7 @@ Public Sub OutputArrayToCSV(ByRef vararg2DimentionsDataArray As Variant, ByVal s
     MsgBox "CSV出力完了 " & strargFilePath
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "OutputArrayToCSV code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "OutputArrayToCSV code: " & err.Number & " Description: " & err.Description
     Exit Sub
 End Sub
 '''Author Daisuke Oota 2021_10_18
@@ -166,12 +166,12 @@ Public Function IsRedim(varargArray As Variant) As Boolean
     End If
     'Uboud関数を実行し、Err.Numberで判定する
     On Error Resume Next
-    Err.Clear
+    err.Clear
     'そもそも要素数があればここで数字が入る
     '要素数1個の場合は0になり、一旦Falseと判定されるが、次でErr.Number = 0を満たすため、Trueに上書きされる
     IsRedim = CBool(UBound(varargArray))
     'UBoundが失敗した時（未初期化）はErr.Numberにたいてい9が入るので、下記条件がFalseになる
-    IsRedim = (Err.Number = 0)
+    IsRedim = (err.Number = 0)
     Exit Function
 End Function
 '''---------------------------------------------------------------------------------------------------------------------------

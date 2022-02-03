@@ -61,7 +61,7 @@ Public Function ReplaceParm(strargOriginString As String, dicargParm As Dictiona
     Exit Function
 ErrorCatch:
     Set objBuilder = Nothing
-    DebugMsgWithTime "ReplaceParm code: " & Err.Number & vbCrLf & " Description: " & Err.Description
+    DebugMsgWithTime "ReplaceParm code: " & err.Number & vbCrLf & " Description: " & err.Description
     Exit Function
 End Function
 '''------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ Private Function Append(ByVal strargOrignString As String, ByRef varAryString As
     Append = Join(strarrBuf, strDelimiter)
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "Append Error code: " & Err.Number & "Description: " & Err.Description
+    DebugMsgWithTime "Append Error code: " & err.Number & "Description: " & err.Description
 End Function
 Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal strQuote As String = """") As String
     '与えられた文字列に、エスケープ処理をする
@@ -110,7 +110,7 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     addQuote = Append("", strBuf, "")
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "addQuote Error code: " & Err.Number & "Description: " & Err.Description
+    DebugMsgWithTime "addQuote Error code: " & err.Number & "Description: " & err.Description
 End Function
 '''INVPartMasterテーブルと対応する在庫情報シートのフィールド名から UPDATE の SET パラメータや WHERE パラメータを作成する
 '''対応フィールドを配列引数で受け取るよう変更 2022_01_27 Daisuke Oota
@@ -237,7 +237,7 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ReturnCommonFieldCondition code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "ReturnCommonFieldCondition code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -304,10 +304,40 @@ Public Function CreateAfterIN_WordFromSHFullPath(strargDBFileFullPah As String, 
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & Err.Number & " Description: " & Err.Description
+    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceParm = Nothing
     Set fsoINWord = Nothing
+    Exit Function
+End Function
+'''AdoHandleより返された2次元配列を1次元配列に置き換えて返す
+'''Return Variant配列   引数の2次元配列のうち、最初の次元のデータしか有効にならない
+Public Function SQLResutArrayto1Dimmention(varargArr2Demmention As Variant) As Variant
+    On Error GoTo ErrorCatch
+    If Not IsRedim(varargArr2Demmention) Or getArryDimmensions(varargArr2Demmention) <> 2 Then
+        DebugMsgWithTime "arg array not AdoHandle Return array"
+        GoTo CloseAndExit
+    End If
+    If UBound(varargArr2Demmention, 2) - LBound(varargArr2Demmention, 2) <> 0 Then
+        '2次元目の要素数が1個以外だった
+        DebugMsgWithTime "SWLResultArrayto1Dimmention: Dimmention 2 have not 1 elements"
+        GoTo CloseAndExit
+    End If
+    '配列の要素数分ループ
+    Dim vararr1Dimmention As Variant
+    '配列のサイズを初期化
+    ReDim vararr1Dimmention(UBound(varargArr2Demmention, 1))
+    Dim longArrayRowCounter As Long
+    For longArrayRowCounter = LBound(varargArr2Demmention, 1) To UBound(varargArr2Demmention, 1)
+        vararr1Dimmention(longArrayRowCounter) = varargArr2Demmention(longArrayRowCounter, 0)
+    Next longArrayRowCounter
+    '結果を返す
+    SQLResutArrayto1Dimmention = vararr1Dimmention
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
     Exit Function
 End Function
