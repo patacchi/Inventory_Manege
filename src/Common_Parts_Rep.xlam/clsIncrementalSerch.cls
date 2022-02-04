@@ -341,7 +341,7 @@ Public Function Incremental_LstBox_Click() As Boolean
     strWHEREcondition = Join(strarrCondition, "")
     'ReplaceDicを設定する
     '今回のSELECTはDicObjctToFieldにある全ての項目を引っ張ってこないとダメ
-    SetReplaceParmDic GetSELECTfieldListFromDicObjctToFieldName, strWHEREcondition
+    SetReplaceParmDic clsSQLBRef.GetSELECTfieldListFromDicObjctToFieldName(dicObjectToFieldName), strWHEREcondition
     'clsADOのプロパティにSQLをセット
     Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
     'SQL実行
@@ -433,45 +433,6 @@ Private Sub SetReplaceParmDic(strargSELECTField As String, strargWHERECondition 
         dicReplaceSELECTParam.Add 6, strargWHERECondition
     End If
 End Sub
-'''プロパティのdicObjToFieldNameより全フィールド選択のSELECT 引数を作成する
-'''戻り値   string      SELECTの後にくっつけて使用する
-Private Function GetSELECTfieldListFromDicObjctToFieldName() As String
-    On Error GoTo ErrorCatch
-    '引数チェック
-    Dim isInitialized As Boolean
-    isInitialized = CheckInctance
-    If Not isInitialized Then
-        DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName : not initialized instance var..."
-        GetSELECTfieldListFromDicObjctToFieldName = ""
-        GoTo CloseAndExit
-    End If
-    'dicobj.count分の配列を定義
-    Dim strarrSELECTfield() As String
-    ReDim strarrSELECTfield(Me.dicObjectField.Count - 1)
-    Dim varKeyDicObj As Variant
-    Dim longArrRowCounter As Long
-    longArrRowCounter = 0
-    For Each varKeyDicObj In Me.dicObjectField
-        '配列にフィールド名を格納していく
-        'フィールド名を明示的に指定しないとSELECTした結果がエイリアス外されちゃう
-        'ついでにドットは特殊文字扱いされるのでRelaceしなきゃだめ
-        Dim strarrPlusAlias(2) As String
-        strarrPlusAlias(0) = Me.dicObjectField(varKeyDicObj)
-        strarrPlusAlias(1) = " AS "
-        strarrPlusAlias(2) = REPLACE(strarrPlusAlias(0), ".", "_")
-        strarrSELECTfield(longArrRowCounter) = Join(strarrPlusAlias, "")
-        '配列の行カウンターをインクリメント
-        longArrRowCounter = longArrRowCounter + 1
-    Next varKeyDicObj
-    '結果を返す
-    GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
-    GoTo CloseAndExit
-ErrorCatch:
-    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
-    GoTo CloseAndExit
-CloseAndExit:
-    Exit Function
-End Function
 '''ListBoxに各種プロパティをセットし、表示する
 '''args
 '''varArrayList                 リストボックスに表示する配列

@@ -387,6 +387,10 @@ End If
 '    F_EndDay_ICS = 100
 '    F_CSV_No_ICS = 101
 '    F_Available_ICS = 102
+'    'ロケーションだけメンドウなので独自に番号振る
+'    F_Location_Text = 103
+'    F_Status_ICS = 104
+'    F_Bin_Amount_ICS = 105
 '    '以下は共通フィールド
 '    F_ManegeSection_ICS = Enum_INV_M_Parts.F_Manege_Section_IMPrt
 '    F_ManegeSection_Sub_ICS = Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt
@@ -394,8 +398,6 @@ End If
 '    F_System_Name_ICS = Enum_INV_M_Parts.F_System_Name_IMPrt
 '    F_System_Spec_ICS = Enum_INV_M_Parts.F_System_Spec_IMPrt
 '    F_System_Tana_NO_ICS = Enum_INV_M_Parts.F_System_TanaNo_IMPrt
-'    'ロケーションだけメンドウなので独自に番号振る
-'    F_Location_Text = 103
 '    F_Store_Code = Enum_INV_M_Parts.F_Store_Code_IMPrt
 '    F_Stock_Amount = Enum_INV_M_Parts.F_Stock_Amount_IMPrt
 'End Enum
@@ -414,6 +416,8 @@ End If
     dicCSVTana.Add Enum_CSV_Tana_Field.F_Location_Text_ICS, INV_CONST.F_INV_CSV_LOCATION_TEXT
     dicCSVTana.Add Enum_CSV_Tana_Field.F_Store_Code_ICS, INV_CONST.F_INV_CSV_STORE_CODE
     dicCSVTana.Add Enum_CSV_Tana_Field.F_Stock_Amount_ICS, INV_CONST.F_INV_CSV_STOCK_AMOUNT
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Status_ICS, INV_CONST.F_INV_CSV_STATUS
+    dicCSVTana.Add Enum_CSV_Tana_Field.F_Bin_Amount_ICS, INV_CONST.F_INV_CSV_BIN_AMOUNT
 'dicCommonTanaCSV
     '特殊パターン、Tana_CSVファイルとDBのテーブルで共通の項目のEnumを格納したDictionary
     If dicCommonTanaCSV Is Nothing Then

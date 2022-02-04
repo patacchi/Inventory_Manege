@@ -65,4 +65,8 @@ End Sub
 '''INV_M_Partsマスター表示フォームを表示する
 Public Sub ShowfrmInvPartsMaster()
     frmINV_PartsMaster_List.Show
+End Sub
+'''frmTanaBincardフォームを表示する
+Public Sub ShowfrmINVTanaBincard()
+    frmTanaBincard.Show
 End Sub

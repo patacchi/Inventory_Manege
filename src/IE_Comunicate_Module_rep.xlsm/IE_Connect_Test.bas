@@ -4,7 +4,7 @@ Private Const START_COLUMN As Long = 2
 Private Const START_ROW As Long = 4
 Public Sub OpenUrlatIE()
     Dim clsIETest As clsGetIE
-    Set clsIETest = New clsGetIE
+    Set clsIETest = CreateclsGetIE
     'InternetMediumだとうまくいかないので、インスタンス差し替え
     Set clsIETest.IEInstance = New InternetExplorer
     '沖縄県市町村一覧ダウンロード_SaveAsテスト

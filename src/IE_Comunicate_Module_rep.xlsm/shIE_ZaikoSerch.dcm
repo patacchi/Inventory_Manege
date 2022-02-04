@@ -19,6 +19,9 @@ Option Explicit
 Public Sub ShowfrmPartMaster()
     Call ShowfrmInvPartsMaster
 End Sub
+Public Sub ShowfrmTanaBinCard_Test()
+    Call ShowfrmINVTanaBincard
+End Sub
 Public Sub TanaCSVtoDB()
     '最初にCSVファイルを選択してもらう
     Dim strCSVFullPath As String
@@ -34,7 +37,7 @@ Public Sub TanaCSVtoDB()
     Dim clsINVDBRegistfrom As clsINVDB
     Set clsINVDBRegistfrom = CreateclsINVDB
     Dim clsGetIERegistfrom As clsGetIE
-    Set clsGetIERegistfrom = New clsGetIE
+    Set clsGetIERegistfrom = CreateclsGetIE
     '以下、インスタンス共有のための変数宣言
     Dim objExcelShare As Excel.Application
     Set objExcelShare = New Excel.Application
@@ -121,7 +124,7 @@ Public Sub btnZaikoSerch_Click()
     If strDialogFileName = "False" Then
         'キャンセルが押されたら文字列のFalseが帰ってくるらしい・・・
         Dim clsGetIEZaikoserchTehaiCode As clsGetIE
-        Set clsGetIEZaikoserchTehaiCode = New clsGetIE
+        Set clsGetIEZaikoserchTehaiCode = CreateclsGetIE
         '手配コード空白でDLし、結果のファイル名をセットする
         strDialogFileName = modZaikoSerch.ZaikoSerchbyTehaiCode("", clsGetIEZaikoserchTehaiCode)
         If strDialogFileName = "" Then
@@ -191,7 +194,7 @@ Public Function RegistDBbyDailyTanaCSV() As Long
     Dim clsINVDBRegistfrom As clsINVDB
     Set clsINVDBRegistfrom = CreateclsINVDB
     Dim clsGetIERegistfrom As clsGetIE
-    Set clsGetIERegistfrom = New clsGetIE
+    Set clsGetIERegistfrom = CreateclsGetIE
     '以下、インスタンス共有のための変数宣言
     Dim objExcelShare As Excel.Application
     Set objExcelShare = New Excel.Application

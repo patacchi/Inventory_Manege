@@ -105,7 +105,7 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     Dim strBuf(2) As String
     On Error GoTo ErrorCatch
     strBuf(0) = strQuote
-    strBuf(1) = REPLACE(strargOriginalString, """", """""")
+    strBuf(1) = Replace(strargOriginalString, """", """""")
     strBuf(2) = strQuote
     addQuote = Append("", strBuf, "")
     Exit Function
@@ -337,6 +337,45 @@ Public Function SQLResutArrayto1Dimmention(varargArr2Demmention As Variant) As V
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "SQLResultArrayto1Dimention code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
+End Function
+'''プロパティのdicObjToFieldNameより全フィールド選択のSELECT 引数を作成する
+'''戻り値   string      SELECTの後にくっつけて使用する
+'''args
+'''argdicObjToField     ObjectName から フィールド名（テーブル名エイリアスプレフィックス付き）の対応をセットしたDictionary
+Public Function GetSELECTfieldListFromDicObjctToFieldName(ByRef argdicObjToField As Dictionary) As String
+    On Error GoTo ErrorCatch
+    '引数チェック
+    If argdicObjToField Is Nothing Then
+        DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName : argDic not initialized..."
+        GetSELECTfieldListFromDicObjctToFieldName = ""
+        GoTo CloseAndExit
+    End If
+    'dicobj.count分の配列を定義
+    Dim strarrSELECTfield() As String
+    ReDim strarrSELECTfield(argdicObjToField.Count - 1)
+    Dim varKeyDicObj As Variant
+    Dim longArrRowCounter As Long
+    longArrRowCounter = 0
+    For Each varKeyDicObj In argdicObjToField
+        '配列にフィールド名を格納していく
+        'フィールド名を明示的に指定しないとSELECTした結果がエイリアス外されちゃう
+        'ついでにドットは特殊文字扱いされるのでRelaceしなきゃだめ
+        Dim strarrPlusAlias(2) As String
+        strarrPlusAlias(0) = argdicObjToField(varKeyDicObj)
+        strarrPlusAlias(1) = " AS "
+        strarrPlusAlias(2) = Replace(strarrPlusAlias(0), ".", "_")
+        strarrSELECTfield(longArrRowCounter) = Join(strarrPlusAlias, "")
+        '配列の行カウンターをインクリメント
+        longArrRowCounter = longArrRowCounter + 1
+    Next varKeyDicObj
+    '結果を返す
+    GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function

@@ -20,7 +20,7 @@ Private clsINVDBfrmBIN As clsINVDB
 Private clsEnumfrmBIN As clsEnum
 Private clsSQLBc As clsSQLStringBuilder
 Private objExcelFrmBIN As Excel.Application
-Private dicoObjNameToFieldName As Dictionary
+Private dicObjNameToFieldName As Dictionary
 Private clsIncrementalfrmBIN As clsIncrementalSerch
 'メンバ変数
 Private rsfrmBIN As ADODB.Recordset
@@ -71,6 +71,8 @@ Private Sub btnRegistTanaCSVtoDB_Click()
 #Else
     longAffected = clsINVDBfrmBIN.UpsertINVPartsMasterfromZaikoSH(strCSVFullPath, objExcelFrmBIN, clsINVDBfrmBIN, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc, False)
 #End If
+    '登録処理が終わったら、リストを再構成する
+    setEndDayList
 End Sub
 Private Sub lstBoxEndDay_Click()
     '締切日リスト選択された
@@ -100,8 +102,8 @@ Private Sub UserForm_Initialize()
     If objExcelFrmBIN Is Nothing Then
         Set objExcelFrmBIN = New Excel.Application
     End If
-    If dicoObjNameToFieldName Is Nothing Then
-        Set dicoObjNameToFieldName = New Dictionary
+    If dicObjNameToFieldName Is Nothing Then
+        Set dicObjNameToFieldName = New Dictionary
     End If
     If clsIncrementalfrmBIN Is Nothing Then
         Set clsIncrementalfrmBIN = CreateclsIncrementalSerch
@@ -116,6 +118,10 @@ Private Sub UserForm_Initialize()
         MsgBox "棚卸CSVのDBデータ読み込みでエラーが発生しました"
         Unload Me
     End If
+    'divObjToFieldを設定
+    setDicObjToField
+End Sub
+Private Sub ClearAllContents(strargExceptControlName As String)
 End Sub
 '''締切日リストを設定する
 '''Return Bool  成功したらTrue、それ以外はFalse
@@ -165,13 +171,76 @@ CloseAndExit:
     Set fsoEndDay = Nothing
     Exit Function
 End Function
+'''dicObjToFieldNameの設定を行う
+'''key がオブジェクト名、value がテーブルエイリアス付きフィールド名
+Private Sub setDicObjToField()
+    On Error GoTo ErrorCatch
+    If dicObjNameToFieldName Is Nothing Then
+        '初期化されていなかったら初期化する
+        Set dicObjNameToFieldName = New Dictionary
+    End If
+    '最初に全消去
+    dicObjNameToFieldName.RemoveAll
+    dicObjNameToFieldName.Add txtBox_F_CSV_No.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_CSV_No_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_Tana_Local_Text.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Location_Text_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_Tehai_Code.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Tehai_Code_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_DB_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Stock_Amount_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_BIN_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Bin_Amount_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_Real_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Available_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_System_Name.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_System_Name_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add txtBox_F_CSV_System_Spac.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_System_Spec_ICS), clsEnumfrmBIN)
+    '以下は画面表示はしないものの、RSでデータとして保持はするものなので、KeyはDBのフィールド名（テーブルエイリアスプレフィックス無し）、Valueはプレフィックス有りとする
+    dicObjNameToFieldName.Add clsEnumfrmBIN.CSVTanafield(F_Status_ICS), clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Status_ICS), clsEnumfrmBIN)
+    dicObjNameToFieldName.Add clsEnumfrmBIN.CSVTanafield(F_EndDay_ICS), clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_EndDay_ICS), clsEnumfrmBIN)
+    GoTo CloseAndExit
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "dicObjNameToFieldName code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
+End Sub
 '''デフォルト(フィルタ掛かる前）のSelect結果をRSに入れる
 '''Retrun bool 成功したらTrue、それ以外はfalse
 '''args
-'''strEndDay        締切日の10文字
-Private Function setDefaultDataToRS(strEndDay As String) As Boolean
+'''strargEndDay        締切日の10文字
+Private Function setDefaultDataToRS(strargEndDay As String) As Boolean
     On Error GoTo ErrorCatch
     '設定された引数を元にSQLを組み立てる
+''棚卸チェック用デフォルトデータ取得SQL
+''{0}    (selectField As 必須)
+''{1}    T_INV_CSV
+''{2}    (After IN Word)
+''{3}    (TCSVtana? Alias)
+''{4}    ロケーション
+''{5}    締切日
+''{6}    (lstBox_EndDayの選択テキスト)
+''{7}    (追加するWhere条件あれば、なければ"")
+''{8}    (ORDER BY引数 F_ロケーション ASC ？)
+'Private Const CSV_SQL_TANA_DEFAULT As String = "SELECT {0} FROM {1} IN """"{2} AS {3} " & vbCrLf &
+    '置換用dic宣言、初期化
+    Dim dicReplaceSetDefault As Dictionary
+    Set dicReplaceSetDefault = New Dictionary
+    'DBPathをデフォルトに
+    clsADOfrmBIN.SetDBPathandFilenameDefault
+    dicReplaceSetDefault.RemoveAll
+    Dim strSelectField As String
+    strSelectField = clsSQLBc.GetSELECTfieldListFromDicObjctToFieldName(dicObjNameToFieldName)
+    dicReplaceSetDefault.Add 0, strSelectField
+    dicReplaceSetDefault.Add 1, INV_CONST.T_INV_CSV
+    Dim fsoSetDefault As FileSystemObject
+    Set fsoSetDefault = New FileSystemObject
+    dicReplaceSetDefault.Add 2, clsSQLBc.CreateAfterIN_WordFromSHFullPath(fsoSetDefault.BuildPath(clsADOfrmBIN.DBPath, clsADOfrmBIN.DBFileName), clsEnumfrmBIN)
+    dicReplaceSetDefault.Add 3, clsEnumfrmBIN.SQL_INV_Alias(TanaCSV_Alias_sia)
+    dicReplaceSetDefault.Add 4, clsEnumfrmBIN.CSVTanafield(F_Location_Text_ICS)
+    dicReplaceSetDefault.Add 5, clsEnumfrmBIN.CSVTanafield(F_EndDay_ICS)
+    dicReplaceSetDefault.Add 6, strargEndDay
+    '(追加条件があればここで加味する)
+    'とりあえずは絞り込みなし
+    dicReplaceSetDefault.Add 7, ""
+    dicReplaceSetDefault.Add 8, Replace(dicObjNameToFieldName(txtBox_F_CSV_Tana_Local_Text.Name), ".", "_") & " ASC"
+    'Replace実行、SQL設定
+    clsADOfrmBIN.SQL = clsSQLBc.ReplaceParm(CSV_SQL_TANA_DEFAULT, dicReplaceSetDefault)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "setDefaultDataToRS code: " & err.Number & " Description: " & err.Description
