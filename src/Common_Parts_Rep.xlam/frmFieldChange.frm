@@ -175,6 +175,9 @@ Private Sub btnGetTableList_Click()
         If adoxTable.Type = "TABLE" Then
             ReDim Preserve strarrTableName(longTableCount)
             strarrTableName(longTableCount) = adoxTable.Name
+#If DebugDB Then
+            DebugMsgWithTime adoxTable.Name
+#End If
             longTableCount = longTableCount + 1
         End If
     Next adoxTable

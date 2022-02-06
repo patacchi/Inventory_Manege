@@ -115,7 +115,7 @@ Private Sub btnUpdateOriginData_Click()
         'クラス変数が初期化されていなかったら初期化する
         Set objExxelfrmPMList = New Excel.Application
     End If
-#If DontRemoveZaikoSH Then
+#If NoIEConnect Then
     'ファイル残すとき
     longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExxelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, True)
 #Else
@@ -151,7 +151,7 @@ Private Sub lstBox_Incremental_Click()
                 'Dictionaryにあった
                 '別名が.を_に置換した名前になっているので、フィールド名からその文字列を生成する
                 Dim strFieldName As String
-                strFieldName = Replace(dicObjNameToFieldName(varCtrlKey.Name), ".", "_")
+                strFieldName = REPLACE(dicObjNameToFieldName(varCtrlKey.Name), ".", "_")
                 '値を取得
                 Dim strResultValue As String
                 If (IsNull(clsADOfrmPMList.RS.Fields(strFieldName))) Then

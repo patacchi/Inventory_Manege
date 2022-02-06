@@ -492,9 +492,10 @@ Private Function DBReady(Optional strargDBPath As String, Optional strargDBFileN
 End Function
 '''接続文字列を作成する
 '''与えられた拡張子により接続文字を分岐する
+'''Return   string  生成された接続文字列
 '''args
 '''Optional NoExistCheck    Trueでファイルの存在確認を行わない。ファイル新規作成時にAdox.catalogを使用する場合に、存在しないファイル名を指定する可能性があるため
-Private Function CreateConnectionString(Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String, Optional NoExistCheck As Boolean = False) As String
+Public Function CreateConnectionString(Optional ByVal strargDBPath As String, Optional ByVal strargDBFileName As String, Optional NoExistCheck As Boolean = False) As String
     If strargDBPath = "" Then
         '引数でDBパスが指定されていなかったらプロパティから引っ張る
         strargDBPath = Me.DBPath

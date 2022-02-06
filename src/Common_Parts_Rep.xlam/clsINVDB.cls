@@ -152,6 +152,59 @@ Private Sub Class_Terminate()
 End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
+'''クラスの共有変数を引数にとり、クラスのプロパティにセットする関数
+'''Retourn Bool     引数チェックに成功したらTrue、それ以外はFalse
+'''clsADORef             ADOHandleのインスタンス、繰り返し処理をすることになると思うので、このメソッド以前で宣言し、共有する
+'''                         DBPath,DBFilenameは引数で渡されるクラスのインスタンスのプロパティで設定することとする
+'''clsINVDBUpsert           INVDBクラスのインスタンスを指定する。このメソッド以前に作成していたら再利用する（コンストラクタの動作が重いため）
+'''clsEnumRef            Enunクラスのインスタンスを指定する、できれば事前に一度だけ作成したのを使いまわしたい
+'''objExcel                 objExcelのインスタンス共有のための・・・
+'''NotDeleteSHFile          TrueをセットするとUpsert完了後に元データを削除しないで残す、デフォルトはFalse（消去する）
+Public Function SetShareInsance(ByRef objargExcel As Excel.Application, ByRef clsargINVDB As clsINVDB, ByRef clsargADO As clsADOHandle, _
+ByRef clsargEnum As clsEnum, ByRef clsargclsSQLBcRef As clsSQLStringBuilder) As Boolean
+    On Error GoTo ErrorCatch
+    'インスタンス変数がNothingじゃなかったら、とりあえずクラスのプロパティにセットしてやる
+    'objExcel
+    If Not objargExcel Is Nothing And objExcelRef Is Nothing Then
+        Set objExcelRef = objargExcel
+    End If
+    'clsINVDBUpsert
+    If Not clsargINVDB Is Nothing And clsINVDBRef Is Nothing Then
+        Set clsINVDBRef = clsargINVDB
+    End If
+    'clsADOHandle
+    If Not clsargADO Is Nothing And clsADORef Is Nothing Then
+        Set clsADORef = clsargADO
+'        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH: warning! ADOUpsert instance is nothing.will delay..."
+'        Set clsADORef = CreateclsADOHandleInstance
+    End If
+    'clsEnum
+    If Not clsargEnum Is Nothing And clsEnumRef Is Nothing Then
+        Set clsEnumRef = clsargEnum
+    End If
+    'clsclsSQLBcRef
+    If Not clsargclsSQLBcRef Is Nothing And clsSQLBcRef Is Nothing Then
+        Set clsSQLBcRef = clsargclsSQLBcRef
+    End If
+    'インスタンス変数の初期化確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH : Instance not Initialized"
+        SetShareInsance = False
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    '成功
+    SetShareInsance = True
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SetShareInsance code: " & err.Number & " Description: " & err.Description
+    SetShareInsance = False
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
+End Function
 '''インスタンス共有変数の初期化状態を調べる関数
 '''戻り値   Bool    全ての変数がNothingじゃなかったら True それ以外は False
 Private Function CheckInstance() As Boolean
@@ -286,7 +339,19 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         Dim arrstrFilterTables() As String
         arrstrFilterTables = clsADORef.GetTableList
         Dim arrstrResult() As String
-        arrstrResult = Filter(arrstrFilterTables, FILTER_NAME_RANGE_PART)
+        '帰ってきたテーブルが2個以上の場合のみフィルタ処理を行う
+        '1個だけの時はそのまま採用する
+        If UBound(arrstrFilterTables) - LBound(arrstrFilterTables) = 0 Then
+            '結果が1個しかなかった場合
+            'そのまま返す
+            'この状態だとフィルタ適用後のテーブル名が無いので、失敗する可能性があるので警告を出す
+            MsgBox "ファイル名が長いため、フィルタ処理がスキップされました。正常に動作しないかもしれません。" & vbCrLf & strargExcelFileFullpath
+            ReDim arrstrResult(0)
+            arrstrResult(0) = arrstrFilterTables(0)
+        Else
+            '複数テーブル返ってきたときはフィルタ処理を行う
+            arrstrResult = Filter(arrstrFilterTables, FILTER_NAME_RANGE_PART)
+        End If
         If UBound(arrstrResult) = 0 Then
             '結果が一つのみであった場合（複数あると困る）
             Dim arrstrFilterRangeResult(0, 1) As String
@@ -604,9 +669,7 @@ Optional NotDeleteSHFile As Boolean = False) As Long
         Kill strargZaikoSHFullPath
     End If
     '処理件数を返して終了
-#If DebugDB Then
     DebugMsgWithTime "Upsert Affected: " & clsADORef.Affected & " OriginFile: " & strargZaikoSHFullPath
-#End If
     UpsertINVPartsMasterfromZaikoSH = clsADORef.Affected
     GoTo CloseAndExit
 ErrorCatch:
@@ -1024,5 +1087,231 @@ ErrorCatch:
 CloseAndExit:
     Set fso4Digit = Nothing
     Set dicReplaceParm = Nothing
+    Exit Function
+End Function
+'''T_INV_CSVの内容を（当初は現品残のみ）棚卸CSVに反映させる
+'''Return String    オリジナルファイルをリネームしたバックアップファイルのフルパス
+'''                 目的のファイルは、引数で与えられたファイルと同名とする
+'''args
+'''strargSHCSVFullPath  処理対象のCSV(xls)ファイル
+'''strargEndDay         棚卸締切日、Right10のやつ
+Public Function SetDBDatatoTanaCSV(strargSHCSVFullPath As String, strargEndDay As String) As String
+    On Error GoTo ErrorCatch
+    '共有インスタンスの初期化状況を確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        '初期化チェック失敗
+        DebugMsgWithTime "SetDBDatatoTanaCSV : share instance Initialize fail..."
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    'ファイルの存在確認
+    Dim fsoSetCSV As FileSystemObject
+    Set fsoSetCSV = New FileSystemObject
+    If Not fsoSetCSV.FileExists(strargSHCSVFullPath) Then
+        MsgBox "指定のファイルが見つかりませんでした: " & strargSHCSVFullPath
+        DebugMsgWithTime "SetDBDatatoTanaCSV : file not found: " & strargSHCSVFullPath
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    'EndDay引数の空チェック
+    If strargEndDay = "" Then
+        MsgBox "棚卸締切日が空でした"
+        DebugMsgWithTime "SetDBDatatoTanaCSV : EndDay is empty"
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    '引数のシートのEndDayを受け取り、引数のEndDayと比較する
+    Dim strSHEndDay As String
+    strSHEndDay = GetEndDayFromTanaCSV(strargSHCSVFullPath)
+    If strSHEndDay <> strargEndDay Then
+        DebugMsgWithTime "SetDBDatatoTanaCSV : End Day dif arg and SHFile: " & strargSHCSVFullPath
+        '引数のEndDayとシートのEndDayが違った
+        Dim longReturnVal As Long
+        longReturnVal = MsgBox("保存先のシートとBINカードチェック画面の棚卸締切日が異なります。このまま続行しますか？", vbYesNo)
+        If longReturnVal = vbNo Then
+            'いいえを押されたっぽい
+            MsgBox "処理を中断します"
+            SetDBDatatoTanaCSV = ""
+            GoTo CloseAndExit
+        End If
+    End If
+    'CSVファイルにフィルタ処理をして、フルパス名とテーブル名を得る
+    Dim strarrSetCSV() As String
+    strarrSetCSV = GetFilterRangeNameFromExcel(strargSHCSVFullPath)
+    If Not IsRedim(strarrSetCSV) Then
+        '初期化されてない配列が返ってきた、失敗してるっぽい
+        DebugMsgWithTime "SetDBDatatoTanaCSV : fail convert CSV to xls"
+        MsgBox "CSVファイル読み込み中にエラーが発生しました"
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    'SQL組み立て開始
+''{0}    (Sheet Table Name)
+''{1}    SHCSV
+''{2}    T_INV_CSV
+''{3}    (After In Word Default DB)
+''{4}    棚卸締切日
+''{5}    (2022/01/12 EndDay)
+''{6}    TCSVTana
+''{7}    手配コード
+''{8}    現品残
+'Public Const SQL_INV_DB_TO_CSV As String = "UPDATE [{0}] AS {1}" & vbCrLf &
+    Dim dicReplaceSetCSV As Dictionary
+    Set dicReplaceSetCSV = New Dictionary
+    dicReplaceSetCSV.Add 0, strarrSetCSV(0, 1)
+    dicReplaceSetCSV.Add 1, clsEnumRef.SQL_INV_Alias(SHCSV_Alias_sia)
+    dicReplaceSetCSV.Add 2, INV_CONST.T_INV_CSV
+    '一旦clsADOをデフォルトディレクトリへ
+    clsADORef.SetDBPathandFilenameDefault
+    dicReplaceSetCSV.Add 3, clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoSetCSV.BuildPath(clsADORef.DBPath, clsADORef.DBFileName), clsEnumRef)
+    dicReplaceSetCSV.Add 4, clsEnumRef.CSVTanafield(F_EndDay_ICS)
+    dicReplaceSetCSV.Add 5, strargEndDay
+    dicReplaceSetCSV.Add 6, clsEnumRef.SQL_INV_Alias(TanaCSV_Alias_sia)
+    dicReplaceSetCSV.Add 7, clsEnumRef.CSVTanafield(F_Tehai_Code_ICS)
+    dicReplaceSetCSV.Add 8, clsEnumRef.CSVTanafield(F_Available_ICS)
+    '置換実行、SQL設定
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_DB_TO_CSV, dicReplaceSetCSV)
+    'DBPath,DBFilenameをフィルタ処理後のxlsのものに
+    clsADORef.DBPath = fsoSetCSV.GetParentFolderName(strarrSetCSV(0, 0))
+    clsADORef.DBFileName = fsoSetCSV.GetFileName(strarrSetCSV(0, 0))
+    'Writeフラグを立てる
+    clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
+    'SQL実行
+    Dim isCollect As Boolean
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    'Writeフラグ下げる
+    clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
+    If Not isCollect Then
+        DebugMsgWithTime "SetDBDatatoTanaCSV : do sql fail..."
+        MsgBox "SetDBDatatoTanaCSV でSQL実行失敗したようです"
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    'ファイルリネーム関係の処理
+    'オリジナルファイルの名前を変更(バックアップ)
+    Dim strarrNewFileName(3) As String
+    strarrNewFileName(0) = fsoSetCSV.GetBaseName(strargSHCSVFullPath)
+    strarrNewFileName(1) = GetTimeForFileNameWithMilliSec
+    strarrNewFileName(2) = "."
+    strarrNewFileName(3) = fsoSetCSV.GetExtensionName(strargSHCSVFullPath)
+    '保存前のファイルのFileオブジェクトを取得
+    Dim fileOrigin As File
+    Set fileOrigin = fsoSetCSV.GetFile(strargSHCSVFullPath)
+    'リネーム実行
+    fileOrigin.Name = Join(strarrNewFileName, "")
+    '関数の戻り値としてバックアップファイルの名前をセット
+    SetDBDatatoTanaCSV = fileOrigin.Name
+    '次に処理後のファイルを引数のフルパスで保存するが、拡張子によって処理を分岐する必要あり
+    isCollect = SavesomefileToExelFile(strarrSetCSV(0, 0), strargSHCSVFullPath)
+    If Not isCollect Then
+        'ファイル変換中にエラー発生
+        DebugMsgWithTime "SetDBDatatoTanaCSV : error in exchanging"
+        SetDBDatatoTanaCSV = ""
+        GoTo CloseAndExit
+    End If
+    '変換終了したら途中の中間フィルタ処理ファイルは削除する
+    Kill strarrSetCSV(0, 0)
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SetDBDatatoTanaCSV code: " & err.Number & " Description: " & err.Description
+    SetDBDatatoTanaCSV = ""
+    GoTo CloseAndExit
+CloseAndExit:
+    Set fsoSetCSV = Nothing
+    Exit Function
+End Function
+'''与えられたExcel対応ファイルを、指定されたExcel対応ファイルに別名保存する
+'''Return   Bool    成功したらTrue、それ以外はFalse
+'''args
+'''strargOriginFile             変換(リネーム)元のファイル
+'''strargSavetoNewFileFullPath  変換(リネーム)先のファイル
+'''                             2つのファイル名は別の名前にすること
+Private Function SavesomefileToExelFile(strargOriginFile As String, strargSavetoNewFileFullPath As String) As Boolean
+    On Error GoTo ErrorCatch
+    'ファイル存在確認
+    Dim fsoSaveTo As FileSystemObject
+    Set fsoSaveTo = New FileSystemObject
+    If strargOriginFile = strargSavetoNewFileFullPath Then
+        DebugMsgWithTime "SavesomefileToExelFile before and after file path is same"
+        MsgBox "変換前と変換後のファイルパスが同一です"
+        SavesomefileToExelFile = False
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    If Not fsoSaveTo.FileExists(strargOriginFile) Then
+        DebugMsgWithTime "SavesomefileToExelFile : origin file not found: " & strargOriginFile
+        MsgBox "オリジナルファイルが見つかりません。" & strargOriginFile
+        SavesomefileToExelFile = False
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    If fsoSaveTo.FileExists(strargSavetoNewFileFullPath) Then
+        '変換後のファイルが存在した
+        Dim longMsgBoxReturn As Long
+        '削除の確認
+        longMsgBoxReturn = MsgBox("変換後のファイルが既に存在します。消去してもいいですか？", vbYesNo)
+        If longMsgBoxReturn = vbYes Then
+            'Yes
+            'ファイル消去実行
+            Kill strargSavetoNewFileFullPath
+        Else
+            'NO
+            MsgBox "処理を中断します"
+            SavesomefileToExelFile = False
+            GoTo CloseAndExit
+            Exit Function
+        End If
+    End If
+    '変換前のWorkBookオブジェクトの取得
+    Dim wkbSaveTo As Workbook
+    '読み取り専用で開く
+    Set wkbSaveTo = objExcelRef.Workbooks.Open(strargOriginFile, , True)
+    '変換後の拡張子により処理を分岐
+    Select Case LCase(fsoSaveTo.GetExtensionName(strargSavetoNewFileFullPath))
+    Case clsEnumRef.DBFileExetension(csv_dext)
+        'CSV
+        'このファイル形式だけシートごとの保存になるので、(1)のシートで決め打ちする
+        Dim shSeveTo As Worksheet
+        Set shSeveTo = wkbSaveTo.Sheets(1)
+        shSeveTo.SaveAs strargSavetoNewFileFullPath, xlCSV
+        SavesomefileToExelFile = True
+        wkbSaveTo.Saved = True
+        GoTo CloseAndExit
+    Case clsEnumRef.DBFileExetension(xls_dext)
+        'xls
+        wkbSaveTo.SaveAs strargSavetoNewFileFullPath, XlFileFormat.xlWorkbookNormal
+        SavesomefileToExelFile = True
+        GoTo CloseAndExit
+    Case clsEnumRef.DBFileExetension(xlsb_dext)
+        'xlsb
+        wkbSaveTo.SaveAs strargSavetoNewFileFullPath, XlFileFormat.xlExcel12
+        SavesomefileToExelFile = True
+        GoTo CloseAndExit
+    Case clsEnumRef.DBFileExetension(xlsm_dext)
+        'xlsm
+        wkbSaveTo.SaveAs strargSavetoNewFileFullPath, XlFileFormat.xlOpenXMLWorkbookMacroEnabled
+        SavesomefileToExelFile = True
+        GoTo CloseAndExit
+    Case clsEnumRef.DBFileExetension(xlsx_dext)
+        'xlsx
+        wkbSaveTo.SaveAs strargSavetoNewFileFullPath, XlFileFormat.xlWorkbookDefault
+        SavesomefileToExelFile = True
+        GoTo CloseAndExit
+    End Select
+    GoTo CloseAndExit
+    Exit Function
+ErrorCatch:
+    DebugMsgWithTime "SavesomefileToExelFile code: " & err.Number & " Description: " & err.Description
+    SavesomefileToExelFile = False
+    GoTo CloseAndExit
+CloseAndExit:
+    Set shSeveTo = Nothing
+    If Not wkbSaveTo Is Nothing Then
+        wkbSaveTo.Saved = True
+        wkbSaveTo.Close
+        Set wkbSaveTo = Nothing
+    End If
     Exit Function
 End Function

@@ -195,7 +195,8 @@ Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                      
 Public Const SQL_ALIAS_T_INVDB_Tana As String = "TDBTana"                                           'INV_M_Tanaテーブル別名定義
 Public Const SQL_ALIAS_T_TEMP As String = "TTmp"                                                    '一時テーブル別名定義
 Public Const SQL_ALIAS_T_SH_ZAIKO As String = "TSHZaiko"                                            '在庫情報シートテーブル名別名定義
-Public Const SQL_ALIAS_T_INV_CSV As String = "TCSVTana"                                             '棚卸CSVの別名定義
+Public Const SQL_ALIAS_T_INV_CSV As String = "TCSVTana"                                             '棚卸CSVテーブルの別名定義
+Public Const SQL_ALIAS_SH_CSV As String = "SHCSV"                                                   '棚卸CSVファイルそのものの別名定義
 'SQLAliasEnum
 Public Enum Enum_SQL_INV_Alias
     INVDB_Parts_Alias_sia = 1
@@ -203,6 +204,7 @@ Public Enum Enum_SQL_INV_Alias
     INVDB_Tmp_Alias_sia = 3
     ZaikoSH_Alias_sia = 4
     TanaCSV_Alias_sia = 5
+    SHCSV_Alias_sia = 6
 End Enum
 Public Const SQL_AFTER_IN_ACCDB_0FullPath As String = "[MS ACCESS;DATABASE={0};]"                   'Select From の IN""句の後に来る文字列accdb
 Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE={0};HDR=Yes;]"     'In xlsm,xlam
@@ -338,4 +340,32 @@ Public Const SQL_INV_TMP_TO_CSVTANA As String = "UPDATE {0} AS {1} " & vbCrLf & 
 "           IN """"{3} ) AS {4} " & vbCrLf & _
 "   ON {1}.{5} = {4}.{5} AND {1}.{7} = {4}.{7} " & vbCrLf & _
 "SET {6} " & vbCrLf & _
-"WHERE {1}.{7} Is Null"
+"WHERE {1}.{7} Is Null"
+'------------------------------------------------------------------------------------------------
+'DBからCSV(xls)ファイルにデータセットするSQL
+'カレントディレクトリはシートファイルのものにする
+'UPDATE ['SIZ_TANAOROSI_HYO - コピー_Local$'_xlnm#_FilterDatabase] AS SHCSV
+'    RIGHT JOIN (
+'        SELECT * FROM T_INV_CSV
+'        IN "" [MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\INV_Manege_Local.accdb]
+'        WHERE 棚卸締切日 = "2022/01/12"
+'        ) AS TCSVTana
+'    ON SHCSV.手配コード = TCSVTana.手配コード
+'Set SHCSV.現品残 = TCSVTana.現品残
+'{0}    (Sheet Table Name)
+'{1}    SHCSV
+'{2}    T_INV_CSV
+'{3}    (After In Word Default DB)
+'{4}    棚卸締切日
+'{5}    (2022/01/12 EndDay)
+'{6}    TCSVTana
+'{7}    手配コード
+'{8}    現品残
+Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
+"    RIGHT JOIN (" & vbCrLf & _
+"        SELECT * FROM {2}" & vbCrLf & _
+"        IN """" {3}" & vbCrLf & _
+"        WHERE {4} = ""{5}""" & vbCrLf & _
+"        ) AS {6}" & vbCrLf & _
+"    ON {1}.{7} = {6}.{7}" & vbCrLf & _
+"Set {1}.{8} = {6}.{8}"

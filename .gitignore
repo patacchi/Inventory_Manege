@@ -12,6 +12,9 @@ bin/IE_Comunicate_Module_Rep.xlsm
 #_Localファイルを無視する
 bin/*_Local*
 *_Local*
+#本番データベースファイルはステージング対象外とする
+#テンプレートは _Templateのサフィックスを付与し運用する
+bin/Inventory_DB/INV_Manege.accdb
 #説明ファイルは除外設定の例外としてステージング対象とする
 !bin/_Localファイルはgit管理されません.txt
 src/*/*.frx

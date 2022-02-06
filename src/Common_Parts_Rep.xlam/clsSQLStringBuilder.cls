@@ -105,7 +105,7 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     Dim strBuf(2) As String
     On Error GoTo ErrorCatch
     strBuf(0) = strQuote
-    strBuf(1) = Replace(strargOriginalString, """", """""")
+    strBuf(1) = REPLACE(strargOriginalString, """", """""")
     strBuf(2) = strQuote
     addQuote = Append("", strBuf, "")
     Exit Function
@@ -366,7 +366,7 @@ Public Function GetSELECTfieldListFromDicObjctToFieldName(ByRef argdicObjToField
         Dim strarrPlusAlias(2) As String
         strarrPlusAlias(0) = argdicObjToField(varKeyDicObj)
         strarrPlusAlias(1) = " AS "
-        strarrPlusAlias(2) = Replace(strarrPlusAlias(0), ".", "_")
+        strarrPlusAlias(2) = REPLACE(strarrPlusAlias(0), ".", "_")
         strarrSELECTfield(longArrRowCounter) = Join(strarrPlusAlias, "")
         '配列の行カウンターをインクリメント
         longArrRowCounter = longArrRowCounter + 1
