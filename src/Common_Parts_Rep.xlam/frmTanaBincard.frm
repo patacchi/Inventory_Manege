@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmTanaBincard 
    Caption         =   "棚卸BINカードチェック用フォーム"
-   ClientHeight    =   9240.001
+   ClientHeight    =   9555.001
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   8160
@@ -226,14 +226,7 @@ Private Sub txtBox_F_CSV_BIN_Amount_Change()
         'イベント停止フラグが立っていたら中止
         Exit Sub
     End If
-    If txtBox_F_CSV_BIN_Amount.Text = "" Then
-        '空白だったら抜ける
-        Exit Sub
-    End If
-    If Not IsNumeric(txtBox_F_CSV_BIN_Amount.Text) Then
-        MsgBox "BINカード残数に入力された文字列が数値として認識出来ません。"
-        Exit Sub
-    End If
+    '空白で消去（Nullセット)するようにするので、空白でイベントはありえる
     'データチェックとDB登録を実行
     CheckDataAndUpdateDB txtBox_F_CSV_BIN_Amount
 End Sub
@@ -241,14 +234,6 @@ Private Sub txtBox_F_CSV_Real_Amount_Change()
     '実残数
     If StopEvents Then
         'イベント停止フラグが立っていた
-        Exit Sub
-    End If
-    If txtBox_F_CSV_Real_Amount.Text = "" Then
-        '空白だったら抜ける
-        Exit Sub
-    End If
-    If Not IsNumeric(txtBox_F_CSV_Real_Amount.Text) Then
-        MsgBox "実残数に入力された文字列が数値として認識出来ません。"
         Exit Sub
     End If
     'データチェックとDB登録を実行
@@ -878,22 +863,44 @@ Private Sub CheckDataAndUpdateDB(ByRef argTxtBox As MSForms.TextBox)
         DebugMsgWithTime "CheckDataAndUpdateDB : Control name is empty"
         GoTo CloseAndExit
     End If
-    If Not IsNumeric(argTxtBox.Text) Then
-        MsgBox "入力された文字が数値として認識できませんでした"
-        DebugMsgWithTime "CheckDataAndUpdateDB : cant cast number txtboxname: " & argTxtBox.Name
-        GoTo CloseAndExit
-    End If
-    If rsfrmBIN.State = ObjectStateEnum.adStateClosed Then
-        'RSが閉じていたら何もせずに抜ける
-        DebugMsgWithTime "CheckDataAndUpdateDB : RS not open."
-        GoTo CloseAndExit
-    End If
-    'テキストボックスに入力された文字とRSの数値が同じだったら何もしない
-    If rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = CDbl(argTxtBox.Text) Then
-        GoTo CloseAndExit
-    End If
-    'フィールド指定でRSに登録実行
-    UpdateSpecificField argTxtBox
+    Select Case argTxtBox.Text
+    Case ""
+        '空白だった場合
+        'chkBoxNoConfirmDeleteの状態によって問い合わせを実施、結果が通れば強制削除モードでUpdateメソッドを呼び出す
+        If Not chkBoxNoConfirmatDelete.Value Then
+            '削除確認ありの場合
+            Dim lonMsgBoxMSG As Long
+            lonMsgBoxMSG = MsgBox("テキストボックスが空白になったので、該当のデータを未入力にします。よろしいですか？", vbYesNo)
+            If lonMsgBoxMSG = vbNo Then
+                '確認したらNoだった
+                MsgBox "削除処理を中断します"
+                '該当テキストボックスの値をRSに保存されている値に復元する
+                If Not IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value) Then
+                    argTxtBox.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value
+                End If
+                Exit Sub
+            End If
+        End If
+        UpdateSpecificField argTxtBox, True
+    Case Else
+        '通常動作はこっち
+        If Not IsNumeric(argTxtBox.Text) Then
+            MsgBox "入力された文字が数値として認識できませんでした"
+            DebugMsgWithTime "CheckDataAndUpdateDB : cant cast number txtboxname: " & argTxtBox.Name
+            GoTo CloseAndExit
+        End If
+        If rsfrmBIN.State = ObjectStateEnum.adStateClosed Then
+            'RSが閉じていたら何もせずに抜ける
+            DebugMsgWithTime "CheckDataAndUpdateDB : RS not open."
+            GoTo CloseAndExit
+        End If
+        'テキストボックスに入力された文字とRSの数値が同じだったら何もしない
+        If rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = CDbl(argTxtBox.Text) Then
+            GoTo CloseAndExit
+        End If
+        'フィールド指定でRSに登録実行
+        UpdateSpecificField argTxtBox
+    End Select
     'フラグチェックと設定
     ChekStatusAndSetFlag
     'RSのフラグ情報をもとにラベルを更新する
@@ -917,20 +924,30 @@ End Sub
 '''指定されたコントロール名に対応するRSにデータを登録する
 '''args
 '''argTxtBox    操作対象のコントロールの参照
-Private Sub UpdateSpecificField(ByRef argTxtBox As MSForms.TextBox)
+'''Optional ForceSetNull    Trueにセットすると無条件で指定フィールドにNullをセットする（消去モード）
+Private Sub UpdateSpecificField(ByRef argTxtBox As MSForms.TextBox, Optional ForceSetNull As Boolean = False)
     On Error GoTo ErrorCatch
-    If argTxtBox.Text = "" Then
-        '対象のテキストが空白だったら何もせずに抜ける
+    Select Case ForceSetNull
+    Case True
+        '強制Nullセットモードはこっち
+        '対応するRSにNullをセットする
+        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = Null
         GoTo CloseAndExit
-        Exit Sub
-    End If
-    'RSの値と違っていたら対応するRSに値をセットする
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value) Or rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value <> CDbl(argTxtBox.Text) Then
-        'ValueがNullか、テキストボックスの数値と違っていた場合
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = _
-        CDbl(argTxtBox.Text)
-    End If
-    GoTo CloseAndExit
+    Case False
+        '通常動作はこっち
+        If argTxtBox.Text = "" Then
+            '対象のテキストが空白だったら何もせずに抜ける
+            GoTo CloseAndExit
+            Exit Sub
+        End If
+        'RSの値と違っていたら対応するRSに値をセットする
+        If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value) Or rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value <> CDbl(argTxtBox.Text) Then
+            'ValueがNullか、テキストボックスの数値と違っていた場合
+            rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = _
+            CDbl(argTxtBox.Text)
+        End If
+        GoTo CloseAndExit
+    End Select
 ErrorCatch:
     DebugMsgWithTime "UpdateSpecificField code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
@@ -948,6 +965,11 @@ Private Sub ChekStatusAndSetFlag()
     'BinCard
     'Select Case の Caseはショートサーキットになることを利用
     Select Case True
+    Case IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_BIN_Amount.Name), ".", "_")).Value)
+        'Nullだった場合
+        'Bin の Input と DataOKフラグをまとめて落とす
+        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
+        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value And Not (Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput)
     Case Not IsNumeric(txtBox_F_CSV_BIN_Amount.Text)
         '数値として認識されない場合
         '特に何もしない
@@ -966,6 +988,11 @@ Private Sub ChekStatusAndSetFlag()
     'RealAmount
     'Select Case の Caseはショートサーキットになることを利用
     Select Case True
+    Case IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Real_Amount.Name), ".", "_")).Value)
+        'Nullだった場合
+        'Real の input と DataOK両方まとめて落とす
+        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
+        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value And Not (Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput)
     Case Not IsNumeric(txtBox_F_CSV_Real_Amount.Text)
         '数値として認識されない場合
         '特に何もしない
