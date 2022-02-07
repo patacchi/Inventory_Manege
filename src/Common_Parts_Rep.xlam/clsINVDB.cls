@@ -13,6 +13,7 @@ Option Explicit
 '定数定義
 Private Const FILTER_NAME_RANGE_PART As String = "FilterDatabase"
 Private Const TANA_CSV_ENDDAY_KEY As String = "棚卸締切日"
+Private Const SH_FILTERD_PREFIX As String = "SHFlt"  'Sheet Filtered
 '{0}    T_INV_CSV
 '{1}    (afterIN word)
 '{2}    F_EndDay
@@ -220,11 +221,13 @@ End Function
 '''Author Patacchi 2022_01_16
 '''Excel関連ファイルにオートフィルタを設定し、フィルタ範囲の名前を返す（Select の From の引数になる）
 '''戻り値 string配列 1次元目はファイルのフルパス、2次元目がTable名
+'''                 この時のファイルパスは、中間生成ファイルとして扱うので、オリジナルとは別に一時ファイル名を設定する
 '''parms
 '''optional strargExceFileFullpath          Excelファイルのフルパスを指定する、未指定の場合はクラスのBKZAikoInfoFullPathプロパティを設定
 '''optional strargSheetName                 フィルタ設定するシート名を指定する、未指定の場合は最初のシートを対象とする
 '''Optional strargKeyFieldName              フィルタ設定する際の基準フィールド名、未指定の場合手配コードとする
-Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As String, Optional strargSheetName As String, Optional strargKeyFieldName As String) As String()
+'''optional DeleteOriginFile                最後に引数で与えられたファイルを削除する場合は指定する 使いどころは、CSVで再帰呼び出しする時とか
+Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As String, Optional strargSheetName As String, Optional strargKeyFieldName As String, Optional DeleteOriginFile As Boolean = False) As String()
     'インスタンス共有変数の初期化状況のチェック
     Dim isInitialized As Boolean
     isInitialized = CheckInstance
@@ -257,8 +260,24 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         'エクセル関連ファイルの時
         '非表示で処理するために、ApplicationオブジェクトとWorkbookオブジェクトを別に定義する
         Dim wkbFilter As Workbook
+        'フィルタ処理後のファイルはオリジナルと別に作成し、後で中間生成ファイルとしたいので、MilliSec付きの一時ファイル名とし
+        'オリジナルファイルを一時ファイル名としてコピーして、そちらで処理を行う
+        Dim strOutPutFileFullPath As String
+        Dim strarrNewFile(3) As String
+        strarrNewFile(0) = SH_FILTERD_PREFIX
+        strarrNewFile(1) = GetTimeForFileNameWithMilliSec
+        strarrNewFile(2) = "."
+        strarrNewFile(3) = fsoFilterRange.GetExtensionName(strargExcelFileFullpath)
+        strOutPutFileFullPath = fsoFilterRange.BuildPath(fsoFilterRange.GetParentFolderName(strargExcelFileFullpath), _
+        Join(strarrNewFile, ""))
+        '引数で与えられたファイルを一時ファイル名にコピーする（無いとは思うけど強制上書き）
+        fsoFilterRange.CopyFile strargExcelFileFullpath, strOutPutFileFullPath, True
+        'ここでオリジナルファイル削除フラグが立っていたらオリジナルファイルを消去してしまう
+        If DeleteOriginFile Then
+            Kill strargExcelFileFullpath
+        End If
         'workbookオブジェクトを取得
-        Set wkbFilter = objExcelRef.Workbooks.Open(strargExcelFileFullpath)
+        Set wkbFilter = objExcelRef.Workbooks.Open(strOutPutFileFullPath)
         If wkbFilter.Worksheets.Count < 1 Then
             'シート数が1未満だった場合は抜ける
             DebugMsgWithTime "GetFilterRangeNameFromExcel: Sheet count under 1"
@@ -267,6 +286,8 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         If strargSheetName = "" Then
             '引数でシート名を与えられなかった場合
             '最初のシート名を対象とする
+            'この時、シート名が長すぎるとフィルタ適用テーブルが生成されないようなので、シート名を変更してしまう
+            wkbFilter.Worksheets(1).Name = fsoFilterRange.GetBaseName(strOutPutFileFullPath)
             strargSheetName = wkbFilter.Worksheets(1).Name
         End If
         '存在しないシート名を開いた場合はErr.Number = 9 、インデックス外エラーが発生するので、エラートラップを行う
@@ -328,14 +349,15 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         '保存フラグの状態を調べる
         If flgSave Then
             '保存フラグが立っていたらブックを保存する
+'            wkbFilter.SaveAs Filename:=strOutPutFileFullPath
             wkbFilter.Save
         End If
         'Bookへの接続を閉じてやる
         wkbFilter.Close
         Set wkbFilter = Nothing
         '処理完了したExcelファイルのテーブル一覧を取得し、フィルター識別文字列の入っているテーブル名が見つかったらそれを返す
-        clsADORef.DBFileName = fsoFilterRange.GetFileName(strargExcelFileFullpath)
-        clsADORef.DBPath = fsoFilterRange.GetParentFolderName(strargExcelFileFullpath)
+        clsADORef.DBFileName = fsoFilterRange.GetFileName(strOutPutFileFullPath)
+        clsADORef.DBPath = fsoFilterRange.GetParentFolderName(strOutPutFileFullPath)
         Dim arrstrFilterTables() As String
         arrstrFilterTables = clsADORef.GetTableList
         Dim arrstrResult() As String
@@ -355,7 +377,9 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         If UBound(arrstrResult) = 0 Then
             '結果が一つのみであった場合（複数あると困る）
             Dim arrstrFilterRangeResult(0, 1) As String
-            arrstrFilterRangeResult(0, 0) = strargExcelFileFullpath
+            'ここで返されるファイルは中間生成ファイルなので、後で消去したいのでファイル名は一時ファイル名とする
+            arrstrFilterRangeResult(0, 0) = strOutPutFileFullPath
+'            arrstrFilterRangeResult(0, 0) = strargExcelFileFullpath
             arrstrFilterRangeResult(0, 1) = "[" & arrstrResult(0) & "]"
             GetFilterRangeNameFromExcel = arrstrFilterRangeResult
            GoTo CloseAndExit
@@ -366,9 +390,9 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         '一連の処理を行い、xlsxファイルにした後、そのファイル名で自信を再帰呼び出しする
         Dim strResultxlsxFileName As String
         strResultxlsxFileName = CSVFileSaveAsXlsxFileandPasteValues(strargExcelFileFullpath)
-        '自身を再起呼び出し
+        '自身を再起呼び出し、この時変換後のファイルは不要なので、オリジナルファイル削除フラグ付きで実行する
         Dim arrstrRangeTableName() As String
-        arrstrRangeTableName = GetFilterRangeNameFromExcel(strResultxlsxFileName)
+        arrstrRangeTableName = GetFilterRangeNameFromExcel(strResultxlsxFileName, , , True)
         '帰ってきたテーブル名を結果として返す
         GetFilterRangeNameFromExcel = arrstrRangeTableName
         GoTo CloseAndExit
@@ -780,15 +804,10 @@ Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optiona
         TanaCSVFileToT_INV_CSV = "TanaCSVFileToT_INV_CSVでSQL実行時にエラーが発生しました。"
         GoTo CloseAndExit
     End If
+    '中間生成ファイルを削除する
+    DebugMsgWithTime "TanaCSVFileToT_INV_CSV : delete work file: " & strFilteredSHFile(0, 0)
+    Kill strFilteredSHFile(0, 0)
     TanaCSVFileToT_INV_CSV = "棚卸CSVから 棚卸締切日： " & strTanaEndDay & " 分として " & clsADORef.Affected & " 件のデータを追加しました"
-'    Dim strSet(4) As String
-'    strSet(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumRef.CSVTanafield(F_EndDay_ICS), clsEnumRef)
-'    strSet(1) = " = "
-'    strSet(2) = clsSQLBcRef.addQuote(strTanaEndDay)
-'    strSet(3) = ","
-'    strSet(4) = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetCommonFieldArrayT_INV_CSV_andtemp, clsEnumRef.Dic_Reverse_INV_CSV, clsEnumRef.Dic_NeedTrim_CSV, _
-'    TanaCSV_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
-'    strSetCondition = Join(strSet, "")
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & err.Number & " Description: " & err.Description
