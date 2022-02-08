@@ -20,6 +20,7 @@ bin/Inventory_DB/INV_Manege.accdb
 src/*/*.frx
 #新規フォームは少しの間管理対象とする
 #!src/Common_Parts_Rep.xlam/frmINV_PartsMaster_List.*
-!src/Common_Parts_Rep.xlam/frmTanaBincard.*
+#!src/Common_Parts_Rep.xlam/frmTanaBincard.*
+!src/Common_Parts_Rep.xlam/frmBinLabel.*
 TempDB/
 #/x64/
