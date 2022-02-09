@@ -27,6 +27,10 @@ Public Const F_INV_STORE_UNIT As String = "F_INV_Sotre_Unit"                    
 Public Const F_INV_SYSTEM_DESCRIPTION As String = "F_INV_System_Description"    'システム側の自由記述欄
 Public Const F_INV_LOCAL_DESCRIPTION As String = "F_INV_Local_Description"      '4701独自の詳細を記述したい場合に使用する
 Public Const F_INV_MANEGE_SECTION_SUB As String = "F_INV_Manege_Section_Sub"    'システム側の管理課サブ
+Public Const F_INV_LABEL_NAME_1 As String = "F_INV_Label_Name_1"                'BINカードラベルの品名1行目 CASE
+Public Const F_INV_LABEL_NAME_2 As String = "F_INV_Label_Name_2"                'BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア
+Public Const F_INV_LABEL_REMARK_1 As String = "F_INV_Label_Name_2"              'BINカードラベルの備考1行目 錆びやすいので注意
+Public Const F_INV_LABEL_REMARK_2 As String = "F_INV_Label_Name_2"              'BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事
 '手配コードマスターのEnum定義
 Public Enum Enum_INV_M_Parts
     Table_Name_IMPrt = 1
@@ -50,6 +54,11 @@ Public Enum Enum_INV_M_Parts
     F_Local_Description_IMPrt = 19
     F_Manege_Section_Sub_IMPrt = 20
     F_InputDate_IMPrt = 21
+    'BINカード、表示関係でローカル限定
+    F_Label_Name_1_IMPrt = 22
+    F_Label_Name_2_IMPrt = 23
+    F_Label_Remark_1_IMPrt = 24
+    F_Label_Remark_2_IMPrt = 25
 End Enum
 '在庫情報シートに関する定数
 'Excelファイル名は日付をシリアル値とした文字列を付加するので、毎回変動する

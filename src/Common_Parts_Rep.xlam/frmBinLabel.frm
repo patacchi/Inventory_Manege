@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmBinLabel 
-   Caption         =   "UserForm1"
+   Caption         =   "BINカードラベル印刷項目編集画面"
    ClientHeight    =   5895
    ClientLeft      =   45
    ClientTop       =   390
@@ -26,7 +26,7 @@ Private confrmBIN As ADODB.Connection
 Private StopEvents As Boolean
 '------------------------------------------------------------------------------------------------------
 'SQL
-Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_2 " & vbCrLf & _
+Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2 " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
@@ -40,6 +40,18 @@ End Sub
 'Form Terminate
 Private Sub UserForm_Terminate()
     Destructor
+End Sub
+'Click
+Private Sub btnMove_Click()
+    If Not rsfrmBIN.BOF Then
+        rsfrmBIN.MovePrevious
+    End If
+End Sub
+Private Sub btnMoveNext_Click()
+    If Not rsfrmBIN.EOF Then
+        'EOFじゃなかったら次のレコードに進む
+        rsfrmBIN.MoveNext
+    End If
 End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
@@ -71,6 +83,8 @@ Private Sub ConstRuctor()
     StopEvents = True
     '初回データ設定
     SetDefaultValuetoRS
+    'objToFieldNameを設定
+    setObjToFieldNameDic
 End Sub
 '''デストラクタ
 Private Sub Destructor()
@@ -107,12 +121,12 @@ Private Sub SetDefaultValuetoRS()
     'Connectionの設定をする
     confrmBIN.ConnectionString = clsADOfrmBIN.CreateConnectionString(clsADOfrmBIN.DBPath, clsADOfrmBIN.DBFileName)
     confrmBIN.CursorLocation = adUseClient
-    confrmBIN.Mode = adModeReadWrite
+    confrmBIN.Mode = adModeRead Or adModeShareDenyNone
     '接続オープン
     confrmBIN.Open
     'RSのプロパティを設定していく
     rsfrmBIN.LockType = adLockBatchOptimistic
-    rsfrmBIN.CursorType = adOpenKeyset
+    rsfrmBIN.CursorType = adOpenStatic
     'rsのSourceにSQL設定(後でパラメータ対応する)
     rsfrmBIN.Source = SQL_BIN_LABEL_DEFAULT_DATA
     'rsのActiveConnectionにConnectionオブジェクト指定
@@ -121,9 +135,21 @@ Private Sub SetDefaultValuetoRS()
     rsfrmBIN.Open , , , , CommandTypeEnum.adCmdText
     '以下は正常に動く
     '更新に必要なキー列の情報が～・・・→両方のテーブルの主キーをSELECTのフィールドに含めると解決
-'    rsfrmBIN.Fields("F_INV_Label_Name_2").Value = "InputTest"
-'    rsfrmBIN.Fields("F_INV_Tana_Local_Text").Value = "K68_+A07"
+    rsfrmBIN.Fields("F_INV_Label_Name_2").Value = "InputTest"
+'    rsfrmBIN.Fields("F_INV_Tana_Local_Text").Value = "K23 A01"
 '    rsfrmBIN.Update
 '    rsfrmBIN.UpdateBatch
     DebugMsgWithTime "Default Data count: " & rsfrmBIN.RecordCount
+End Sub
+'dicobjToFieldNameの設定
+Private Sub setObjToFieldNameDic()
+    If dicObjNameToFieldName Is Nothing Then
+        Set dicObjNameToFieldName = New Dictionary
+    End If
+    '最初に全消去
+    dicObjNameToFieldName.RemoveAll
+    '項目を追加していく
+    '今回はテーブル毎にフィールド名が独立しているので、テーブルプリフィックスは無しでRSで格納している
+    dicObjNameToFieldName.Add txtBox_F_INV_Tana_Local_Text.Name, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT)
+    dicObjNameToFieldName.Add txtBox_F_INV_Tehai_Code.Name, clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)
 End Sub

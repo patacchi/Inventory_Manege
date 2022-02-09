@@ -250,6 +250,11 @@ Private Sub INV_Enum_Initialize()
 '    F_Local_Description_IMPrt = 19
 '    F_Manege_Section_Sub_IMPrt = 20
 '    F_InputDate_IMPrt = 21
+'    'BINカード、表示関係でローカル限定
+'    F_Label_Name_1_IMPrt = 101
+'    F_Label_Name_2_IMPrt = 102
+'    F_Label_Remark_1_IMPrt = 103
+'    F_Label_Remark_2_IMPrt = 104
 'End Enum
     If dicINVMasterParts Is Nothing Then
         Set dicINVMasterParts = New Dictionary
@@ -274,6 +279,10 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Description_IMPrt, INV_CONST.F_INV_SYSTEM_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Local_Description_IMPrt, INV_CONST.F_INV_LOCAL_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt, INV_CONST.F_INV_MANEGE_SECTION_SUB
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_1_IMPrt, INV_CONST.F_INV_LABEL_NAME_1
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_2_IMPrt, INV_CONST.F_INV_LABEL_NAME_2
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_1_IMPrt, INV_CONST.F_INV_LABEL_REMARK_1
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_2_IMPrt, INV_CONST.F_INV_LABEL_REMARK_2
 '    dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
 ''在庫情報シートのフィールド名（漢字）
 ''大部分をINV_Master_PartsのEnumと共有する
