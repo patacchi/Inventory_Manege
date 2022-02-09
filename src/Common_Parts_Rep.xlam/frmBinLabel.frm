@@ -24,9 +24,11 @@ Private clsIncrementalfrmBIN As clsIncrementalSerch
 Private rsfrmBIN As ADODB.Recordset
 Private confrmBIN As ADODB.Connection
 Private StopEvents As Boolean
+'定数
+Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
 '------------------------------------------------------------------------------------------------------
 'SQL
-Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2 " & vbCrLf & _
+Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
@@ -42,16 +44,124 @@ Private Sub UserForm_Terminate()
     Destructor
 End Sub
 'Click
-Private Sub btnMove_Click()
-    If Not rsfrmBIN.BOF Then
-        rsfrmBIN.MovePrevious
-    End If
+Private Sub btnMovePrevious_Click()
+    '前へ戻る
+    MoveRecord vbKeyLeft
 End Sub
 Private Sub btnMoveNext_Click()
-    If Not rsfrmBIN.EOF Then
-        'EOFじゃなかったら次のレコードに進む
-        rsfrmBIN.MoveNext
+    '次へ進む
+    MoveRecord vbKeyRight
+End Sub
+'編集制限解除
+Private Sub btnEnableEdit_Click()
+    btnDoUpdate.Enabled = True
+    txtBox_F_INV_Tana_Local_Text.Locked = False
+    txtBox_F_INV_Label_Name_1.Locked = False
+    txtBox_F_INV_Label_Name_2.Locked = False
+    txtBox_F_INV_Label_Remark_1.Locked = False
+    txtBox_F_INV_Label_Remark_2.Locked = False
+End Sub
+'最終的にDBにUpdateする
+Private Sub btnDoUpdate_Click()
+    If rsfrmBIN.Status And adRecModified Then
+        rsfrmBIN.UpdateBatch
+        If rsfrmBIN.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
+            MsgBox "正常に更新されました"
+        Else
+            MsgBox "更新に失敗した可能性があります"
+        End If
     End If
+End Sub
+'Change
+'RSに値セットするテキストボックス
+'棚番
+Private Sub txtBox_F_INV_Tana_Local_Text_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+        Exit Sub
+    End If
+    'Updateメソッドへ
+    UpdateRSFromContrl ActiveControl
+End Sub
+'品名1
+Private Sub txtBox_F_INV_Label_Name_1_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+        Exit Sub
+    End If
+    'Updateメソッドへ
+    UpdateRSFromContrl ActiveControl
+End Sub
+'品名2
+Private Sub txtBox_F_INV_Label_Name_2_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+        Exit Sub
+    End If
+    'Updateメソッドへ
+    UpdateRSFromContrl ActiveControl
+End Sub
+'備考1
+Private Sub txtBox_F_INV_Label_Remark_1_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+        Exit Sub
+    End If
+    'Updateメソッドへ
+    UpdateRSFromContrl ActiveControl
+End Sub
+'備考2
+Private Sub txtBox_F_INV_Label_Remark_2_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+        Exit Sub
+    End If
+    'Updateメソッドへ
+    UpdateRSFromContrl ActiveControl
+End Sub
+'手配コードフィルタ
+Private Sub txtBox_Filter_Tehai_Code_Change()
+    If StopEvents Then
+        Exit Sub
+    End If
+    'イベント停止
+    StopEvents = True
+    If Len(ActiveControl.Text) >= 1 Then
+        ActiveControl.Text = UCase(ActiveControl.Text)
+    End If
+    SetFilter ActiveControl
+End Sub
+'棚番フィルター
+Private Sub txtBox_Filter_Local_Tana_Change()
+    If StopEvents Then
+        Exit Sub
+    End If
+    'イベント停止
+    StopEvents = True
+    If Len(ActiveControl.Text) >= 1 Then
+        ActiveControl.Text = UCase(ActiveControl.Text)
+    End If
+    SetFilter ActiveControl
 End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
@@ -85,6 +195,8 @@ Private Sub ConstRuctor()
     SetDefaultValuetoRS
     'objToFieldNameを設定
     setObjToFieldNameDic
+    'RSのデータを取得する
+    GetValuFromRS
 End Sub
 '''デストラクタ
 Private Sub Destructor()
@@ -135,7 +247,7 @@ Private Sub SetDefaultValuetoRS()
     rsfrmBIN.Open , , , , CommandTypeEnum.adCmdText
     '以下は正常に動く
     '更新に必要なキー列の情報が～・・・→両方のテーブルの主キーをSELECTのフィールドに含めると解決
-    rsfrmBIN.Fields("F_INV_Label_Name_2").Value = "InputTest"
+'    rsfrmBIN.Fields("F_INV_Label_Name_2").Value = "InputTest"
 '    rsfrmBIN.Fields("F_INV_Tana_Local_Text").Value = "K23 A01"
 '    rsfrmBIN.Update
 '    rsfrmBIN.UpdateBatch
@@ -152,4 +264,184 @@ Private Sub setObjToFieldNameDic()
     '今回はテーブル毎にフィールド名が独立しているので、テーブルプリフィックスは無しでRSで格納している
     dicObjNameToFieldName.Add txtBox_F_INV_Tana_Local_Text.Name, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT)
     dicObjNameToFieldName.Add txtBox_F_INV_Tehai_Code.Name, clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)
+    dicObjNameToFieldName.Add txtBox_F_INV_Label_Name_1.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Name_1_IMPrt)
+    dicObjNameToFieldName.Add txtBox_F_INV_Label_Name_2.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Name_2_IMPrt)
+    dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_1.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
+    dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_2.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
+End Sub
+'cidObjToFieldにあるコントロールの値をすべて消去する
+Private Sub ClearAllContents()
+    Dim varKeyobjDic As Variant
+    'dicObjtoFieldループ
+    For Each varKeyobjDic In dicObjNameToFieldName
+        Select Case TypeName(Me.Controls(varKeyobjDic))
+        Case "TextBox"
+            'TextBoxだった時
+            Me.Controls(varKeyobjDic).Text = ""
+        Case "Label"
+            'Labelだった時
+            Me.Controls(varKeyobjDic).Caption = ""
+        End Select
+    Next varKeyobjDic
+End Sub
+'RSから値をとってくる
+Private Sub GetValuFromRS()
+    On Error GoTo ErrorCatch
+    If rsfrmBIN.EOF And rsfrmBIN.BOF Then
+            'BOFとEOF両方同時に立っていたらレコードが無いので抜ける
+        Exit Sub
+    End If
+    'イベント停止
+    StopEvents = True
+    '一旦全項目消去
+    ClearAllContents
+    Dim varKeyobjDic As Variant
+    'dicObjtoFieldをループ
+    For Each varKeyobjDic In dicObjNameToFieldName
+        Select Case True
+        Case IsNull(rsfrmBIN.Fields(dicObjNameToFieldName(varKeyobjDic)).Value)
+            'Nullだった場合
+            'とりあえず空文字にする
+            Select Case TypeName(Me.Controls(varKeyobjDic))
+            Case "TextBox"
+                'テキストボックスだったら
+                Me.Controls(varKeyobjDic).Text = ""
+            Case "Label"
+                'ラベルだった
+                Me.Controls(varKeyobjDic).Caption = ""
+            End Select
+        Case Else
+            'データがあった場合
+            'RSのデータをそのまま適用する
+            Select Case TypeName(Me.Controls(varKeyobjDic))
+            Case "TextBox"
+                'テキストボックス
+                Me.Controls(varKeyobjDic).Text = rsfrmBIN.Fields(dicObjNameToFieldName(varKeyobjDic)).Value
+            Case "Label"
+                'ラベル
+                Me.Controls(varKeyobjDic).Caption = rsfrmBIN.Fields(dicObjNameToFieldName(varKeyobjDic)).Value
+            End Select
+        End Select
+    Next varKeyobjDic
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "GetValuFromRS code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開
+    StopEvents = False
+    Exit Sub
+End Sub
+'''レコードを進んだり戻ったりする
+'''args
+'''intargKeyCode    基本はキー操作にする、→で次へ、←で前へ
+Private Sub MoveRecord(intargKeyCode As Integer)
+    If rsfrmBIN.BOF And rsfrmBIN.EOF Then
+        'BOFとEOF両方立ってたら抜ける
+    End If
+    'イベント停止する
+    StopEvents = True
+    Select Case intargKeyCode
+    Case vbKeyRight
+        '右、次へ
+        rsfrmBIN.MoveNext
+        If rsfrmBIN.EOF Then
+            MsgBox "現在のレコードが最終レコードです"
+            rsfrmBIN.MovePrevious
+        End If
+    Case vbKeyLeft
+        '左、前へ
+        rsfrmBIN.MovePrevious
+        If rsfrmBIN.BOF Then
+            MsgBox "現在のレコードが先頭レコードです"
+            rsfrmBIN.MoveNext
+        End If
+    End Select
+    '値の取得をする
+    GetValuFromRS
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "MoveRecord code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開する
+    StopEvents = False
+    Exit Sub
+End Sub
+'フィルタテキストボックスでChangeイベントが発生したらRSにFilter設定してやる
+Private Sub SetFilter(ByRef argCtrl As Control)
+    If rsfrmBIN.BOF And rsfrmBIN.EOF Then
+        'RSに中身が無かったら抜ける
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    Select Case argCtrl.Text
+    Case ""
+        '空白だったら、FilterにadFilterNonをセットしてフィルタをクリアする
+        rsfrmBIN.Filter = adFilterNone
+        '値取得する
+        GetValuFromRS
+    Case Else
+        '何かしら文字列が入ってたら、Like ～%といった感じで前方一致で条件を組む
+        Dim strFilter(3) As String
+        Select Case argCtrl.Name
+        Case txtBox_Filter_Local_Tana.Name
+            '棚番だった場合
+            strFilter(0) = dicObjNameToFieldName(txtBox_F_INV_Tana_Local_Text.Name)
+        Case txtBox_Filter_Tehai_Code.Name
+            '手配コードだった場合
+            strFilter(0) = dicObjNameToFieldName(txtBox_F_INV_Tehai_Code.Name)
+        End Select
+        '共通部分を埋めていく
+        strFilter(1) = " LIKE '"
+        strFilter(2) = argCtrl.Text
+        '最後にワイルドカード付与
+        strFilter(3) = "%'"
+        'Filterセット
+        rsfrmBIN.Filter = Join(strFilter, "")
+        '値取得する
+        GetValuFromRS
+    End Select
+    'レコードが0だったら報告する
+    If rsfrmBIN.BOF And rsfrmBIN.EOF Then
+        MsgBox "現在の指定条件では該当するレコードがありません"
+        '一旦フィルタ解除する
+        rsfrmBIN.Filter = adFilterNone
+        'テキストボックスの文字数により処理を分岐
+        'イベント再開
+        StopEvents = False
+        Select Case Len(argCtrl.Text)
+        Case Is = 1
+            '1文字目でダメだったらテキストを全消去
+            argCtrl.Text = ""
+        Case Is >= 2
+            '2文字以上あったらフィルタ文字列1文字減らして再セット
+            argCtrl.Text = Mid(argCtrl.Text, 1, Len(argCtrl.Text) - 1)
+        End Select
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SetFilter code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開する
+    StopEvents = False
+    Exit Sub
+End Sub
+'各コントロールの値をRSにセットする
+Private Sub UpdateRSFromContrl(argCtrl As Control)
+    If Not dicObjNameToFieldName.Exists(argCtrl.Name) Then
+        'dicobjToFieldに存在しないコントロール名の場合は抜ける
+        Exit Sub
+    End If
+    Select Case True
+    Case IsNull(rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).Value), rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).Value <> argCtrl.Text
+        'RSの値がNullか、引数のコントロールのtextと違っている場合
+        'rsに値をセットして、Updateまでする（DBに反映するにはUpdateBatchしないとダメ）
+        rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).Value = _
+        argCtrl.Text
+        rsfrmBIN.Update
+    End Select
+    Exit Sub
 End Sub

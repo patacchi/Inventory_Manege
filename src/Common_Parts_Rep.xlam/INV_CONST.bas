@@ -29,8 +29,8 @@ Public Const F_INV_LOCAL_DESCRIPTION As String = "F_INV_Local_Description"      
 Public Const F_INV_MANEGE_SECTION_SUB As String = "F_INV_Manege_Section_Sub"    'システム側の管理課サブ
 Public Const F_INV_LABEL_NAME_1 As String = "F_INV_Label_Name_1"                'BINカードラベルの品名1行目 CASE
 Public Const F_INV_LABEL_NAME_2 As String = "F_INV_Label_Name_2"                'BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア
-Public Const F_INV_LABEL_REMARK_1 As String = "F_INV_Label_Name_2"              'BINカードラベルの備考1行目 錆びやすいので注意
-Public Const F_INV_LABEL_REMARK_2 As String = "F_INV_Label_Name_2"              'BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事
+Public Const F_INV_LABEL_REMARK_1 As String = "F_INV_Label_Remark_1"            'BINカードラベルの備考1行目 錆びやすいので注意
+Public Const F_INV_LABEL_REMARK_2 As String = "F_INV_Label_Remark_2"            'BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事
 '手配コードマスターのEnum定義
 Public Enum Enum_INV_M_Parts
     Table_Name_IMPrt = 1
