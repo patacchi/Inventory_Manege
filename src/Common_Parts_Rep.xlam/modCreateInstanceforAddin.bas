@@ -69,4 +69,8 @@ End Sub
 '''frmTanaBincardフォームを表示する
 Public Sub ShowfrmINVTanaBincard()
     frmTanaBincard.Show
+End Sub
+'''frmBinLabeoShow
+Public Sub ShowfrmBinLabel()
+    frmBinLabel.Show
 End Sub

@@ -26,6 +26,8 @@ Private confrmBIN As ADODB.Connection
 Private StopEvents As Boolean
 '定数
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
+Private Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0         '薄い緑
+Private Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ウィンドウの背景
 '------------------------------------------------------------------------------------------------------
 'SQL
 Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
@@ -54,23 +56,11 @@ Private Sub btnMoveNext_Click()
 End Sub
 '編集制限解除
 Private Sub btnEnableEdit_Click()
-    btnDoUpdate.Enabled = True
-    txtBox_F_INV_Tana_Local_Text.Locked = False
-    txtBox_F_INV_Label_Name_1.Locked = False
-    txtBox_F_INV_Label_Name_2.Locked = False
-    txtBox_F_INV_Label_Remark_1.Locked = False
-    txtBox_F_INV_Label_Remark_2.Locked = False
+    SwitchtBoxEditmode True
 End Sub
 '最終的にDBにUpdateする
 Private Sub btnDoUpdate_Click()
-    If rsfrmBIN.Status And adRecModified Then
-        rsfrmBIN.UpdateBatch
-        If rsfrmBIN.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
-            MsgBox "正常に更新されました"
-        Else
-            MsgBox "更新に失敗した可能性があります"
-        End If
-    End If
+    DoUpdateBatch
 End Sub
 'Change
 'RSに値セットするテキストボックス
@@ -80,10 +70,10 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
-        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
-        Exit Sub
-    End If
+'    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+'        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+'        Exit Sub
+'    End If
     'Updateメソッドへ
     UpdateRSFromContrl ActiveControl
 End Sub
@@ -93,10 +83,10 @@ Private Sub txtBox_F_INV_Label_Name_1_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
-        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
-        Exit Sub
-    End If
+'    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+'        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+'        Exit Sub
+'    End If
     'Updateメソッドへ
     UpdateRSFromContrl ActiveControl
 End Sub
@@ -106,10 +96,10 @@ Private Sub txtBox_F_INV_Label_Name_2_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
-        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
-        Exit Sub
-    End If
+'    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+'        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+'        Exit Sub
+'    End If
     'Updateメソッドへ
     UpdateRSFromContrl ActiveControl
 End Sub
@@ -119,10 +109,10 @@ Private Sub txtBox_F_INV_Label_Remark_1_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
-        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
-        Exit Sub
-    End If
+'    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+'        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+'        Exit Sub
+'    End If
     'Updateメソッドへ
     UpdateRSFromContrl ActiveControl
 End Sub
@@ -132,10 +122,10 @@ Private Sub txtBox_F_INV_Label_Remark_2_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
-        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
-        Exit Sub
-    End If
+'    If Len(ActiveControl.Text) > MAX_LABEL_TEXT_LENGTH Then
+'        MsgBox "設定可能な文字数" & MAX_LABEL_TEXT_LENGTH & " を超えています。"
+'        Exit Sub
+'    End If
     'Updateメソッドへ
     UpdateRSFromContrl ActiveControl
 End Sub
@@ -197,6 +187,9 @@ Private Sub ConstRuctor()
     setObjToFieldNameDic
     'RSのデータを取得する
     GetValuFromRS
+#If DebugDB Then
+    MsgBox "DebugDB有効"
+#End If
 End Sub
 '''デストラクタ
 Private Sub Destructor()
@@ -429,13 +422,60 @@ CloseAndExit:
     StopEvents = False
     Exit Sub
 End Sub
+'''テキストボックスの編集可能状態を切り替える
+'''args
+'''Editable     Trueにセットすると変更可能に、Falseで変更不可にする
+Private Sub SwitchtBoxEditmode(Editable As Boolean)
+    Select Case Editable
+    Case True
+        '編集可能にするとき
+        btnDoUpdate.Enabled = True
+        'LockedをFalseにして、BackColoreを薄緑にする
+        txtBox_F_INV_Tana_Local_Text.Locked = False
+        txtBox_F_INV_Tana_Local_Text.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Name_1.Locked = False
+        txtBox_F_INV_Label_Name_1.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Name_2.Locked = False
+        txtBox_F_INV_Label_Name_2.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Remark_1.Locked = False
+        txtBox_F_INV_Label_Remark_1.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Remark_2.Locked = False
+        txtBox_F_INV_Label_Remark_2.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        '編集可能設定ボタンを無効に
+        btnEnableEdit.Enabled = False
+    Case False
+        '編集不可にするとき
+        'UpdateBatckボタンをFalseに
+        btnDoUpdate.Enabled = False
+        'LockedをTrueにして、BackColoreを標準背景色にする
+        txtBox_F_INV_Tana_Local_Text.Locked = True
+        txtBox_F_INV_Tana_Local_Text.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Name_1.Locked = True
+        txtBox_F_INV_Label_Name_1.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Name_2.Locked = True
+        txtBox_F_INV_Label_Name_2.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Remark_1.Locked = True
+        txtBox_F_INV_Label_Remark_1.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Remark_2.Locked = True
+        txtBox_F_INV_Label_Remark_2.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        '編集可能設定ボタンを有効に
+        btnEnableEdit.Enabled = True
+    End Select
+End Sub
 '各コントロールの値をRSにセットする
 Private Sub UpdateRSFromContrl(argCtrl As Control)
+    On Error GoTo ErrorCatch
     If Not dicObjNameToFieldName.Exists(argCtrl.Name) Then
         'dicobjToFieldに存在しないコントロール名の場合は抜ける
         Exit Sub
     End If
     Select Case True
+    '最初に文字数チェックを行い、オーバーしていたら設定値まで切り下げる
+    Case Len(argCtrl.Text) > rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize
+        '文字数がフィールド設定値オーバー
+        MsgBox "入力された文字数が設定の " & rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize & " 文字を超えています。"
+        argCtrl.Text = Mid(argCtrl.Text, 1, rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize)
+        GoTo CloseAndExit
     Case IsNull(rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).Value), rsfrmBIN.Fields(dicObjNameToFieldName(argCtrl.Name)).Value <> argCtrl.Text
         'RSの値がNullか、引数のコントロールのtextと違っている場合
         'rsに値をセットして、Updateまでする（DBに反映するにはUpdateBatchしないとダメ）
@@ -443,5 +483,40 @@ Private Sub UpdateRSFromContrl(argCtrl As Control)
         argCtrl.Text
         rsfrmBIN.Update
     End Select
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "UpdateRSFromContrl code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
+End Sub
+'UpdateでRSにコミットされた変更をDBにプッシュする
+Private Sub DoUpdateBatch()
+    On Error GoTo ErrorCatch
+    'イベント停止する
+    StopEvents = True
+    If rsfrmBIN.Status And adRecModified Then
+        rsfrmBIN.UpdateBatch
+'        If (rsfrmBIN.Status And ADODB.RecordStatusEnum.adRecUnmodified) Or (rsfrmBIN.Status = ADODB.RecordStatusEnum.adRecOK) Then
+        If (rsfrmBIN.Status And ADODB.RecordStatusEnum.adRecUnmodified) Then
+            MsgBox "正常に更新されました"
+            '編集不可モードへ
+            SwitchtBoxEditmode False
+            GoTo CloseAndExit
+        Else
+            MsgBox "更新に失敗した可能性があります RSStasus: " & rsfrmBIN.Status
+            GoTo CloseAndExit
+        End If
+    ElseIf rsfrmBIN.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
+        MsgBox "変更点はありませんでした。"
+        GoTo CloseAndExit
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "DoUpdateBatch code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開する
+    StopEvents = False
     Exit Sub
 End Sub

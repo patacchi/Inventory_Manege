@@ -361,6 +361,9 @@ Private Sub ConstRactor()
 '        Unload Me
         Exit Sub
     End If
+#If DebugDB Then
+    MsgBox "DebugDB Enable"
+#End If
     'divObjToField‚ğİ’è
     setDicObjToField
     Exit Sub

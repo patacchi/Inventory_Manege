@@ -258,6 +258,9 @@ Private Sub UserForm_Initialize()
     '棚版テキストボックスにフォーカスを移動
     txtBox_F_INV_Tana_Local_Text.SetFocus
     '初期化が終わる前に全消去しようとすると、Dictionary等の準備ができてないのにTxtBox_Changeイベントが先に発生してしまうので消去は最後に
+#If DebugDB Then
+    MsgBox "DebugDB Enable"
+#End If
     'テキストボックス、ラベル全消去
     ClearAllTextBoxAndLabel
     '実際の値の入れ込みはインクリメンタルサーチの中で行う
