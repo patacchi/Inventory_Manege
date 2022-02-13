@@ -8,11 +8,12 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 '''フォームの（主に）テキストボックスでインクリメンタルサーチを実装するためのクラス
+'''このクラスを呼び出す前に、クラスに渡す参照のclsADOで全条件を表示するSQLを実行しておく事
 Option Explicit
 'メンバ変数
 Private boolStopEvents As Boolean
 Private varSourceArray As Variant                       'ListBoxに割り当てる大元の配列（フィルタ前、実際はこれにフィルタをかけてListBox.Listに割り当てる）
-Private dicReplaceSELECTParam As Dictionary             'SQL SELECT用のReplaseParam
+'Private dicReplaceSELECTParam As Dictionary             'SQL SELECT用のReplaseParam
 Private txtBoxTarget As MSForms.TextBox                 'ターゲットとなるテキストボックスの参照
 Private lstBox_Incremental As MSForms.ListBox           'インクリメンタルサーチ用のリストボックスの参照
 Private frmParent As UserForm                           'Parentとなるフォームそのもの
@@ -84,6 +85,64 @@ Property Set clsSQLBRef(ByRef argclsSQLB As clsSQLStringBuilder)
 End Property
 '--------------------------------------------------------------------------------------------------------------
 'メソッド
+'''コンストラクター
+'''クラスインスタンスとdicObjToField,親フォームの参照をセットする
+'''args
+'''me.frmref                    Parentのフォームの参照
+'''me.dicobjectfield         オブジェクト名をkey、テーブルエイリアス名付きのフィールド名をvalueとするDictionary
+'''me.clsadohandleref            AdoHandleのインスタンス参照
+'''me.clsenumref
+'''clsSQLStringBuilder
+Public Sub Constructor(ByRef argFrmParent As UserForm, dicargObjectToFieldName As Dictionary, _
+clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBargIncremental As clsSQLStringBuilder)
+    If argFrmParent Is Nothing Or dicargObjectToFieldName Is Nothing Or _
+    clsADOargIncremental Is Nothing Or clsEnumargIncremental Is Nothing Or clsSQLBargIncremental Is Nothing Then
+        DebugMsgWithTime "Constructor: some arg is nothing"
+        MsgBox "clsIncremental の コンストラクタでいずれかの引数がNothingでした"
+        Exit Sub
+    End If
+    'クラスのメンバ変数にセット
+    Set Me.frmRef = argFrmParent
+    Set Me.dicObjectField = dicargObjectToFieldName
+    Set Me.clsADOhandleRef = clsADOargIncremental
+    Set Me.clsEnumRef = clsEnumargIncremental
+    Set Me.clsSQLBRef = clsSQLBargIncremental
+End Sub
+'''dicObjToFieldに含まれるコントロールのテキストを消去する
+'''args
+'''Optional strargExceptCtrlName    この引数に指定されたコントロールのは消去しない、デフォルトは""
+Private Sub ClearAllContents(Optional strargExceptCtrlName As String = "")
+    On Error GoTo ErrorCatch
+    'インスタンス引数チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
+        DebugMsgWithTime "ClearAllContents: instance not initialized"
+        GoTo CloseAndExit
+    End If
+    Dim ctlKey As Control
+    'parent.frmの全コントロールをループ
+    For Each ctlKey In Me.frmRef.Controls
+        Select Case True
+        Case (CStr(ctlKey.Name) <> strargExceptCtrlName) And Me.dicObjectField.Exists(ctlKey.Name)
+            '除外コントロールではなく、なおかつdicObjtoFEfieldにキーが存在するときのみ処理する
+            Select Case TypeName(ctlKey)
+            Case "TextBox"
+                'テキストボックスだった場合
+                ctlKey.Text = ""
+            Case "Label"
+                'ラベルだった場合
+                ctlKey.Caption = ""
+            End Select
+        End Select
+    Next ctlKey
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "ClearAllContents code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
+End Sub
 '''インクリメンタルサーチでテキストボックスのChangeイベントの共通イベントハンドラ
 '''Changeイベント
 '''文字が入力されたら、リストの絞り込みを行い、結果が1件のみになったらリストを消去する
@@ -109,36 +168,50 @@ Public Sub Incremental_TextBox_Change()
         GoTo CloseAndExit
         Exit Sub
     End If
-    If Not IsRedim(varSourceArray) Then
-        'まだ配列が初期化されてなかった場合
-        GoTo CloseAndExit
-    End If
     'イベント受付を停止する
     Me.StopEvent = True
+    '既に前に確定してデータが入っていたら判別しにくいので、自身のテキストボックス以外データ消去
+    ClearAllContents Me.txtBoxRef.Name
     'リストボックスの選択状態を解除する
-    Me.LstBoxRef.ListIndex = -1
-    'テキストボックスに入力されている文字列でフィルタかけてみる
-    Dim varArrayFilterd As Variant
-    varArrayFilterd = Filter(varSourceArray, Me.txtBoxRef.Text, True, vbTextCompare)
-    'filter関数は見つからないと 0 to -1 の配列を返すらしいので、Ubound < Lboundになるらしい
-    If Not IsRedim(varArrayFilterd) Or UBound(varArrayFilterd) < LBound(varArrayFilterd) Then
+'    If Not IsRedim(varSourceArray) Then
+'        'まだ配列が初期化されてなかった場合
+'        GoTo CloseAndExit
+'    End If
+'    Me.LstBoxRef.ListIndex = -1
+'    Dim varArrayFilterd As Variant
+'    varArrayFilterd = Filter(varSourceArray, Me.txtBoxRef.Text, True, vbTextCompare)
+'    'filter関数は見つからないと 0 to -1 の配列を返すらしいので、Ubound < Lboundになるらしい
+    'テキストボックスに入力されている文字列でフィルタかけて、結果をメンバ変数に格納する
+    varSourceArray = Me.clsSQLBRef.Get1DimentionVarArrFromRS(Me.clsADOhandleRef.RS, _
+    Me.clsSQLBRef.RepDotField(Me.dicObjectField, Me.txtBoxRef.Name), _
+    Me.txtBoxRef.Text)
+'    If Not IsRedim(varSourceArray) Or UBound(varSourceArray) < LBound(varSourceArray) Then
+    If Not IsRedim(varSourceArray) Then
         '見つからなかった場合？
         DebugMsgWithTime "Incremental_TextBox_Change: No result found"
+        'テキストボックスにまだ文字が残っている場合は最後の1文字を削除して、再設定してやる(自身再帰呼び出しになるはず)
+        If Me.txtBoxRef.TextLength > 1 Then
+            '一旦イベント再開
+            Me.StopEvent = False
+            Me.txtBoxRef.Text = Mid(Me.txtBoxRef, 1, Me.txtBoxRef.TextLength - 1)
+            GoTo CloseAndExit
+            Exit Sub
+        End If
         'リストボックスをクリアしてやり、VisibleをFalseにする
         Me.LstBoxRef.Clear
         Me.LstBoxRef.Visible = False
         GoTo CloseAndExit
         Exit Sub
     End If
-    If UBound(varArrayFilterd) - LBound(varArrayFilterd) = 0 Then
+    If UBound(varSourceArray) - LBound(varSourceArray) = 0 Then
         'フィルタ掛けた後の候補が残り1個になった場合
 '        'リストボックスを非表示にして、リストボックスのIndex 0を選択し、Clickイベントを発火させる
 ''        'ここで非表示にしてしまうと検索文字列を削除した時にリスト復活しない
 ''        Me.LstBoxRef.Visible = False
-'        Me.LstBoxRef.List = varArrayFilterd
+'        Me.LstBoxRef.List = varsourcearray
 '        Me.LstBoxRef.ListIndex = 0
 '        'まずは表示調整をする
-''        SetListBoxStyle varArrayFilterd
+''        SetListBoxStyle varsourcearray
         '確定なので、リストボックスは表示しない→どうしよう?
         '候補1つになった時点で確定すると、次に連続入力したい時に不便
         'テキストボックスの値をリストボックスの値にセットしてやる
@@ -148,8 +221,10 @@ Public Sub Incremental_TextBox_Change()
 '        me.lstboxref.Visible = False
 '        GoTo CloseAndExit
     End If
+    'リストボックスの選択状態を解除してやる
+    Me.LstBoxRef.ListIndex = -1
     'リストボックスを表示する
-    SetListBoxStyle varArrayFilterd
+    SetListBoxStyle varSourceArray
     'イベント受付を再開する
     Me.StopEvent = False
     GoTo CloseAndExit
@@ -162,22 +237,16 @@ CloseAndExit:
 End Sub
 '''インクリメンタルサーチ、テキストボックスイベントハンドラ
 '''Enter
+'''クラスインスタンス共有変数に関してはコンストラクタのプロシージャを新設したので、ここでやる必要はなし、ただし初期化確認はすること
 '''一番最初にこのイベントから始まるはずなので、クラスのコンストラクタ代わり
 '''フォーカスが入った時点で、リストの初期化を行う
 '''args
 '''me.txtBoxRef                 ターゲットとなるテキストボックスの参照
 '''me.lstboxref           インクリメンタルサーチ用のリストボックスの参照
-'''me.frmref                    Parentのフォームの参照
-'''me.dicobjectfield         オブジェクト名をkey、テーブルエイリアス名付きのフィールド名をvalueとするDictionary
-'''me.clsadohandleref            AdoHandleのインスタンス参照
-'''me.clsenumref
-'''clsSQLStringBuilder
-Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, ByRef lstBoxarg_Incremental As MSForms.ListBox, ByRef argFrmParent As UserForm, dicargObjectToFieldName As Dictionary, _
-clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBargIncremental As clsSQLStringBuilder)
+Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, ByRef lstBoxarg_Incremental As MSForms.ListBox)
     On Error GoTo ErrorCatch
     '各引数のチェック、Nothingじゃなかったらクラスのプロパティにセットする
-    If txtBoxargTarget Is Nothing Or lstBoxarg_Incremental Is Nothing Or dicargObjectToFieldName Is Nothing Or clsADOargIncremental Is Nothing _
-     Or clsEnumargIncremental Is Nothing Or clsSQLBargIncremental Is Nothing Then
+    If txtBoxargTarget Is Nothing Or lstBoxarg_Incremental Is Nothing Then
         'どれかのインスタンス参照がNothingだった
         DebugMsgWithTime "Incremental_Textbox_Enter: some instance Nothing"
         GoTo CloseAndExit
@@ -186,11 +255,14 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
         'それぞれプロパティにセットしてやる
         Set Me.txtBoxRef = txtBoxargTarget
         Set Me.LstBoxRef = lstBoxarg_Incremental
-        Set Me.frmRef = argFrmParent
-        Set Me.dicObjectField = dicargObjectToFieldName
-        Set Me.clsADOhandleRef = clsADOargIncremental
-        Set Me.clsEnumRef = clsEnumargIncremental
-        Set Me.clsSQLBRef = clsSQLBargIncremental
+    End If
+    'メンバ変数初期化確認
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
+        DebugMsgWithTime "Incremental_TextBox_Enter : instance not initialized"
+        GoTo CloseAndExit
+        Exit Sub
     End If
     If Not Me.dicObjectField.Exists(Me.txtBoxRef.Name) Then
         'フィールド名Dicにテキストボックスの名前が見つからなかったら終了
@@ -204,40 +276,47 @@ clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBa
     Me.LstBoxRef.Visible = False
     Me.LstBoxRef.ListIndex = -1
     Me.LstBoxRef.Font.Size = LISTBOX_FONT_SIZE
-    'ReplaceDicを設定する
-    '今回はWhere条件はなし→X
-    'Nullを排除しないとめんどうになる
-    Dim strWHEREcondition As String
-    Dim strarrWhere(2) As String
-    strarrWhere(0) = "AND NOT "
-    strarrWhere(1) = Me.dicObjectField(Me.txtBoxRef.Name)
-    strarrWhere(2) = " IS NULL"
-    strWHEREcondition = Join(strarrWhere, "")
-    'ReplaceDicの設定を行う
-    SetReplaceParmDic Me.dicObjectField(Me.txtBoxRef.Name), strWHEREcondition
-    'SQL組み立て
-    Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
-    Dim isCollect As Boolean
-    'SQL実行
-    isCollect = Me.clsADOhandleRef.Do_SQL_with_NO_Transaction
-    If Not isCollect Then
-        DebugMsgWithTime "Incremental_TextBox_Enter: Do Get List sql fail..."
-        MsgBox "Incremantal_TextBox_Enterでリスト取得SQL実行時にエラーが発生しました"
-        GoTo CloseAndExit
-    End If
+'    '以下SQLを使用していた時の参考
+'    'ReplaceDicを設定する
+'    '今回はWhere条件はなし→X
+'    'Nullを排除しないとめんどうになる
+'    Dim strWHEREcondition As String
+'    Dim strarrWhere(2) As String
+'    strarrWhere(0) = "AND NOT "
+'    strarrWhere(1) = Me.dicObjectField(Me.txtBoxRef.Name)
+'    strarrWhere(2) = " IS NULL"
+'    strWHEREcondition = Join(strarrWhere, "")
+'    'ReplaceDicの設定を行う
+'    SetReplaceParmDic dicReplaceSELECTParam, Me.dicObjectField(Me.txtBoxRef.Name), strWHEREcondition
+'    'SQL組み立て
+'    Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
+'    Dim isCollect As Boolean
+'    'SQL実行
+'    isCollect = Me.clsADOhandleRef.Do_SQL_with_NO_Transaction
+'    If Not isCollect Then
+'        DebugMsgWithTime "Incremental_TextBox_Enter: Do Get List sql fail..."
+'        MsgBox "Incremantal_TextBox_Enterでリスト取得SQL実行時にエラーが発生しました"
+'        GoTo CloseAndExit
+'    End If
+'    'Filter関数では1次元配列しか引数にとれないので、メンバ変数に格納する前に1次元配列に変換してやる
+'    '一旦2次元配列として受け取る
+'    Dim vararr2Dimention As Variant
+'    vararr2Dimention = Me.clsADOhandleRef.RS_Array(NoTitle:=True)
+'    If Not IsRedim(vararr2Dimention) Then
+'        '初期化されてない配列が帰ってきたら
+'        MsgBox "データが見つかりませんでした"
+'        GoTo CloseAndExit
+'        Exit Sub
+'    End If
+'    '1次元配列に変換し、メンバ変数にセット
+'    varSourceArray = clsSQLBRef.SQLResutArrayto1Dimmention(vararr2Dimention)
+    'ここに来るまでにclsADOのRSにはフィルタ前の全情報が入っている前提
+    'clsADOのRSより該当フィールドのリストの1次元配列を取得する
+    'Enterの時点で既にテキストが存在したら最初からフィルタ設定してやる
     'タイトル無しの配列をメンバ変数に割り当てる
-    'Filter関数では1次元配列しか引数にとれないので、メンバ変数に格納する前に1次元配列に変換してやる
-    '一旦2次元配列として受け取る
-    Dim vararr2Dimention As Variant
-    vararr2Dimention = Me.clsADOhandleRef.RS_Array(NoTitle:=True)
-    If Not IsRedim(vararr2Dimention) Then
-        '初期化されてない配列が帰ってきたら
-        MsgBox "データが見つかりませんでした"
-        GoTo CloseAndExit
-        Exit Sub
-    End If
-    '1次元配列に変換し、メンバ変数にセット
-    varSourceArray = clsSQLBRef.SQLResutArrayto1Dimmention(vararr2Dimention)
+    varSourceArray = Me.clsSQLBRef.Get1DimentionVarArrFromRS(Me.clsADOhandleRef.RS, _
+    Me.clsSQLBRef.RepDotField(Me.dicObjectField, Me.txtBoxRef.Name), _
+    Me.txtBoxRef.Text)
     '候補が一つの場合は直接テキストボックスに値を設定してやり、リストボックス自体は非表示のままにする
     If UBound(varSourceArray) - LBound(varSourceArray) = 0 Then
         Me.LstBoxRef.Visible = False
@@ -331,27 +410,13 @@ Public Function Incremental_LstBox_Click() As Boolean
     Me.StopEvent = True
     '結果を取得
     strResultText = Me.LstBoxRef.List(Me.LstBoxRef.ListIndex)
-    'WHERE条件を作成
-    Dim strWHEREcondition As String
-    Dim strarrCondition(3) As String
-    strarrCondition(0) = "AND "
-    strarrCondition(1) = Me.dicObjectField(Me.txtBoxRef.Name)
-    strarrCondition(2) = " = "
-    strarrCondition(3) = Me.clsSQLBRef.addQuote(strResultText)
-    strWHEREcondition = Join(strarrCondition, "")
-    'ReplaceDicを設定する
-    '今回のSELECTはDicObjctToFieldにある全ての項目を引っ張ってこないとダメ
-    SetReplaceParmDic clsSQLBRef.GetSELECTfieldListFromDicObjctToFieldName(dicObjectToFieldName), strWHEREcondition
-    'clsADOのプロパティにSQLをセット
-    Me.clsADOhandleRef.SQL = Me.clsSQLBRef.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplaceSELECTParam)
-    'SQL実行
-    Dim isCollect As Boolean
-    isCollect = Me.clsADOhandleRef.Do_SQL_with_NO_Transaction
-    If Not isCollect Then
-        DebugMsgWithTime "Incremental_LstBox_Click : SQL executing fali...."
-        Incremental_LstBox_Click = False
-        GoTo CloseAndExit
-    End If
+    'clsADOのRSのFilterを設定
+    Dim strarrFilter(3) As String
+    strarrFilter(0) = Me.clsSQLBRef.RepDotField(Me.dicObjectField, Me.txtBoxRef.Name)
+    strarrFilter(1) = " = '"
+    strarrFilter(2) = strResultText
+    strarrFilter(3) = "'"
+    Me.clsADOhandleRef.RS.Filter = Join(strarrFilter, "")
     'リストの選択状態解除、テキストボックスへの結果テキストの反映等はKeyUPおよびMouseUpイベント内で行う
     Incremental_LstBox_Click = True
     GoTo CloseAndExit
@@ -382,12 +447,15 @@ Public Sub Incremental_LstBox_Key_UP(argKeyCode As MSForms.ReturnInteger, argShi
     Me.StopEvent = True
     'キーコードにより処理を分岐
     Select Case argKeyCode
-    Case vbKeyEscape
-        'ESCキー
+    Case vbKeyEscape, vbKeyReturn
+        'ESCキーかReturnキー
         'リストを非表示にする
-        Me.LstBoxRef.Visible = False
+        If Me.LstBoxRef.ListCount >= 2 Then
+            Me.LstBoxRef.Visible = False
+        Else
+            Me.LstBoxRef.Height = 0
+        End If
         GoTo CloseAndExit
-    Case vbKeyReturn
     Case vbKeyUp
     End Select
     GoTo CloseAndExit
@@ -395,15 +463,53 @@ ErrorCatch:
     DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    'イベント受付再開する
+    StopEvent = False
+    Exit Sub
+End Sub
+'''ListBoxのMouseUpイベント
+'''くりこされたらリスト消去するのみ
+'''args
+'''argButton        押されたボタンのコードが入る
+Public Sub Incremental_LstBox_Mouse_UP(argButton As Integer)
+    On Error GoTo ErrorCatch
+    'メンバ変数チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInctance
+    If Not isInitialized Then
+        DebugMsgWithTime "Incremental_LstBox_Mouse_UP : some instance not initialized"
+        GoTo CloseAndExit
+    End If
+    'イベント受付停止する
+    Me.StopEvent = True
+    Select Case argButton
+    Case vbMouseLeft
+        '左クリック時
+        Me.LstBoxRef.Visible = False
+        GoTo CloseAndExit
+    End Select
+ErrorCatch:
+    DebugMsgWithTime "Incremental_LstBox_Mouse_UP coe: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開する
+    StopEvent = False
     Exit Sub
 End Sub
 '''T_INV_M_Tana と T_M_INV_Partsを F_INV_Tana_IDで結合した汎用SQLのRepleceDictionaryを設定するメソッド
 '''args
+'''dicargReplace            Replace条件を設定するDictionaryの参照
 '''strargSelectField        SELECT の引数
-'''strargWhereCondition     WHERE の引数
-Private Sub SetReplaceParmDic(strargSELECTField As String, strargWHERECondition As String)
-    If dicReplaceSELECTParam Is Nothing Then
-        Set dicReplaceSELECTParam = New Dictionary
+'''Optional strargWhereCondition     WHERE の引数、デフォルトは""（無し)
+Public Sub SetReplaceParmDic(ByRef dicargReplace As Dictionary, strargSELECTField As String, Optional strargWHERECondition As String = "")
+    On Error GoTo ErrorCatch
+    '引数チェック
+    If dicargReplace Is Nothing Then
+        '引数のDictionaryがNothingだった
+        Set dicargReplace = New Dictionary
+    End If
+    '最初にdicReplace全消去
+    dicargReplace.RemoveAll
 ''T_INV_M_TanaとT_INV_M_Parts結合した汎用SELECT SQL、外部DBファイル参照は無いものとする
 ''{0}    (SELECT Field)
 ''{1}    T_INV_M_Parts
@@ -413,25 +519,21 @@ Private Sub SetReplaceParmDic(strargSELECTField As String, strargWHERECondition 
 ''{5}    F_INV_Tana_ID
 ''{6}    (WHERE condition)無しの場合は空文字 "" でOK
 ''INV_CONST.SQL_INV_JOIN_TANA_PARTS
-        '初回は全ての条件を新たに入れてやる
-        '0番SELECT フィールド
-        dicReplaceSELECTParam.Add 0, strargSELECTField
-        dicReplaceSELECTParam.Add 1, INV_CONST.T_INV_M_Parts
-        dicReplaceSELECTParam.Add 2, Me.clsEnumRef.SQL_INV_Alias(INVDB_Parts_Alias_sia)
-        dicReplaceSELECTParam.Add 3, INV_CONST.T_INV_M_Tana
-        dicReplaceSELECTParam.Add 4, Me.clsEnumRef.SQL_INV_Alias(INVDB_Tana_Alias_sia)
-        dicReplaceSELECTParam.Add 5, Me.clsEnumRef.INVMasterTana(F_INV_TANA_ID_IMT)
-        '6番、WHERE条件
-        dicReplaceSELECTParam.Add 6, strargWHERECondition
-    Else
-        '既に初期化済みの場合は、SELECT条件とWHERE条件のみ変更になるので、そこだけ消去して再割り当て
-        '0 SELECT
-        dicReplaceSELECTParam.Remove (0)
-        dicReplaceSELECTParam.Add 0, strargSELECTField
-        '6 WHERE
-        dicReplaceSELECTParam.Remove (6)
-        dicReplaceSELECTParam.Add 6, strargWHERECondition
-    End If
+    '0番SELECT フィールド
+    dicargReplace.Add 0, strargSELECTField
+    dicargReplace.Add 1, INV_CONST.T_INV_M_Parts
+    dicargReplace.Add 2, Me.clsEnumRef.SQL_INV_Alias(INVDB_Parts_Alias_sia)
+    dicargReplace.Add 3, INV_CONST.T_INV_M_Tana
+    dicargReplace.Add 4, Me.clsEnumRef.SQL_INV_Alias(INVDB_Tana_Alias_sia)
+    dicargReplace.Add 5, Me.clsEnumRef.INVMasterTana(F_INV_TANA_ID_IMT)
+    '6番、WHERE条件
+    dicargReplace.Add 6, strargWHERECondition
+    Exit Sub
+ErrorCatch:
+    DebugMsgWithTime "SetReplaceParmDic code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
 End Sub
 '''ListBoxに各種プロパティをセットし、表示する
 '''args
@@ -488,4 +590,31 @@ Private Function CheckInctance() As Boolean
     End If
 CloseAndExit:
     Exit Function
-End Function
+End Function
+'デストラクタ
+Private Sub Class_Terminate()
+    Destructor
+End Sub
+Private Sub Destructor()
+    If Not frmParent Is Nothing Then
+        Set frmParent = Nothing
+    End If
+    If Not txtBoxTarget Is Nothing Then
+        Set txtBoxTarget = Nothing
+    End If
+    If Not lstBox_Incremental Is Nothing Then
+        Set lstBox_Incremental = Nothing
+    End If
+    If Not dicObjectField Is Nothing Then
+        Set dicObjectField = Nothing
+    End If
+    If Not clsADOIncremental Is Nothing Then
+        clsADOIncremental.CloseClassConnection
+    End If
+    If Not clsEnumIncremental Is Nothing Then
+        Set clsEnumIncremental = Nothing
+    End If
+    If Not clsSQLBIncremental Is Nothing Then
+        Set clsSQLBIncremental = Nothing
+    End If
+End Sub

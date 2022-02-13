@@ -255,10 +255,17 @@ ByRef clsEnumField As clsEnum) As String
         DebugMsgWithTime "ReturnTahleAliasPlusedFieldName: no field name given"
         Exit Function
     End If
-    Dim strField(2) As String
-    strField(0) = clsEnumField.SQL_INV_Alias(TableAlias)
-    strField(1) = "."
-    strField(2) = strargFieldName
+'    Dim strField(2) As String
+'    strField(0) = clsEnumField.SQL_INV_Alias(TableAlias)
+'    strField(1) = "."
+'    strField(2) = strargFieldName
+    '空白を含むフィールド名に対応するために[]でクオートする
+    Dim strField(4) As String
+    strField(0) = "["
+    strField(1) = clsEnumField.SQL_INV_Alias(TableAlias)
+    strField(2) = "."
+    strField(3) = strargFieldName
+    strField(4) = "]"
     ReturnTableAliasPlusedFieldName = Join(strField, "")
     Exit Function
 End Function
@@ -359,17 +366,34 @@ Public Function GetSELECTfieldListFromDicObjctToFieldName(ByRef argdicObjToField
     Dim varKeyDicObj As Variant
     Dim longArrRowCounter As Long
     longArrRowCounter = 0
+    'フィールド重複チェック用Dictionary定義
+    Dim dicCheckDistinct As Dictionary
+    Set dicCheckDistinct = New Dictionary
     For Each varKeyDicObj In argdicObjToField
         '配列にフィールド名を格納していく
         'フィールド名を明示的に指定しないとSELECTした結果がエイリアス外されちゃう
         'ついでにドットは特殊文字扱いされるのでRelaceしなきゃだめ
+        'AS の後ろは何をしてもピリオドは使用不可だった
         Dim strarrPlusAlias(2) As String
         strarrPlusAlias(0) = argdicObjToField(varKeyDicObj)
         strarrPlusAlias(1) = " AS "
         strarrPlusAlias(2) = REPLACE(strarrPlusAlias(0), ".", "_")
-        strarrSELECTfield(longArrRowCounter) = Join(strarrPlusAlias, "")
-        '配列の行カウンターをインクリメント
-        longArrRowCounter = longArrRowCounter + 1
+        'ここでフィールド重複チェックをする
+        'フィルタ用のテキストボックスと更新用のテキストボックス二つで同じフィールドを使用することがあるため
+        If dicCheckDistinct.Exists(Join(strarrPlusAlias, "")) Then
+            '既に同じフィールドが存在していた場合
+            '結果配列のサイズをひとつ切り下げる
+            ReDim Preserve strarrSELECTfield(UBound(strarrSELECTfield) - 1)
+            'このループでは何もしない
+        Else
+            '重複がなかった場合(通常動作)
+            '重複チェック用Dictionaryに項目追加
+            dicCheckDistinct.Add Join(strarrPlusAlias, ""), Empty
+            '結果配列にも追加
+            strarrSELECTfield(longArrRowCounter) = Join(strarrPlusAlias, "")
+            '配列の行カウンターをインクリメント
+            longArrRowCounter = longArrRowCounter + 1
+        End If
     Next varKeyDicObj
     '結果を返す
     GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
@@ -378,5 +402,127 @@ ErrorCatch:
     DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    Exit Function
+End Function
+'''dicObjFieldとフィールド名を引数に取り、ドット(.)をアンダースコート(_)に変換し、なおかつ前後の[]クオートを外したものを返す
+'''RSに収納後のFieldsの引数として使う
+'''args
+'''dicargObjToField     objToFieldのDictionaryの参照
+'''strargContrlName     objToFielcのkey、コントロール.nameになってるはず
+Public Function RepDotField(ByRef dicargObjToField As Dictionary, strargContrlName As String) As String
+    If Not dicargObjToField.Exists(strargContrlName) Then
+        '指定されたフィールド名が存在しなかったら抜ける
+        RepDotField = ""
+        DebugMsgWithTime "RepDotField : ControlName not found : " & strargContrlName
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'Replace入れ子にして結果を返す
+    RepDotField = REPLACE(REPLACE(REPLACE(dicargObjToField(strargContrlName), "[", ""), "]", ""), ".", "_")
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "RepDotField coce: " & err.Number & " Description:" & err.Description
+    RepDotField = ""
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
+End Function
+'''引数のRSより指定されたフィールドの1次元配列(Variant)を返す
+'''return Variant()     指定されたフィールドの値を入れた1次元配列(タイトルはなし)、指定されたフィールドで昇順並び替えを行う
+'''args
+'''argRS                    大元のデータが入ったRecordSet
+'''strargFieldName          対象となるフィールド名
+'''Optional strargFilter    フィルタ文字列があれば、'%引数%'という風にセットする、デフォルトは""(無し)
+Public Function Get1DimentionVarArrFromRS(ByRef argRS As ADODB.Recordset, strargFieldName As String, Optional strargFilter As String = "") As Variant
+    On Error GoTo ErrorCatch
+    '引数チェック
+    If argRS Is Nothing Or strargFieldName = "" Then
+        DebugMsgWithTime "Get1DimentionVarArrFromRS : arg is nothing or empty"
+        GoTo CloseAndExit
+        Set Get1DimentionVarArrFromRS = Empty
+        Exit Function
+    End If
+    'フィルタを一旦解除する
+    argRS.Filter = adFilterNone
+    If argRS.BOF And argRS.EOF Then
+        'データがなかった
+        DebugMsgWithTime "Get1DimentionVarArrFromRS : no data avilable"
+        MsgBox "Get1DimentionVarArrFromRS:引数で与えられたRecordsetにデータがありませんでした。"
+        Get1DimentionVarArrFromRS = Empty
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'フィルタが指定されていればフィルタかけてやる
+    If Not strargFilter = "" Then
+        'フィルタ文字列あり
+        Dim strarrFilter(3) As String
+        strarrFilter(0) = strargFieldName
+        strarrFilter(1) = " Like '%"
+        strarrFilter(2) = strargFilter
+        strarrFilter(3) = "%'"
+        'RSのFilterにセットしてやる
+        argRS.Filter = Join(strarrFilter, "")
+        'フィルタ処理後レコードなければ抜ける
+        If argRS.BOF And argRS.EOF Then
+            MsgBox "フィルタ処理後のレコード件数が0でした。"
+            Get1DimentionVarArrFromRS = Empty
+            GoTo CloseAndExit
+            Exit Function
+        End If
+    End If
+    If argRS.CursorLocation = adUseClient Then
+        'クライアントカーソルの場合
+        '昇順ソート
+        Dim strarrSort(1) As String
+        strarrSort(0) = strargFieldName
+        strarrSort(1) = " ASC"
+        argRS.Sort = Join(strarrSort, "")
+    End If
+    '結果格納開始
+    '重複確認のため一旦Dictionaryに格納
+    '重複は排除、Nullは格納しない
+    Dim dicResult As Dictionary
+    Set dicResult = New Dictionary
+    '明示的にMoveFirst
+    argRS.MoveFirst
+    'EOFまでループ
+    Do
+        Select Case True
+        Case IsNull(argRS.Fields(strargFieldName).Value), argRS.Fields(strargFieldName).Value = ""
+            'データがNullだった
+            'そのレコードはスキップする
+            DebugMsgWithTime "Get1DimentionVarArrFromRS :Skip cause Null data "
+        Case dicResult.Exists(argRS.Fields(strargFieldName).Value)
+            '既に値が存在した場合もスキップ
+            DebugMsgWithTime "Get1DimentionVarArrFromRS : Skip cause AlreadyDataExists"
+        Case Else
+            'それ以外の場合は値をDictonaryに格納
+            dicResult.Add argRS.Fields(strargFieldName).Value, Empty
+        End Select
+        '次のレコードへ
+        argRS.MoveNext
+    Loop Until argRS.EOF
+    '次のために最初のレコードに移動しておく
+    argRS.MoveFirst
+    'ここまでで重複、Null排除が終わってるのでDictionaryの要素を全ループし、1次元配列に格納する
+    Dim vararrResult() As Variant
+    ReDim vararrResult(dicResult.Count - 1)
+    Dim longArrCounter As Long
+    longArrCounter = 0
+    Dim varKeyDic As Variant
+    For Each varKeyDic In dicResult
+        '1次元配列にDictionaryのKeyを格納
+        vararrResult(longArrCounter) = varKeyDic
+        '配列の行カウンターをインクリメント
+        longArrCounter = longArrCounter + 1
+    Next varKeyDic
+    Get1DimentionVarArrFromRS = vararrResult
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "Get1DimentionVarArrFromRS code: " & err.Number & " Description: " & err.Description
+    Set Get1DimentionVarArrFromRS = Nothing
+    GoTo CloseAndExit
+CloseAndExit:
+    Set dicResult = Nothing
     Exit Function
 End Function

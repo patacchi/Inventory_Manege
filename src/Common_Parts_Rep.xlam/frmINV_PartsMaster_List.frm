@@ -6,6 +6,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmINV_PartsMaster_List
    ClientTop       =   390
    ClientWidth     =   15120
    OleObjectBlob   =   "frmINV_PartsMaster_List.frx":0000
+   ShowModal       =   0   'False
    StartUpPosition =   1  'オーナー フォームの中央
 End
 Attribute VB_Name = "frmINV_PartsMaster_List"
@@ -22,9 +23,11 @@ Private clsEnumPMList As clsEnum
 Private clsSQLBc As clsSQLStringBuilder
 Private clsIncrementalParts As clsIncrementalSerch
 Private clsGetIEfrmPMList As clsGetIE
-Private objExxelfrmPMList As Excel.Application
+Private objExcelfrmPMList As Excel.Application
 'keyがオブジェクト名で、値がテーブルエイリアス付きのフィールド名
 Private dicObjNameToFieldName As Dictionary
+'Replace用Dictionary
+Private dicReplacePartsMaster As Dictionary
 '定数定義
 Private Const TEXT_BOX_NAME_PREFIX As String = "txtBox_"
 Private Const LABEL_NAME_PREFIX As String = "lbl_"
@@ -111,16 +114,16 @@ Private Sub btnUpdateOriginData_Click()
 #End If
     '指定の在庫情報ファイルでDB PartsMasterをUPdateし、処理レコード数を受け取る
     Dim longAffected As Long
-    If objExxelfrmPMList Is Nothing Then
+    If objExcelfrmPMList Is Nothing Then
         'クラス変数が初期化されていなかったら初期化する
-        Set objExxelfrmPMList = New Excel.Application
+        Set objExcelfrmPMList = New Excel.Application
     End If
 #If NoIEConnect Then
     'ファイル残すとき
-    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExxelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, True)
+    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExcelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, True)
 #Else
     'ファイル削除するとき
-    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExxelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, False)
+    longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExcelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, False)
 #End If
     MsgBox longAffected & " 件のデータを更新しました。"
     'イベント再開
@@ -135,15 +138,6 @@ Private Sub lstBox_Incremental_Click()
     If clsIncrementalParts.Incremental_LstBox_Click Then
         'イベントの実行を抑止する
         clsIncrementalParts.StopEvent = True
-        '確定した値に対してSQLの実行まで完了した
-        'dicObjNameToFieldName全てに対してループ
-        'レコードセットのカーソルを最初にもっていく
-        If clsADOfrmPMList.RS.EOF And clsADOfrmPMList.RS.BOF Then
-            '二つ同時に立ってるということはレコードなし
-            DebugMsgWithTime "IncrementalList_Click: No record found"
-            Exit Sub
-        End If
-        clsADOfrmPMList.RS.MoveFirst
         Dim varCtrlKey As Control
         '全てのコントロールをループし、dicObjtoFieldNameに含まれるもののみ値をセットしていく
         For Each varCtrlKey In Me.Controls
@@ -151,7 +145,8 @@ Private Sub lstBox_Incremental_Click()
                 'Dictionaryにあった
                 '別名が.を_に置換した名前になっているので、フィールド名からその文字列を生成する
                 Dim strFieldName As String
-                strFieldName = REPLACE(dicObjNameToFieldName(varCtrlKey.Name), ".", "_")
+'                strFieldName = REPLACE(dicObjNameToFieldName(varCtrlKey.Name), ".", "_")
+                strFieldName = clsSQLBc.RepDotField(dicObjNameToFieldName, varCtrlKey.Name)
                 '値を取得
                 Dim strResultValue As String
                 If (IsNull(clsADOfrmPMList.RS.Fields(strFieldName))) Then
@@ -194,6 +189,7 @@ Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByV
 End Sub
 Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
     'このイベントがリスト選択直後に発生するのでよさそう
+    clsIncrementalParts.Incremental_LstBox_Mouse_UP Button
 End Sub
 Private Sub txtBox_F_INV_Tana_Local_Text_Change()
     If Me.txtBox_F_INV_Tana_Local_Text.Text = "" Then
@@ -209,7 +205,7 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
 End Sub
 Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
     '棚番表示用 Enterイベント
-    clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tana_Local_Text, lstBox_Incremental, Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
+    clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tana_Local_Text, lstBox_Incremental
 End Sub
 Private Sub txtBox_F_INV_Tehai_Code_Change()
     If Me.txtBox_F_INV_Tehai_Code.Text = "" Then
@@ -223,11 +219,12 @@ Private Sub txtBox_F_INV_Tehai_Code_Change()
 End Sub
 Private Sub txtBox_F_INV_Tehai_Code_Enter()
     'インクリメンタルサーチ Enterイベント
-    clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tehai_Code, lstBox_Incremental, Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
+    clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tehai_Code, lstBox_Incremental
 End Sub
 '-----------------------------------------------------------------------------------------
 'メソッド定義
 Private Sub UserForm_Initialize()
+    On Error GoTo ErrorCatch
     'フォーム初期化動作
     'メンバのクラス変数の初期化を行う
     'clsADO
@@ -250,12 +247,37 @@ Private Sub UserForm_Initialize()
     If clsIncrementalParts Is Nothing Then
         Set clsIncrementalParts = CreateclsIncrementalSerch
     End If
+    '初期化完了するまでイベントストップする
+    clsIncrementalParts.StopEvent = True
     'DBPathとDBFilenameを設定する
     txtBox_DB_Path.Text = clsADOfrmPMList.DBPath
     txtBox_DB_Filename.Text = clsADOfrmPMList.DBFileName
     'オブジェクト名→フィールド名のDictionaryの設定を行う
     InitializeFieldNameDic
-    '棚版テキストボックスにフォーカスを移動
+    'clsIncrementalSerchのコンストラクタ
+    clsIncrementalParts.Constructor Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
+    'ここでフィルタ前の全情報を取得する、Where条件は今回はなし
+    'ReplaceDicを設定する
+    clsIncrementalParts.SetReplaceParmDic dicReplacePartsMaster, clsSQLBc.GetSELECTfieldListFromDicObjctToFieldName(dicObjNameToFieldName)
+    'clsADOのプロパティにSQLをセット
+    clsADOfrmPMList.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplacePartsMaster)
+    'clsADOのConnectionをを共有読み取りモードに設定する
+    clsADOfrmPMList.ConnectMode = adModeRead Or adModeShareDenyNone
+    'SQL実行し、clsADOのRSにデータを格納する
+    Dim isCollect As Boolean
+    isCollect = clsADOfrmPMList.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "frmPartsMaster_Initialize : do first sql fail..."
+        MsgBox "初回情報取得時のSQL実行でエラーがありました。"
+        GoTo CloseAndExit
+        Exit Sub
+    End If
+    'clsADOのRSをデータソースから切り離す
+    Set clsADOfrmPMList.RS.ActiveConnection = Nothing
+    '後のFilterやSortは基本的にclsADOのRSに対して行う
+    'イベント再開
+    clsIncrementalParts.StopEvent = False
+    '棚番テキストボックスにフォーカスを移動
     txtBox_F_INV_Tana_Local_Text.SetFocus
     '初期化が終わる前に全消去しようとすると、Dictionary等の準備ができてないのにTxtBox_Changeイベントが先に発生してしまうので消去は最後に
 #If DebugDB Then
@@ -264,6 +286,12 @@ Private Sub UserForm_Initialize()
     'テキストボックス、ラベル全消去
     ClearAllTextBoxAndLabel
     '実際の値の入れ込みはインクリメンタルサーチの中で行う
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "frmPartsMaster_Initialize code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
 End Sub
 '''テキストボックス、ラベルを全消去する
 '''args
@@ -313,13 +341,19 @@ Private Sub InitializeFieldNameDic()
 End Sub
 Private Sub UserForm_Terminate()
     'デストラクタ
+    Destractor
 End Sub
 'クラスのデストラクタ
-Private Sub Fainalizer()
+Private Sub Destractor()
     If Not clsADOfrmPMList Is Nothing Then
         'ADOが生き残っている
         clsADOfrmPMList.CloseClassConnection
         Set clsADOfrmPMList = Nothing
+    End If
+    If Not objExcelfrmPMList Is Nothing Then
+        'objExcel
+        objExcelfrmPMList.Quit
+        Set objExcelfrmPMList = Nothing
     End If
     If Not clsINVDBfrmPMList Is Nothing Then
         Set clsINVDBfrmPMList = Nothing
@@ -333,4 +367,9 @@ Private Sub Fainalizer()
     If Not clsIncrementalParts Is Nothing Then
         Set clsIncrementalParts = Nothing
     End If
+    If Not clsGetIEfrmPMList Is Nothing Then
+        Set clsGetIEfrmPMList = Nothing
+    End If
+    Me.Hide
+    Unload Me
 End Sub

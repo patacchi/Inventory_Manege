@@ -81,6 +81,11 @@ Property Let DBPath(ByVal strargDBPath As String)
         Exit Property
     End If
 End Property
+'Connectionオブジェクト(読み取り専用)
+Property Get ConnectionObj() As ADODB.Connection
+    Set ConnectionObj = adoConnection
+    Exit Property
+End Property
 'DBFileName
 Property Get DBFileName() As String
     If strDBFileName = "" Then
@@ -172,9 +177,13 @@ Property Let SQL(ByVal strargSQL As String)
     End If
 End Property
 'RecordSet
-'読み取り専用？
+'読み取り専用？じゃなくなったかも・・・
 Property Get RS() As ADODB.Recordset
     Set RS = rsMyRecord
+End Property
+Property Set RS(argRS As ADODB.Recordset)
+    Set rsMyRecord = argRS
+    Exit Property
 End Property
 'RA_Array
 '読み取り専用
@@ -255,6 +264,10 @@ Property Get ConnectMode() As ConnectModeEnum
     End If
 End Property
 Property Let ConnectMode(argConnectMode As ConnectModeEnum)
+    If adoConnection Is Nothing Then
+        'Connectionの初期化がまだならここで新しいインスタンスを割り当てる
+        Set adoConnection = New ADODB.Connection
+    End If
     If adoConnection.Mode = argConnectMode Then
         '既にコネクションモードが同じだったら何もする必要なし
         DebugMsgWithTime "ConnectMode Let: Already connection mode set to: " & argConnectMode

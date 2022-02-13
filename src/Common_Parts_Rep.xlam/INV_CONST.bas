@@ -198,6 +198,8 @@ Public Enum Enum_INV_CSV_Need_Trim
     F_Location_Text_ctrm = Enum_CSV_Tana_Field.F_Location_Text_ICS
     F_Store_Code_ctrm = Enum_CSV_Tana_Field.F_Store_Code_ICS
 End Enum
+'ラベル出力用一時テーブル名
+Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                                        'ラベル出力用の差し込み印刷用テーブルの名前
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -377,4 +379,22 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 "        WHERE {4} = ""{5}""" & vbCrLf & _
 "        ) AS {6}" & vbCrLf & _
 "    ON {1}.{7} = {6}.{7}" & vbCrLf & _
-"Set {1}.{8} = {6}.{8}"
+"Set {1}.{8} = {6}.{8}"
+'------------------------------------------------------------------------------------------------
+'ラベル出力用一時テーブル作成SQL
+'CREATE TABLE T_INV_LABEL_TEMP (
+'    F_INV_Tana_Local_Text CHAR(10),F_INV_Tehai_Code CHAR(50),
+'    F_INV_Label_Name_1 CHAR(18),F_INV_Label_Name_2 CHAR(18),F_INV_Label_Remark_1 CHAR(18),F_INV_Label_Remark_2 CHAR(18),InputDate CHAR(23)
+')
+'{0} T_INV_LABEL_TEMP
+'{1} F_INV_Tana_Local_Text
+'{2} F_INV_Tehai_Code
+'{3} F_INV_Label_Name_1
+'{4} F_INV_Label_Name_2
+'{5} F_INV_Label_Remark_1
+'{6} F_INV_Label_Remark_2
+'{7} InputDate
+Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
+"    {1} CHAR(10),{2} CHAR(50)," & vbCrLf & _
+"    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{7} CHAR(23)" & vbCrLf & _
+")"

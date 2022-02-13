@@ -142,14 +142,27 @@ Private Sub ClassFinarize()
         objExcel.Quit
         Set objExcel = Nothing
     End If
+    If Not clsADOINVDB Is Nothing Then
+        clsADOINVDB.CloseClassConnection
+        Set clsADOINVDB = Nothing
+    End If
+    If Not clsINVDBShare Is Nothing Then
+        Set clsINVDBShare = Nothing
+    End If
+    If Not clsEnumINVDB Is Nothing Then
+        Set clsEnumINVDB = Nothing
+    End If
+    If Not clsSQLBcINVDB Is Nothing Then
+        Set clsSQLBcINVDB = Nothing
+    End If
 End Sub
 '------------------------------------------------------------------------------------------------------
 'コンストラクタ、デストラクタ
 Private Sub Class_Initialize()
-    Call ClassInitialize
+    ClassInitialize
 End Sub
 Private Sub Class_Terminate()
-    Call ClassFinarize
+    ClassFinarize
 End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド

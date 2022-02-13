@@ -1,5 +1,9 @@
 Attribute VB_Name = "PublicConst"
 Option Explicit
+'MsformsでMouseイベントのButton定数値
+Public Const vbMouseLeft As Integer = 1                         '左クリック時のコード
+Public Const vbMouseRight As Integer = 2                        '右クリック時のコード
+Public Const vbMouseMiddle As Integer = 4                       '中央ボタンクリック時のコード
 'データベース全般の定数定義
 'DBファイルの拡張子
 Public Const DB_FILE_EXETENSION_ACCDB As String = "accdb"       'DBファイルの拡張子その１(lcaseにして）

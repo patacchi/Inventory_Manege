@@ -6,6 +6,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmTanaBincard
    ClientTop       =   390
    ClientWidth     =   8160
    OleObjectBlob   =   "frmTanaBincard.frx":0000
+   ShowModal       =   0   'False
    StartUpPosition =   1  'オーナー フォームの中央
 End
 Attribute VB_Name = "frmTanaBincard"
@@ -23,7 +24,6 @@ Private objExcelFrmBIN As Excel.Application
 Private dicObjNameToFieldName As Dictionary
 Private clsIncrementalfrmBIN As clsIncrementalSerch
 'メンバ変数
-Private rsfrmBIN As ADODB.Recordset
 Private confrmBIN As ADODB.Connection
 Private StopEvents As Boolean
 '------------------------------------------------------------------------
@@ -109,8 +109,8 @@ Private Sub btnSaveDBtoCSV_Click()
     '全項目消去
     ClearAllContents
     'RSとConnecitonの接続を切断
-    If rsfrmBIN.State And ObjectStateEnum.adStateOpen Then
-        rsfrmBIN.ActiveConnection.Close
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+        clsADOfrmBIN.RS.ActiveConnection.Close
     End If
     If confrmBIN.State And ObjectStateEnum.adStateOpen Then
         confrmBIN.Close
@@ -160,8 +160,8 @@ Private Sub btnRegistTanaCSVtoDB_Click()
     Dim longAffected As Long
     'RSとConnecitonが接続していたら切断する
     'RS
-    If rsfrmBIN.State And ObjectStateEnum.adStateOpen Then
-        rsfrmBIN.ActiveConnection.Close
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+        clsADOfrmBIN.RS.ActiveConnection.Close
     End If
     'Connection
     If confrmBIN.State And ObjectStateEnum.adStateOpen Then
@@ -189,10 +189,42 @@ Private Sub lstBoxEndDay_Click()
         MsgBox "棚卸締切日: " & lstBoxEndDay.List(lstBoxEndDay.ListIndex) & " のデータの取得に失敗しました"
         Exit Sub
     End If
+    'イベントを停止する
+    StopEvents = True
     'RSより取得するデータ全クリア
     ClearAllContents
     'RSから値取得、表示
     getValueFromRS
+    'イベントを再開
+    StopEvents = False
+End Sub
+'インクリメンタルサーチのリストくりこ
+Private Sub lstBox_IncrementalSerch_Click()
+    On Error GoTo ErrorCatch
+    'イベント停止
+    StopEvents = True
+    If clsIncrementalfrmBIN.Incremental_LstBox_Click Then
+        'この中に入ってる時点でRSにフィルタがかかってる
+        'clsincrementalのイベントも停止する
+        clsIncrementalfrmBIN.StopEvent = True
+        'AditionalFilterのためにフィルターテキストボックスにインクリメンタルリストの値をセット
+        clsIncrementalfrmBIN.txtBoxRef.Text = lstBox_IncrementalSerch.List(lstBox_IncrementalSerch.ListIndex)
+'        インクリメンタルリストボックスを非表示､はKeyupとMouseUpに任せた
+        'RSのデータ反映
+        getValueFromRS True
+'        '追加条件設定はここではしなくてもいい
+'        AditionalWhereFilter clsIncrementalfrmBIN.txtBoxRef
+        'clsIncremantalのイベントも再開してやる
+        clsIncrementalfrmBIN.StopEvent = False
+    End If
+    'イベント再開
+    StopEvents = False
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "lstBox_IncrementalSerch_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Sub
 End Sub
 '前後移動ボタン
 Private Sub btnMoveNextData_Click()
@@ -218,6 +250,80 @@ Private Sub chkBoxShowNotBIN_Click()
         Exit Sub
     End If
     AditionalWhereFilter ActiveControl
+End Sub
+'Enterイベント
+'棚番フィルターテキストボックスEnter
+Private Sub txtBox_Filter_F_CSV_Tana_Local_Text_Enter()
+    'イベント停止する
+    StopEvents = True
+    'clsIncremtental.txtBoxrefにあくちぶコントロールを設定
+    Set clsIncrementalfrmBIN.txtBoxRef = txtBox_Filter_F_CSV_Tana_Local_Text
+    '追加条件設定してやる
+    AditionalWhereFilter clsIncrementalfrmBIN.txtBoxRef
+    'フィルタテキストボックスと表示テキストボックスの内容が違うときのみインクリメンタル
+    If txtBox_F_CSV_Tana_Local_Text.Text <> clsIncrementalfrmBIN.txtBoxRef.Text Then
+        'イベント停止する
+        StopEvents = True
+        clsIncrementalfrmBIN.Incremental_TextBox_Enter clsIncrementalfrmBIN.txtBoxRef, lstBox_IncrementalSerch
+        'RSより値を取得しなおし(フォーカス移動無し)
+        getValueFromRS True
+    End If
+    'イベント再開する
+    StopEvents = False
+End Sub
+Private Sub txtBox_Filter_F_CSV_Tehai_Code_Enter()
+    'イベント停止する
+    StopEvents = True
+    'clsIncrementalのtxtBoxの参照にあくちぶコントロールを設定してやる
+    Set clsIncrementalfrmBIN.txtBoxRef = txtBox_Filter_F_CSV_Tehai_Code
+    '追加条件設定してやる
+    AditionalWhereFilter clsIncrementalfrmBIN.txtBoxRef
+    'フィルタテキストボックスと手配コードが違うときのみエンターイベント
+    If txtBox_F_CSV_Tehai_Code.Text <> clsIncrementalfrmBIN.txtBoxRef.Text Then
+        'イベント停止する
+        StopEvents = True
+        clsIncrementalfrmBIN.Incremental_TextBox_Enter clsIncrementalfrmBIN.txtBoxRef, lstBox_IncrementalSerch
+        'インクリメンタルサーチで一旦値消去されてるので、取得しなおす
+        getValueFromRS True
+    End If
+    'イベント再開する
+    StopEvents = False
+End Sub
+'インクリメンタルリストEnter
+Private Sub lstBox_IncrementalSerch_Enter()
+    'イベント停止する
+    StopEvents = True
+    clsIncrementalfrmBIN.Incremental_LstBox_Enter
+    'イベント再開する
+    StopEvents = False
+End Sub
+Private Sub btnMoveNextData_Enter()
+    If lstBox_IncrementalSerch.ListCount <= 1 Then
+        lstBox_IncrementalSerch.Height = 0
+    Else
+        lstBox_IncrementalSerch.Visible = False
+    End If
+End Sub
+Private Sub btnMovePreviosData_Enter()
+    If lstBox_IncrementalSerch.ListCount <= 1 Then
+        lstBox_IncrementalSerch.Height = 0
+    Else
+        lstBox_IncrementalSerch.Visible = False
+    End If
+End Sub
+Private Sub txtBox_F_CSV_BIN_Amount_Enter()
+    If lstBox_IncrementalSerch.ListCount <= 1 Then
+        lstBox_IncrementalSerch.Height = 0
+    Else
+        lstBox_IncrementalSerch.Visible = False
+    End If
+End Sub
+Private Sub txtBox_F_CSV_Real_Amount_Enter()
+    If lstBox_IncrementalSerch.ListCount <= 1 Then
+        lstBox_IncrementalSerch.Height = 0
+    Else
+        lstBox_IncrementalSerch.Visible = False
+    End If
 End Sub
 'Changeイベント
 Private Sub txtBox_F_CSV_BIN_Amount_Change()
@@ -251,10 +357,18 @@ Private Sub txtBox_Filter_F_CSV_Tana_Local_Text_Change()
     If txtBox_Filter_F_CSV_Tana_Local_Text.Text <> "" Then
         txtBox_Filter_F_CSV_Tana_Local_Text.Text = UCase(txtBox_Filter_F_CSV_Tana_Local_Text.Text)
     End If
+    '条件絞り込み実行
+    AditionalWhereFilter clsIncrementalfrmBIN.txtBoxRef
+    'clsIncremental.textBoxrefと表示データが違う場合のみインクリメンタル実行
+    If txtBox_F_CSV_Tana_Local_Text.Text <> clsIncrementalfrmBIN.txtBoxRef.Text Then
+        'イベント停止する
+        StopEvents = True
+        clsIncrementalfrmBIN.Incremental_TextBox_Change
+        'RSから値を取得しなおす、ふぉかーす移動無し
+        getValueFromRS True
+    End If
     'イベント再開する
     StopEvents = False
-    '条件絞り込み実行
-    AditionalWhereFilter ActiveControl
 End Sub
 'Filter_Tehai_Code
 Private Sub txtBox_Filter_F_CSV_Tehai_Code_Change()
@@ -268,10 +382,20 @@ Private Sub txtBox_Filter_F_CSV_Tehai_Code_Change()
     If txtBox_Filter_F_CSV_Tehai_Code.Text <> "" Then
         txtBox_Filter_F_CSV_Tehai_Code.Text = UCase(txtBox_Filter_F_CSV_Tehai_Code.Text)
     End If
+    '条件絞り込み実行
+    AditionalWhereFilter clsIncrementalfrmBIN.txtBoxRef
+    '絞り込みかけた後clsIncremental.txtBoxrefと表示データが違うときのみインクリメンタルサーチ開始
+    If txtBox_F_CSV_Tehai_Code.Text <> clsIncrementalfrmBIN.txtBoxRef.Text Then
+        'イベント停止する
+        StopEvents = True
+        'clsIncreMentalのイベントを再開する
+        clsIncrementalfrmBIN.StopEvent = False
+        clsIncrementalfrmBIN.Incremental_TextBox_Change
+        'インクリメンタルサーチで一旦全リスト消去されてるので、値をRSから取得しなおす
+        getValueFromRS True
+    End If
     'イベント再開する
     StopEvents = False
-    '条件絞り込み実行
-    AditionalWhereFilter ActiveControl
 End Sub
 'KeyDownイベント
 Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
@@ -322,6 +446,36 @@ Private Sub btnMovePreviosData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, B
         End If
     End Select
 End Sub
+'KeyUpイベント
+Private Sub lstBox_IncrementalSerch_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    'イベント停止
+    StopEvents = True
+    'インクリメンタルリストのキーイベント
+    clsIncrementalfrmBIN.Incremental_LstBox_Key_UP KeyCode, Shift
+    Select Case KeyCode
+    Case vbKeyEscape, vbKeyReturn
+        'キーがReturnかESCだった時
+        'フォーカス移動目的でRSよりデータ取得
+        getValueFromRS
+    End Select
+    'イベント再開
+    StopEvents = False
+End Sub
+'MouseUpイベント
+Private Sub lstBox_IncrementalSerch_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    'イベント停止
+    StopEvents = True
+    'インクリメンタルリストマウスアップイベント
+    clsIncrementalfrmBIN.Incremental_LstBox_Mouse_UP Button
+    Select Case Button
+    Case vbMouseLeft
+        'マウス左クリックだった時
+        'フォーカス移動目的でRSよりデータ取得
+        getValueFromRS
+    End Select
+    'イベント再開
+    StopEvents = False
+End Sub
 '---------------------------------------------------------------------------------------------------------------------
 'プロシージャ
 Private Sub ConstRactor()
@@ -347,8 +501,8 @@ Private Sub ConstRactor()
     If clsIncrementalfrmBIN Is Nothing Then
         Set clsIncrementalfrmBIN = CreateclsIncrementalSerch
     End If
-    If rsfrmBIN Is Nothing Then
-        Set rsfrmBIN = New ADODB.Recordset
+    If clsADOfrmBIN.RS Is Nothing Then
+        Set clsADOfrmBIN.RS = New ADODB.Recordset
     End If
     If confrmBIN Is Nothing Then
         Set confrmBIN = New ADODB.Connection
@@ -366,11 +520,20 @@ Private Sub ConstRactor()
 #End If
     'divObjToFieldを設定
     setDicObjToField
+    'clsIncrementalSerchコンストラクタ
+    clsIncrementalfrmBIN.Constructor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
     Exit Sub
 End Sub
 'フォーム終了時に実行するプロシージャ
 Private Sub Destractor()
     'メンバ変数の解放
+    If Not clsADOfrmBIN.RS Is Nothing Then
+        If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+            '接続が開いていたら閉じる
+            clsADOfrmBIN.RS.Close
+        End If
+        Set clsADOfrmBIN.RS = Nothing
+    End If
     If Not clsADOfrmBIN Is Nothing Then
         clsADOfrmBIN.CloseClassConnection
         Set clsADOfrmBIN = Nothing
@@ -385,6 +548,7 @@ Private Sub Destractor()
         Set clsSQLBc = Nothing
     End If
     If Not objExcelFrmBIN Is Nothing Then
+        objExcelFrmBIN.Quit
         Set objExcelFrmBIN = Nothing
     End If
     If Not dicObjNameToFieldName Is Nothing Then
@@ -393,13 +557,6 @@ Private Sub Destractor()
     If Not clsIncrementalfrmBIN Is Nothing Then
         Set clsIncrementalfrmBIN = Nothing
     End If
-    If Not rsfrmBIN Is Nothing Then
-        If rsfrmBIN.State And ObjectStateEnum.adStateOpen Then
-            '接続が開いていたら閉じる
-            rsfrmBIN.Close
-        End If
-        Set rsfrmBIN = Nothing
-    End If
     If Not confrmBIN Is Nothing Then
         If confrmBIN.State And ObjectStateEnum.adStateOpen Then
             'openフラグが立っていたら閉じる
@@ -407,12 +564,16 @@ Private Sub Destractor()
         End If
         Set confrmBIN = Nothing
     End If
+    Me.Hide
+    Unload Me
     Exit Sub
 End Sub
 '''dicObjToFieldに存在するコントロールの内容を消去していく
 '''args
 '''strargExceptControlName  オプション、指定されたNameのオブジェクトのは消去しない
 Private Sub ClearAllContents(Optional strargExceptControlName As String)
+    'イベント停止する
+    StopEvents = True
     Dim controlKey As Control
     For Each controlKey In Me.Controls
         If dicObjNameToFieldName.Exists(controlKey.Name) And (strargExceptControlName <> controlKey.Name) Then
@@ -427,6 +588,8 @@ Private Sub ClearAllContents(Optional strargExceptControlName As String)
             End Select
         End If
     Next controlKey
+    '消去完了したらイベント再開する
+    StopEvents = False
 End Sub
 '''RSより各コントロールへ値をセットする
 '''args
@@ -436,72 +599,81 @@ Private Sub getValueFromRS(Optional NotMoveFocus As Boolean = False)
     'イベント停止する
     StopEvents = True
     '最初に全項目クリア
-    ClearAllContents
+    Select Case True
+    Case clsIncrementalfrmBIN.txtBoxRef Is Nothing
+        'インクリメンタルサーチのテキストボックス参照がNothingだった場合
+        ClearAllContents
+    Case Else
+        'インクリメンタルサーチのテキストボックス参照が存在していた場合
+        'インクリメンタルサーチ中のテキストボックスは消去しない
+        ClearAllContents clsIncrementalfrmBIN.txtBoxRef.Name
+    End Select
     'txtBox_F_CSV_No
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_No.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_No.Name)).Value) Then
+'    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_No.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_No.Text = ""
     Else
-        txtBox_F_CSV_No.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_No.Name), ".", "_")).Value
+        txtBox_F_CSV_No.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_No.Name)).Value
     End If
     'txtBox_F_CSV_Tana_Local_Text
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Tana_Local_Text.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Tana_Local_Text.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_Tana_Local_Text.Text = ""
     Else
-        txtBox_F_CSV_Tana_Local_Text.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Tana_Local_Text.Name), ".", "_")).Value
+        txtBox_F_CSV_Tana_Local_Text.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Tana_Local_Text.Name)).Value
     End If
     'txtBox_F_CSV_Tehai_Code
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Tehai_Code.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Tehai_Code.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_Tehai_Code.Text = ""
     Else
-        txtBox_F_CSV_Tehai_Code.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Tehai_Code.Name), ".", "_")).Value
+        txtBox_F_CSV_Tehai_Code.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Tehai_Code.Name)).Value
     End If
     'txtBox_F_CSV_DB_Amount
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_DB_Amount.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_DB_Amount.Text = ""
     Else
-        txtBox_F_CSV_DB_Amount.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_DB_Amount.Name), ".", "_")).Value
+        txtBox_F_CSV_DB_Amount.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value
     End If
     'txtBox_F_CSV_BIN_Amount
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_BIN_Amount.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_BIN_Amount.Text = ""
     Else
-        txtBox_F_CSV_BIN_Amount.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_BIN_Amount.Name), ".", "_")).Value
+        txtBox_F_CSV_BIN_Amount.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value
     End If
     'txtBox_F_CSV_Real_Amount
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Real_Amount.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_Real_Amount.Text = ""
     Else
-        txtBox_F_CSV_Real_Amount.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Real_Amount.Name), ".", "_")).Value
+        txtBox_F_CSV_Real_Amount.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value
     End If
     'txtBox_F_CSV_System_Name
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_System_Name.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_System_Name.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_System_Name.Text = ""
     Else
-        txtBox_F_CSV_System_Name.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_System_Name.Name), ".", "_")).Value
+        txtBox_F_CSV_System_Name.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_System_Name.Name)).Value
     End If
     'txtBox_F_CSV_System_Spac
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_System_Spac.Name), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_System_Spac.Name)).Value) Then
         'Nullだった場合
         txtBox_F_CSV_System_Spac.Text = ""
     Else
-        txtBox_F_CSV_System_Spac.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_System_Spac.Name), ".", "_")).Value
+        txtBox_F_CSV_System_Spac.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_System_Spac.Name)).Value
     End If
     'ステータスチェック
     StatusCheck
     'RSよりStatusを取得
     Dim longStatusValue As Long
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value) Then
         'Nullだった場合
         longStatusValue = 0
     Else
-        longStatusValue = CLng(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value)
+        longStatusValue = CLng(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value)
     End If
     If Not NotMoveFocus Then
         'フォーカス移動禁止フラグが立っていなかったら
@@ -538,11 +710,11 @@ Private Sub StatusCheck()
     On Error GoTo ErrorCatch
     'まずRSからStatusの数値を受け取る
     Dim longStatusValue As Long
-    If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value) Then
+    If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value) Then
         'Nullだった場合
         longStatusValue = 0
     Else
-        longStatusValue = CLng(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value)
+        longStatusValue = CLng(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value)
     End If
     'Statusに基づきフラグチェックし、表示・非表示を決める
     'Bin Input
@@ -667,7 +839,11 @@ Private Sub setDicObjToField()
     dicObjNameToFieldName.RemoveAll
     dicObjNameToFieldName.Add txtBox_F_CSV_No.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_CSV_No_ICS), clsEnumfrmBIN)
     dicObjNameToFieldName.Add txtBox_F_CSV_Tana_Local_Text.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Location_Text_ICS), clsEnumfrmBIN)
+    '棚番ローカルテキストフィルタ
+    dicObjNameToFieldName.Add txtBox_Filter_F_CSV_Tana_Local_Text.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Location_Text_ICS), clsEnumfrmBIN)
     dicObjNameToFieldName.Add txtBox_F_CSV_Tehai_Code.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Tehai_Code_ICS), clsEnumfrmBIN)
+    '手配コードフィルタ
+    dicObjNameToFieldName.Add txtBox_Filter_F_CSV_Tehai_Code.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Tehai_Code_ICS), clsEnumfrmBIN)
     dicObjNameToFieldName.Add txtBox_F_CSV_DB_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Stock_Amount_ICS), clsEnumfrmBIN)
     dicObjNameToFieldName.Add txtBox_F_CSV_BIN_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Bin_Amount_ICS), clsEnumfrmBIN)
     dicObjNameToFieldName.Add txtBox_F_CSV_Real_Amount.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(TanaCSV_Alias_sia, clsEnumfrmBIN.CSVTanafield(F_Available_ICS), clsEnumfrmBIN)
@@ -729,9 +905,9 @@ Private Function setDefaultDataToRS(strargEndDay As String, Optional strargAditi
     'クラスで接続していたら多重接続になる可能性があるので、明示的に切断してやる
     clsADOfrmBIN.CloseClassConnection
     'SQL組み立て完了したので、データを取り込むRSのプロパティを設定していく
-    If rsfrmBIN.State And ObjectStateEnum.adStateConnecting Then
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateConnecting Then
         '接続されていたら一旦切断する
-        rsfrmBIN.Close
+        clsADOfrmBIN.RS.Close
     End If
     If confrmBIN.State And ObjectStateEnum.adStateOpen Then
         'connectionが開いていたら接続を閉じる
@@ -741,7 +917,7 @@ Private Function setDefaultDataToRS(strargEndDay As String, Optional strargAditi
     confrmBIN.ConnectionString = clsADOfrmBIN.CreateConnectionString(clsADOfrmBIN.DBPath, clsADOfrmBIN.DBFileName)
     confrmBIN.Mode = adModeReadWrite Or adModeShareDenyNone
     'レコードセットのSourceとしてclADOのSQLを設定する
-    rsfrmBIN.Source = clsADOfrmBIN.SQL
+    clsADOfrmBIN.RS.Source = clsADOfrmBIN.SQL
     '即時更新モードの状態によって処理を分岐(即時更新かバッチ更新か)
     Select Case chkBoxUpdateASAP
     Case True
@@ -754,14 +930,14 @@ Private Function setDefaultDataToRS(strargEndDay As String, Optional strargAditi
         '接続をオープン
         confrmBIN.Open
         'rsのActiveConnectionにメンバ変数のConnectionを設定
-        Set rsfrmBIN.ActiveConnection = confrmBIN
+        Set clsADOfrmBIN.RS.ActiveConnection = confrmBIN
         'レコードセットを排他的ロックで開く(CursorLocationがCliantの時は共有的ロックでしか開けない)
-        rsfrmBIN.LockType = adLockPessimistic
+        clsADOfrmBIN.RS.LockType = adLockPessimistic
         '動的カーソルにし、ほかの人が行った変更は見れるが、追加分は見れないカーソルタイプにする
         'CursorLocationがServerになるので、RecordCountは使えなくなる
-        rsfrmBIN.CursorLocation = adUseServer
-        rsfrmBIN.CursorType = adOpenDynamic
-        rsfrmBIN.Open , , , , CommandTypeEnum.adCmdText
+        clsADOfrmBIN.RS.CursorLocation = adUseServer
+        clsADOfrmBIN.RS.CursorType = adOpenDynamic
+        clsADOfrmBIN.RS.Open , , , , CommandTypeEnum.adCmdText
         '登録ボタンを無効に
         btnDoUpdate.Enabled = False
     Case False
@@ -774,29 +950,29 @@ Private Function setDefaultDataToRS(strargEndDay As String, Optional strargAditi
         '接続を開く
         confrmBIN.Open
         'rsのActiveConnectionにメンバ変数を割り当てる
-        Set rsfrmBIN.ActiveConnection = confrmBIN
+        Set clsADOfrmBIN.RS.ActiveConnection = confrmBIN
         'ロックタイプをバッチ更新モードにする
-        rsfrmBIN.LockType = adLockBatchOptimistic
+        clsADOfrmBIN.RS.LockType = adLockBatchOptimistic
         '動的カーソルにし、他の人が行った変更を見れるカーソルタイプにする
-        rsfrmBIN.CursorLocation = adUseClient
+        clsADOfrmBIN.RS.CursorLocation = adUseClient
         'CursorLocationがCliantの時はカーソルタイプはスタティックかFowerdOnlyしか選べない・・のかな？
-        rsfrmBIN.CursorType = adOpenStatic
-        rsfrmBIN.Open , , , , CommandTypeEnum.adCmdText
+        clsADOfrmBIN.RS.CursorType = adOpenStatic
+        clsADOfrmBIN.RS.Open , , , , CommandTypeEnum.adCmdText
         '登録ボタンを有効に
         btnDoUpdate.Enabled = True
     End Select
     'FilterとしてadFilterFetchedRecordsをセットしてやり、フェッチ済みの行だけにする
-    rsfrmBIN.Filter = adFilterFetchedRecords
+    clsADOfrmBIN.RS.Filter = adFilterFetchedRecords
     'ここでBOF、EOFが共にTrueになってたら取得失敗している
-    If rsfrmBIN.BOF And rsfrmBIN.EOF Then
+    If clsADOfrmBIN.RS.BOF And clsADOfrmBIN.RS.EOF Then
         '取得失敗(0件)
         setDefaultDataToRS = False
         GoTo CloseAndExit
     Else
         '取得成功
         'フィルタ解除し、最初のレコードに移動
-        rsfrmBIN.Filter = adFilterNone
-        rsfrmBIN.MoveFirst
+        clsADOfrmBIN.RS.Filter = adFilterNone
+        clsADOfrmBIN.RS.MoveFirst
         setDefaultDataToRS = True
         GoTo CloseAndExit
     End If
@@ -813,7 +989,7 @@ End Function
 '''argKeyCode   KeyCode →なら次へ、←なら前へ
 Private Sub MoveRecord(argKeyCode As Integer)
     On Error GoTo ErrorCatch
-    If rsfrmBIN.State = ObjectStateEnum.adStateClosed Then
+    If clsADOfrmBIN.RS.State = ObjectStateEnum.adStateClosed Then
         'RSが閉じていたら何もせずに抜ける
         DebugMsgWithTime "MoveRecord : RS not open"
         GoTo CloseAndExit
@@ -823,23 +999,23 @@ Private Sub MoveRecord(argKeyCode As Integer)
     Case vbKeyRight
         '右の場合、次へ
         'とりあえずMoveNextする
-        rsfrmBIN.MoveNext
+        clsADOfrmBIN.RS.MoveNext
         'EOFの状態を確認
-        If rsfrmBIN.EOF Then
+        If clsADOfrmBIN.RS.EOF Then
             '移動前が最終レコードだった場合
             MsgBox "現在のレコードが最終レコードです"
-            rsfrmBIN.MovePrevious
+            clsADOfrmBIN.RS.MovePrevious
             GoTo CloseAndExit
         End If
     Case vbKeyLeft
         '左の場合、前へ
         'とりあえずMovePreviousする
-        rsfrmBIN.MovePrevious
+        clsADOfrmBIN.RS.MovePrevious
         'BOFの状態を確認
-        If rsfrmBIN.BOF Then
+        If clsADOfrmBIN.RS.BOF Then
             '移動前が最初のレコードだった
             MsgBox "現在のレコードが先頭レコードです"
-            rsfrmBIN.MoveNext
+            clsADOfrmBIN.RS.MoveNext
             GoTo CloseAndExit
         End If
     End Select
@@ -878,8 +1054,8 @@ Private Sub CheckDataAndUpdateDB(ByRef argTxtBox As MSForms.TextBox)
                 '確認したらNoだった
                 MsgBox "削除処理を中断します"
                 '該当テキストボックスの値をRSに保存されている値に復元する
-                If Not IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value) Then
-                    argTxtBox.Text = rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value
+                If Not IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value) Then
+                    argTxtBox.Text = clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value
                 End If
                 Exit Sub
             End If
@@ -892,13 +1068,13 @@ Private Sub CheckDataAndUpdateDB(ByRef argTxtBox As MSForms.TextBox)
             DebugMsgWithTime "CheckDataAndUpdateDB : cant cast number txtboxname: " & argTxtBox.Name
             GoTo CloseAndExit
         End If
-        If rsfrmBIN.State = ObjectStateEnum.adStateClosed Then
+        If clsADOfrmBIN.RS.State = ObjectStateEnum.adStateClosed Then
             'RSが閉じていたら何もせずに抜ける
             DebugMsgWithTime "CheckDataAndUpdateDB : RS not open."
             GoTo CloseAndExit
         End If
         'テキストボックスに入力された文字とRSの数値が同じだったら何もしない
-        If rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = CDbl(argTxtBox.Text) Then
+        If clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value = CDbl(argTxtBox.Text) Then
             GoTo CloseAndExit
         End If
         'フィールド指定でRSに登録実行
@@ -934,7 +1110,7 @@ Private Sub UpdateSpecificField(ByRef argTxtBox As MSForms.TextBox, Optional For
     Case True
         '強制Nullセットモードはこっち
         '対応するRSにNullをセットする
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = Null
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value = Null
         GoTo CloseAndExit
     Case False
         '通常動作はこっち
@@ -944,9 +1120,9 @@ Private Sub UpdateSpecificField(ByRef argTxtBox As MSForms.TextBox, Optional For
             Exit Sub
         End If
         'RSの値と違っていたら対応するRSに値をセットする
-        If IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value) Or rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value <> CDbl(argTxtBox.Text) Then
+        If IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value) Or clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value <> CDbl(argTxtBox.Text) Then
             'ValueがNullか、テキストボックスの数値と違っていた場合
-            rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(argTxtBox.Name), ".", "_")).Value = _
+            clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, argTxtBox.Name)).Value = _
             CDbl(argTxtBox.Text)
         End If
         GoTo CloseAndExit
@@ -961,55 +1137,55 @@ End Sub
 'RSにテキストボックスの数値を反映させた後に実行する(DB登録エラーのリスクを減らしたい)
 Private Sub ChekStatusAndSetFlag()
     On Error GoTo ErrorCatch
-    If rsfrmBIN.EditMode = adEditNone Then
+    If clsADOfrmBIN.RS.EditMode = adEditNone Then
         'RSに変更がないときは何もしない
         GoTo CloseAndExit
     End If
     'BinCard
     'Select Case の Caseはショートサーキットになることを利用
     Select Case True
-    Case IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_BIN_Amount.Name), ".", "_")).Value)
+    Case IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value)
         'Nullだった場合
         'Bin の Input と DataOKフラグをまとめて落とす
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value And Not (Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput)
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput)
     Case Not IsNumeric(txtBox_F_CSV_BIN_Amount.Text)
         '数値として認識されない場合
         '特に何もしない
-    Case CDbl(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_BIN_Amount.Name), ".", "_")).Value) = _
-        CDbl(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_DB_Amount.Name), ".", "_")).Value)
+    Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value) = _
+        CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
         'RS上のBINカード残数とシート残数が一致した場合
         'BIN DataOKフラグとBin Inputフラグを両方立てる(入力してないとOKにならない前提)
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value Or Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput
     Case txtBox_F_CSV_BIN_Amount.Text <> ""
         '空白ではなかった場合
         'Bin Inputフラグを立てて、BI OKフラグを落とす
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        (rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value Or Enum_frmBIN_Status.BINInput) And Not Enum_frmBIN_Status.BINDataOK
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        (clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.BINInput) And Not Enum_frmBIN_Status.BINDataOK
     End Select
     'RealAmount
     'Select Case の Caseはショートサーキットになることを利用
     Select Case True
-    Case IsNull(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Real_Amount.Name), ".", "_")).Value)
+    Case IsNull(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value)
         'Nullだった場合
         'Real の input と DataOK両方まとめて落とす
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value And Not (Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput)
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput)
     Case Not IsNumeric(txtBox_F_CSV_Real_Amount.Text)
         '数値として認識されない場合
         '特に何もしない
-    Case CDbl(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_Real_Amount.Name), ".", "_")).Value) = _
-        CDbl(rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(txtBox_F_CSV_DB_Amount.Name), ".", "_")).Value)
+    Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value) = _
+        CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
         'RS上のBINカード残数とシート残数が一致した場合
         'Real DataOKフラグとReal Inputフラグを両方立てる(入力してないとOKにならない前提)
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value Or Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput
     Case txtBox_F_CSV_Real_Amount.Text <> ""
         '空白ではなかった場合
         'Real Inputフラグを立てて、Real OKフラグを落とす
-        rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value = _
-        (rsfrmBIN.Fields(REPLACE(dicObjNameToFieldName(clsEnumfrmBIN.CSVTanafield(F_Status_ICS)), ".", "_")).Value Or Enum_frmBIN_Status.RealInput) And Not RealDataOK
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        (clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.RealInput) And Not RealDataOK
     End Select
     GoTo CloseAndExit
 ErrorCatch:
@@ -1022,7 +1198,7 @@ End Sub
 '''Return bool 成功したらTrue、それ以外はFalse
 Private Function UpdateDBfromRS() As Boolean
     On Error GoTo ErrorCatch
-    If rsfrmBIN.EditMode = adEditNone Then
+    If clsADOfrmBIN.RS.EditMode = adEditNone Then
         '変更がなかった場合
         '何もせずに抜ける
         DebugMsgWithTime "UpdateDBfromRS : No data changed. Do nothing"
@@ -1031,17 +1207,17 @@ Private Function UpdateDBfromRS() As Boolean
         Exit Function
     End If
     '接続状況を調べ、接続してなかったら接続する
-    If Not rsfrmBIN.State And ObjectStateEnum.adStateOpen Then
+    If Not clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
         'RSが未接続だった
         '更にConnectionオブジェクトの接続状況も調べる
         If Not confrmBIN.State And ObjectStateEnum.adStateOpen Then
             'Connectionが未接続だった
             confrmBIN.Open
         End If
-        Set rsfrmBIN.ActiveConnection = confrmBIN
+        Set clsADOfrmBIN.RS.ActiveConnection = confrmBIN
     End If
     'Update実行する
-    rsfrmBIN.Update
+    clsADOfrmBIN.RS.Update
     UpdateDBfromRS = True
     GoTo CloseAndExit
 ErrorCatch:
@@ -1061,6 +1237,14 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
         '棚卸締切日リストが選択されてなかった
         MsgBox "棚卸締切日が選択されていません。棚卸締切日を選択して下さい。"
         GoTo CloseAndExit
+    End If
+    If argSouceCtrl Is Nothing Then
+        DebugMsgWithTime "AditionalWhereFilter : arg ctrl Nothing"
+        GoTo CloseAndExit
+    End If
+    'インクリメンタルリストを非表示にする
+    If lstBox_IncrementalSerch.ListCount >= 2 Then
+        lstBox_IncrementalSerch.Visible = False
     End If
     '各コントロールの状態に応じて、追加Where条件を組み立てる
     Dim strarrAddWhere() As String
@@ -1106,6 +1290,8 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
         dicReplaceAddWhere.Add 1, txtBox_Filter_F_CSV_Tehai_Code.Text
         strarrAddWhere(UBound(strarrAddWhere)) = clsSQLBc.ReplaceParm(CSV_SQL_WHERE_LIKE, dicReplaceAddWhere)
     End If
+    '一旦RSのフィルターを解除する
+    clsADOfrmBIN.RS.Filter = adFilterNone
     '指定した条件で条件を指定し、大元のデータを更新してやる
     Dim isCollect As Boolean
     isCollect = setDefaultDataToRS(lstBoxEndDay.List(lstBoxEndDay.ListIndex), Join(strarrAddWhere, " AND "))
@@ -1113,15 +1299,19 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
         MsgBox "指定条件で適合するレコードがありませんでした。絞り込み条件を元に戻し、データ再取得します。"
         'イベント停止
         StopEvents = True
-        'RSより取得するデータ全クリア
-        ClearAllContents
         '条件設定コントロールの状態を出来るだけ元に戻す
         '呼び出し元のコントロールの種類により処理を分岐
         Select Case TypeName(argSouceCtrl)
         Case "TextBox"
             'テキストボックスだった
             '元々の長さのLen -1 を左から取得
-            argSouceCtrl.Text = Mid(argSouceCtrl.Text, 1, Len(argSouceCtrl.Text) - 1)
+            If argSouceCtrl.TextLength > 1 Then
+                'テキストボックスの文字数が1より大きい場合にのみ実行
+                argSouceCtrl.Text = Mid(argSouceCtrl.Text, 1, Len(argSouceCtrl.Text) - 1)
+            Else
+                '文字数が1以下だった場合は、該当テキストボックスの文字を消去する
+                argSouceCtrl.Text = ""
+            End If
         Case "CheckBox"
             'チェックボックス
             'notで反転する
@@ -1142,8 +1332,8 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
 '        getValueFromRS
         'ダメだった条件を戻してるので、もう1回自信を再帰呼び出しする
         AditionalWhereFilter argSouceCtrl
-        'フォーカス移動無しでRSからデータ取得
-        getValueFromRS True
+'        'フォーカス移動無しでRSからデータ取得
+'        getValueFromRS True
         'イベント再開
         StopEvents = False
         GoTo CloseAndExit
@@ -1151,6 +1341,8 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
     '成功したっぽい
     'イベント停止
     StopEvents = True
+    'RSより取得するデータ全クリア
+    ClearAllContents argSouceCtrl.Name
     'RSから値取得、表示
     getValueFromRS True
     'イベント再開
