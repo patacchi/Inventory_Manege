@@ -224,7 +224,7 @@ Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
     End If
     '指定のページを開く
     OpenIEwithURL (strargUrl)
-    Set topDoc = ieObject.document
+    Set topDoc = ieObject.Document
     'HTMLDocumentの読み込み完了を待ってから、フレームの有無について確認し
     'フレームが存在する場合は、フレーム内の読み込み完了も待機する
     Call IsReadComp(topDoc)
@@ -286,7 +286,7 @@ Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef st
         For intFrameCount = 0 To argHTMLDoc.frames.Length - 1
             'セキュリティの設定でドメインが違うと例外を吐くようなので、とりあえず無視する
             On Error Resume Next
-            Set frameDoc = argHTMLDoc.frames(intFrameCount).document
+            Set frameDoc = argHTMLDoc.frames(intFrameCount).Document
             'エラー発生してたらデバッグ出力する
             If err.Number <> 0 Then
                 DebugMsgWithTime "AddResultdicHTML code: " & err.Number & " Description: " & err.Description

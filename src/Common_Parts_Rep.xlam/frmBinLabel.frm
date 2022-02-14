@@ -87,6 +87,64 @@ Private Sub btnAddnewLabelTemp_Click()
     '次にカレントレコードをTempTableに追加する
     AddNewRStoLabelTemp
 End Sub
+'DBからデータを引っ張り、差し込み印刷の結果のDocを表示する
+Private Sub btnCreateMailmergeDoc_Click()
+    On Error GoTo ErrorCatch
+    'テンプレート文書の存在確認
+    Dim fsoMailMerge As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOはデフォルトのDBディレクトリを取得する位にしか使わないので単独で作成
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    'DBPathをデフォルトに
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    If Not fsoMailMerge.FileExists(fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE)) Then
+        'ファイルが存在しなかった
+        MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
+        GoTo CloseAndExit
+    End If
+    'wordDocumentsを得る
+    Dim objWord As Word.Application
+    Set objWord = New Word.Application
+    Dim docMailMerge As Word.Document
+    Set docMailMerge = objWord.Documents.Open(Filename:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE))
+    'SQLを設定
+    clsADOMailMerge.DBFileName = PublicConst.TEMP_DB_FILENAME
+    If Not clsADOMailMerge.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        'ラベルTempテーブルが見つからなかった
+        MsgBox "ラベル一時テーブルが見つかりませんでした"
+        GoTo CloseAndExit
+    End If
+    Dim strSQL As String
+    strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
+    With docMailMerge.MailMerge
+        'データソースを開く
+        .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), sqlstatement:=strSQL
+        '結果は新規ドキュメントへ
+        .Destination = wdSendToNewDocument
+        '差し込み印刷実行
+        .Execute
+    End With
+    'オリジナルのDocumentは保存せずに閉じる
+    docMailMerge.Close savechanges:=False
+    objWord.Visible = True
+    ForceForeground objWord.Windows(1).hwnd
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateMailmergeDoc_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not objWord Is Nothing Then
+'        objWord.Quit
+'        Set objWord = Nothing
+    End If
+    Set fsoMailMerge = Nothing
+    Exit Sub
+End Sub
 'インクリメンタルリストClick
 Private Sub lstBox_Incremental_Click()
     If StopEvents Or UpdateMode Then
@@ -222,30 +280,6 @@ Private Sub txtBox_F_INV_Label_Remark_2_Change()
         'UpdateModeの時はUpdateメソッドへ
         UpdateRSFromContrl ActiveControl
     End If
-End Sub
-'手配コードフィルタ
-Private Sub txtBox_Filter_Tehai_Code_Change()
-'    If StopEvents Then
-'        Exit Sub
-'    End If
-'    'イベント停止
-'    StopEvents = True
-'    If Len(ActiveControl.Text) >= 1 Then
-'        ActiveControl.Text = UCase(ActiveControl.Text)
-'    End If
-'    SetFilter ActiveControl
-End Sub
-'棚番フィルター
-Private Sub txtBox_Filter_Local_Tana_Change()
-'    If StopEvents Then
-'        Exit Sub
-'    End If
-'    'イベント停止
-'    StopEvents = True
-'    If Len(ActiveControl.Text) >= 1 Then
-'        ActiveControl.Text = UCase(ActiveControl.Text)
-'    End If
-'    SetFilter ActiveControl
 End Sub
 'Enter
 '棚番テキストボックスEnter
@@ -502,67 +536,6 @@ Private Sub MoveRecord(intargKeyCode As Integer)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "MoveRecord code: " & err.Number & " Description: " & err.Description
-    GoTo CloseAndExit
-CloseAndExit:
-    'イベント再開する
-    StopEvents = False
-    Exit Sub
-End Sub
-'フィルタテキストボックスでChangeイベントが発生したらRSにFilter設定してやる
-Private Sub SetFilter(ByRef argCtrl As Control)
-    If clsADOfrmBIN.RS.BOF And clsADOfrmBIN.RS.EOF Then
-        'RSに中身が無かったら抜ける
-        Exit Sub
-    End If
-    'イベント停止する
-    StopEvents = True
-    Select Case argCtrl.Text
-    Case ""
-        '空白だったら、FilterにadFilterNonをセットしてフィルタをクリアする
-        clsADOfrmBIN.RS.Filter = adFilterNone
-        '値取得する
-        GetValuFromRS
-    Case Else
-        '何かしら文字列が入ってたら、Like ～%といった感じで前方一致で条件を組む
-        Dim strFilter(3) As String
-        Select Case argCtrl.Name
-        Case txtBox_Filter_Local_Tana.Name
-            '棚番だった場合
-            strFilter(0) = dicObjNameToFieldName(txtBox_F_INV_Tana_Local_Text.Name)
-        Case txtBox_Filter_Tehai_Code.Name
-            '手配コードだった場合
-            strFilter(0) = dicObjNameToFieldName(txtBox_F_INV_Tehai_Code.Name)
-        End Select
-        '共通部分を埋めていく
-        strFilter(1) = " LIKE '"
-        strFilter(2) = argCtrl.Text
-        '最後にワイルドカード付与
-        strFilter(3) = "%'"
-        'Filterセット
-        clsADOfrmBIN.RS.Filter = Join(strFilter, "")
-        '値取得する
-        GetValuFromRS
-    End Select
-    'レコードが0だったら報告する
-    If clsADOfrmBIN.RS.BOF And clsADOfrmBIN.RS.EOF Then
-        MsgBox "現在の指定条件では該当するレコードがありません"
-        '一旦フィルタ解除する
-        clsADOfrmBIN.RS.Filter = adFilterNone
-        'テキストボックスの文字数により処理を分岐
-        'イベント再開
-        StopEvents = False
-        Select Case Len(argCtrl.Text)
-        Case Is = 1
-            '1文字目でダメだったらテキストを全消去
-            argCtrl.Text = ""
-        Case Is >= 2
-            '2文字以上あったらフィルタ文字列1文字減らして再セット
-            argCtrl.Text = Mid(argCtrl.Text, 1, Len(argCtrl.Text) - 1)
-        End Select
-    End If
-    GoTo CloseAndExit
-ErrorCatch:
-    DebugMsgWithTime "SetFilter code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する

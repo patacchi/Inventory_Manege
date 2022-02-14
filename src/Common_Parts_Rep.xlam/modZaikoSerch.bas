@@ -94,9 +94,9 @@ Public Function ZaikoSerchbyTehaiCode(ByVal strTehaiCode As String, _
 '    Set wkbNewBook = Workbooks.Open(strResultFullPath)
 '    wkbNewBook.Activate
 '    '試しに検索ボタンをクリックしてみる
-'    clsgetiezaikoserch.IEInstance.document.frames(1).document.frames(0).document.getElementById("kensakuButton").Click
+'    clsgetiezaikoserch.IEInstance.Document.frames(1).Document.frames(0).Document.getElementById("kensakuButton").Click
 '    Dim localHTMLDoc As HTMLDocument
-''    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).document
+''    Set localHTMLDoc = dicReturnHTMLDoc(1).frames(0).Document
 '    Set localHTMLDoc = dicReturnHTMLDoc("t10")
 '    Dim elementStrArray() As String
 '    elementStrArray = clsgetiezaikoserch.getTextArrayByTagName(localHTMLDoc, "A")
@@ -129,9 +129,9 @@ Private Sub SetZaikoSerch_TehaiCode(ByRef clsargIE As clsGetIE, strargTeheaiCode
     End If
     'IEインスタンス（在庫検索ページ）の管理課に対して「W」を設定してやる
     '現状 Index = 11 が MSブ W なのでそこを選択してやる、画面上の表示は変わっていないが、データ上は反映されている模様
-    clsargIE.IEInstance.document.frames(1).document.frames(0).document.forms(0).Item(ZAIKO_SERTH_KANRI_KA_INPUT_BOX_NAME).selectedIndex = 11
+    clsargIE.IEInstance.Document.frames(1).Document.frames(0).Document.forms(0).Item(ZAIKO_SERTH_KANRI_KA_INPUT_BOX_NAME).selectedIndex = 11
     'IEのインスタンスに対して在庫検索の手配コードを設定してやる
-    clsargIE.IEInstance.document.frames(1).document.frames(0).document.forms(0).Item(ZAIKO_SERCH_TEHAI_CODE_INPUT_BOX_NAME).Value = strargTeheaiCode
+    clsargIE.IEInstance.Document.frames(1).Document.frames(0).Document.forms(0).Item(ZAIKO_SERCH_TEHAI_CODE_INPUT_BOX_NAME).Value = strargTeheaiCode
 #If DebugShowIE Then
     '条件付きコンパイル引数で表示する設定になっていたら表示してやる
     clsargIE.IEInstance.Visible = True

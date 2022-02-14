@@ -6,6 +6,7 @@ Public Const INV_DB_FILENAME As String = "INV_Manege.accdb"                     
 Public Const T_INV_TEMP As String = "T_INV_Temp"                                'INVDBの一時テーブル名
 Public Const T_INV_SELECT_TEMP As String = "T_INV_Select_Temp"                  'Selectした結果を格納するテーブル名、一旦テーブルに格納しないと
                                                                                 '更新可能なクエリが・・・とか言われるため
+Public Const INV_DOC_LABEL_MAILMERGE As String = "INV_Label_Mailmerge_Local.docm"   'ラベル差し込み印刷のフィールド設定済みWordDocument名
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
