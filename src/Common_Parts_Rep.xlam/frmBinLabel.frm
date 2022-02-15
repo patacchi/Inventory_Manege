@@ -89,61 +89,7 @@ Private Sub btnAddnewLabelTemp_Click()
 End Sub
 'DBからデータを引っ張り、差し込み印刷の結果のDocを表示する
 Private Sub btnCreateMailmergeDoc_Click()
-    On Error GoTo ErrorCatch
-    'テンプレート文書の存在確認
-    Dim fsoMailMerge As FileSystemObject
-    Set fsoMailMerge = New FileSystemObject
-    'clsADOはデフォルトのDBディレクトリを取得する位にしか使わないので単独で作成
-    Dim clsADOMailMerge As clsADOHandle
-    Set clsADOMailMerge = CreateclsADOHandleInstance
-    'DBPathをデフォルトに
-    clsADOMailMerge.SetDBPathandFilenameDefault
-    If Not fsoMailMerge.FileExists(fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE)) Then
-        'ファイルが存在しなかった
-        MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
-        GoTo CloseAndExit
-    End If
-    'wordDocumentsを得る
-    Dim objWord As Word.Application
-    Set objWord = New Word.Application
-    Dim docMailMerge As Word.Document
-    Set docMailMerge = objWord.Documents.Open(Filename:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE))
-    'SQLを設定
-    clsADOMailMerge.DBFileName = PublicConst.TEMP_DB_FILENAME
-    If Not clsADOMailMerge.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
-        'ラベルTempテーブルが見つからなかった
-        MsgBox "ラベル一時テーブルが見つかりませんでした"
-        GoTo CloseAndExit
-    End If
-    Dim strSQL As String
-    strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
-    With docMailMerge.MailMerge
-        'データソースを開く
-        .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), sqlstatement:=strSQL
-        '結果は新規ドキュメントへ
-        .Destination = wdSendToNewDocument
-        '差し込み印刷実行
-        .Execute
-    End With
-    'オリジナルのDocumentは保存せずに閉じる
-    docMailMerge.Close savechanges:=False
-    objWord.Visible = True
-    ForceForeground objWord.Windows(1).hwnd
-    GoTo CloseAndExit
-ErrorCatch:
-    DebugMsgWithTime "btnCreateMailmergeDoc_Click code: " & err.Number & " Description: " & err.Description
-    GoTo CloseAndExit
-CloseAndExit:
-    If Not clsADOMailMerge Is Nothing Then
-        clsADOMailMerge.CloseClassConnection
-        Set clsADOMailMerge = Nothing
-    End If
-    If Not objWord Is Nothing Then
-'        objWord.Quit
-'        Set objWord = Nothing
-    End If
-    Set fsoMailMerge = Nothing
-    Exit Sub
+    MailMergeDocCreate
 End Sub
 'インクリメンタルリストClick
 Private Sub lstBox_Incremental_Click()
@@ -875,5 +821,76 @@ ErrorCatch:
     rsLabelTemp.CancelUpdate
     GoTo CloseAndExit
 CloseAndExit:
+    Exit Sub
+End Sub
+'''Label Tempテーブルから差し込み印刷を実行する
+Private Sub MailMergeDocCreate()
+    On Error GoTo ErrorCatch
+    'テンプレート文書の存在確認
+    Dim fsoMailMerge As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOはデフォルトのDBディレクトリを取得する位にしか使わないので単独で作成
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    'DBPathをデフォルトに
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    If Not fsoMailMerge.FileExists(fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE)) Then
+        'ファイルが存在しなかった
+        MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
+        GoTo CloseAndExit
+    End If
+    'Label_Tempテーブル存在確認
+    clsADOMailMerge.DBFileName = PublicConst.TEMP_DB_FILENAME
+    If Not clsADOMailMerge.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        'ラベルTempテーブルが見つからなかった
+        MsgBox "ラベル一時テーブルが見つかりませんでした"
+        GoTo CloseAndExit
+    End If
+    'wordDocumentsを得る
+'    Dim objWord As Word.Application
+'    set objWord = new Word.Application
+    Dim objWord As Object
+    Set objWord = CreateObject("Word.Application")
+'    Dim docMailMerge As Word.Document
+    Dim docMailMerge As Object
+    Set docMailMerge = objWord.Documents.Open(Filename:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE))
+    'SQLを設定
+    Dim strSQL As String
+    strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
+    With docMailMerge.MailMerge
+        'データソースを開く
+        .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), ReadOnly:=True, sqlstatement:=strSQL
+        '結果は新規ドキュメントへ
+        .Destination = 0                'wdSendToNewDocument
+        '差し込み印刷実行
+        .Execute
+    End With
+    'オリジナルのDocumentは保存せずに閉じる
+    docMailMerge.Close savechanges:=False
+    'LabelTempテーブルは削除しちゃう
+    Dim isCollect As Boolean
+    isCollect = clsADOMailMerge.DropTable(INV_CONST.T_INV_LABEL_TEMP)
+    If Not isCollect Then
+        MsgBox "一時テーブルの削除に失敗しました。"
+        GoTo CloseAndExit
+    End If
+    'strStartTimeも空文字に設定してやり、新規にテーブルを作成する
+    strStartTime = ""
+    objWord.Visible = True
+    ForceForeground objWord.Windows(1).hwnd
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateMailmergeDoc_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not objWord Is Nothing Then
+'        objWord.Quit
+'        Set objWord = Nothing
+    End If
+    Set fsoMailMerge = Nothing
     Exit Sub
 End Sub
