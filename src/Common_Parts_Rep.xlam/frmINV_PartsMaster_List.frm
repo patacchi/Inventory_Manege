@@ -126,6 +126,8 @@ Private Sub btnUpdateOriginData_Click()
     longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExcelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, False)
 #End If
     MsgBox longAffected & " 件のデータを更新しました。"
+    'DBからRSにデータ取得しなおす
+    SetDefaultDatatoRS
     'イベント再開
     clsIncrementalParts.StopEvent = False
     '手配コードを戻してやる
@@ -247,36 +249,8 @@ Private Sub UserForm_Initialize()
     If clsIncrementalParts Is Nothing Then
         Set clsIncrementalParts = CreateclsIncrementalSerch
     End If
-    '初期化完了するまでイベントストップする
-    clsIncrementalParts.StopEvent = True
-    'DBPathとDBFilenameを設定する
-    txtBox_DB_Path.Text = clsADOfrmPMList.DBPath
-    txtBox_DB_Filename.Text = clsADOfrmPMList.DBFileName
-    'オブジェクト名→フィールド名のDictionaryの設定を行う
-    InitializeFieldNameDic
-    'clsIncrementalSerchのコンストラクタ
-    clsIncrementalParts.Constructor Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
-    'ここでフィルタ前の全情報を取得する、Where条件は今回はなし
-    'ReplaceDicを設定する
-    clsIncrementalParts.SetReplaceParmDic dicReplacePartsMaster, clsSQLBc.GetSELECTfieldListFromDicObjctToFieldName(dicObjNameToFieldName)
-    'clsADOのプロパティにSQLをセット
-    clsADOfrmPMList.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplacePartsMaster)
-    'clsADOのConnectionをを共有読み取りモードに設定する
-    clsADOfrmPMList.ConnectMode = adModeRead Or adModeShareDenyNone
-    'SQL実行し、clsADOのRSにデータを格納する
-    Dim isCollect As Boolean
-    isCollect = clsADOfrmPMList.Do_SQL_with_NO_Transaction
-    If Not isCollect Then
-        DebugMsgWithTime "frmPartsMaster_Initialize : do first sql fail..."
-        MsgBox "初回情報取得時のSQL実行でエラーがありました。"
-        GoTo CloseAndExit
-        Exit Sub
-    End If
-    'clsADOのRSをデータソースから切り離す
-    Set clsADOfrmPMList.RS.ActiveConnection = Nothing
-    '後のFilterやSortは基本的にclsADOのRSに対して行う
-    'イベント再開
-    clsIncrementalParts.StopEvent = False
+    'DBからRSにデータ取得する
+    SetDefaultDatatoRS
     '棚番テキストボックスにフォーカスを移動
     txtBox_F_INV_Tana_Local_Text.SetFocus
     '初期化が終わる前に全消去しようとすると、Dictionary等の準備ができてないのにTxtBox_Changeイベントが先に発生してしまうので消去は最後に
@@ -318,6 +292,8 @@ Private Sub InitializeFieldNameDic()
     If dicObjNameToFieldName Is Nothing Then
         Set dicObjNameToFieldName = New Dictionary
     End If
+    '2回目の実行に対応するため一旦RemoveAllする
+    dicObjNameToFieldName.RemoveAll
     dicObjNameToFieldName.Add txtBox_F_INV_Tehai_Code.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumPMList.INVMasterParts(F_Tehai_Code_IMPrt), clsEnumPMList)
     dicObjNameToFieldName.Add txtBox_F_INV_Manege_Section.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumPMList.INVMasterParts(F_Manege_Section_IMPrt), clsEnumPMList)
     dicObjNameToFieldName.Add lbl_F_INV_Tana_System_Text.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_System_Text_IMT), clsEnumPMList)
@@ -337,6 +313,46 @@ Private Sub InitializeFieldNameDic()
     dicObjNameToFieldName.Add txtBox_F_INV_Manege_Section_Sub.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumPMList.INVMasterParts(F_Manege_Section_Sub_IMPrt), clsEnumPMList)
     dicObjNameToFieldName.Add txtBox_F_INV_Tana_Local_Text.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumPMList)
     dicObjNameToFieldName.Add lbl_F_INV_Tehai_ID.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumPMList.INVMasterParts(F_Tehai_ID_IMPrt), clsEnumPMList)
+    Exit Sub
+End Sub
+Private Sub SetDefaultDatatoRS()
+    On Error GoTo ErrorCatch
+    '初期化完了するまでイベントストップする
+    clsIncrementalParts.StopEvent = True
+    'DBPathをデフォルトへ
+    clsADOfrmPMList.SetDBPathandFilenameDefault
+    'DBPathとDBFilenameを設定する
+    txtBox_DB_Path.Text = clsADOfrmPMList.DBPath
+    txtBox_DB_Filename.Text = clsADOfrmPMList.DBFileName
+    'オブジェクト名→フィールド名のDictionaryの設定を行う
+    InitializeFieldNameDic
+    'clsIncrementalSerchのコンストラクタ
+    clsIncrementalParts.Constructor Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
+    'ここでフィルタ前の全情報を取得する、Where条件は今回はなし
+    'ReplaceDicを設定する
+    clsIncrementalParts.SetReplaceParmDic dicReplacePartsMaster, clsSQLBc.GetSELECTfieldListFromDicObjctToFieldName(dicObjNameToFieldName)
+    'clsADOのプロパティにSQLをセット
+    clsADOfrmPMList.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_JOIN_TANA_PARTS, dicReplacePartsMaster)
+    'clsADOのConnectionをを共有読み取りモードに設定する
+    clsADOfrmPMList.ConnectMode = adModeRead Or adModeShareDenyNone
+    'SQL実行し、clsADOのRSにデータを格納する
+    Dim isCollect As Boolean
+    isCollect = clsADOfrmPMList.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "frmPartsMaster_Initialize : do first sql fail..."
+        MsgBox "初回情報取得時のSQL実行でエラーがありました。"
+        GoTo CloseAndExit
+        Exit Sub
+    End If
+    'clsADOのRSをデータソースから切り離す
+    Set clsADOfrmPMList.RS.ActiveConnection = Nothing
+    '後のFilterやSortは基本的にclsADOのRSに対して行う
+    'イベント再開
+    clsIncrementalParts.StopEvent = False
+ErrorCatch:
+    DebugMsgWithTime "SetDefaultDatatoRS code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
     Exit Sub
 End Sub
 Private Sub UserForm_Terminate()

@@ -31,6 +31,7 @@ Private strStartTime As String
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
 Private Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0         '薄い緑
 Private Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ウィンドウの背景
+Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempテーブルを削除する時にStartTimeにセットする定数
 '------------------------------------------------------------------------------------------------------
 'SQL
 Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
@@ -71,18 +72,12 @@ Private Sub btnCancelUpdate_Click()
 End Sub
 'ラベル一時テーブルに追加する
 Private Sub btnAddnewLabelTemp_Click()
-    If strStartTime = "" Then
-        'フォームスタート時間が空文字だったら今回のフォームでの初回実行とみなす
-        'まずはテーブルを作り直す
-        Dim isCollect As Boolean
-        isCollect = RecreateLabelTempTable
-        If Not isCollect Then
-            '一時テーブル作成に失敗
-            MsgBox "一時テーブル作成に失敗したため、処理を中断します"
-            Exit Sub
-        End If
-        'フォームスタート時間を設定する
-        strStartTime = GetLocalTimeWithMilliSec
+    Dim isCollect As Boolean
+    isCollect = RecreateLabelTempTable
+    If Not isCollect Then
+        '一時テーブル作成に失敗
+        MsgBox "一時テーブル作成に失敗したため、処理を中断します"
+        Exit Sub
     End If
     '次にカレントレコードをTempTableに追加する
     AddNewRStoLabelTemp
@@ -699,50 +694,66 @@ Private Function RecreateLabelTempTable() As Boolean
     'DBPathはデフォルト、DBFilenameは一時テーブル格納DBのものにする
     clsADOLabelTemp.SetDBPathandFilenameDefault
     clsADOLabelTemp.DBFileName = PublicConst.TEMP_DB_FILENAME
-    'まずは既存のラベル一時テーブルを削除
-    Dim isCollect As Boolean
-    isCollect = clsADOLabelTemp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
-    If Not isCollect Then
-        DebugMsgWithTime "RecreateLabelTempTable : fail delete already label tamp table"
-        MsgBox "ラベル出力一時テーブルの作成に失敗しました"
-        RecreateLabelTempTable = False
-        GoTo CloseAndExit
-        Exit Function
+    'ラベル一時テーブルの存在有無をチェック
+    If clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        'LabelTempテーブルが存在していたら
+        'StartTimeの文字列により処理を分岐
+        Dim longDeleteConfirm As Long
+        If strStartTime = "" Then
+            'StartTimeが空文字なのにテーブルが存在していた
+            '前回リストに追加したのに印刷忘れたのかも？ダイアログ表示
+            longDeleteConfirm = MsgBox("ラベル印刷前のデータが残っているようです。削除してもいいですか？", vbYesNo)
+        End If
+        Select Case True
+        Case strStartTime = LABEL_TEMP_DELETE_FLAG, longDeleteConfirm = vbYes
+            'StartTimeにLabelTemp削除フラグが立っている場合か、削除確認でYesが選択された
+            '既存のラベル一時テーブルを削除
+            Dim isCollect As Boolean
+            isCollect = clsADOLabelTemp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
+            If Not isCollect Then
+                DebugMsgWithTime "RecreateLabelTempTable : fail delete already label tamp table"
+                MsgBox "ラベル出力一時テーブルの作成に失敗しました"
+                RecreateLabelTempTable = False
+                GoTo CloseAndExit
+                Exit Function
+            End If
+        Case longDeleteConfirm = vbNo
+            '既存のテーブル削除NGだった
+            'フォームスタート時間を設定し、処理を続行
+            strStartTime = GetLocalTimeWithMilliSec
+        End Select
     End If
-    'ラベル一時テーブルを作成する
-''{0} T_INV_LABEL_TEMP
-''{1} F_INV_Tana_Local_Text
-''{2} F_INV_Tehai_Code
-''{3} F_INV_Label_Name_1
-''{4} F_INV_Label_Name_2
-''{5} F_INV_Label_Remark_1
-''{6} F_INV_Label_Remark_2
-''{7} InputDate
-'Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf &
-    Dim dicReplaceLabelTemp As Dictionary
-    Set dicReplaceLabelTemp = New Dictionary
-    dicReplaceLabelTemp.Add 0, INV_CONST.T_INV_LABEL_TEMP
-    dicReplaceLabelTemp.Add 1, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT)
-    dicReplaceLabelTemp.Add 2, clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)
-    dicReplaceLabelTemp.Add 3, clsEnumfrmBIN.INVMasterParts(F_Label_Name_1_IMPrt)
-    dicReplaceLabelTemp.Add 4, clsEnumfrmBIN.INVMasterParts(F_Label_Name_2_IMPrt)
-    dicReplaceLabelTemp.Add 5, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
-    dicReplaceLabelTemp.Add 6, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
-    dicReplaceLabelTemp.Add 7, PublicConst.INPUT_DATE
-    'Replace実行、SQL設定
-    clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
-    'Writeフラグ立てる
-    clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode Or adModeWrite
-    'SQL実行
-    isCollect = clsADOLabelTemp.Do_SQL_with_NO_Transaction
-    'Writeフラグ下げる
-    clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode And Not adModeWrite
-    If Not isCollect Then
-        'SQL実行失敗
-        DebugMsgWithTime "RecreateLabelTempTable : do sql fail..."
-        MsgBox "RecreateLabelTempTableでSQLの実行に失敗しました"
-        RecreateLabelTempTable = False
-        GoTo CloseAndExit
+    'ここまでで削除が必要なテーブルは削除完了してるはずなので、改めてテーブル存在チェックし、無かったら作成する
+    If Not clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        'ラベル一時テーブルが存在しなかった
+        'ラベル一時テーブルを作成する
+        Dim dicReplaceLabelTemp As Dictionary
+        Set dicReplaceLabelTemp = New Dictionary
+        dicReplaceLabelTemp.Add 0, INV_CONST.T_INV_LABEL_TEMP
+        dicReplaceLabelTemp.Add 1, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT)
+        dicReplaceLabelTemp.Add 2, clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)
+        dicReplaceLabelTemp.Add 3, clsEnumfrmBIN.INVMasterParts(F_Label_Name_1_IMPrt)
+        dicReplaceLabelTemp.Add 4, clsEnumfrmBIN.INVMasterParts(F_Label_Name_2_IMPrt)
+        dicReplaceLabelTemp.Add 5, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
+        dicReplaceLabelTemp.Add 6, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
+        dicReplaceLabelTemp.Add 7, PublicConst.INPUT_DATE
+        'Replace実行、SQL設定
+        clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
+        'Writeフラグ立てる
+        clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode Or adModeWrite
+        'SQL実行
+        isCollect = clsADOLabelTemp.Do_SQL_with_NO_Transaction
+        'Writeフラグ下げる
+        clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode And Not adModeWrite
+        If Not isCollect Then
+            'SQL実行失敗
+            DebugMsgWithTime "RecreateLabelTempTable : do sql fail..."
+            MsgBox "RecreateLabelTempTableでSQLの実行に失敗しました"
+            RecreateLabelTempTable = False
+            GoTo CloseAndExit
+        End If
+        'フォームスタート時間を設定する
+        strStartTime = GetLocalTimeWithMilliSec
     End If
     'メンバ変数のRecordSetに一時テーブルの内容を反映する
     If rsLabelTemp Is Nothing Then
@@ -872,10 +883,13 @@ Private Sub MailMergeDocCreate()
     isCollect = clsADOMailMerge.DropTable(INV_CONST.T_INV_LABEL_TEMP)
     If Not isCollect Then
         MsgBox "一時テーブルの削除に失敗しました。"
+        'LabelTmpテーブル削除に失敗しても成果物だけは表示する
+        objWord.Visible = True
+        ForceForeground objWord.Windows(1).hwnd
         GoTo CloseAndExit
     End If
-    'strStartTimeも空文字に設定してやり、新規にテーブルを作成する
-    strStartTime = ""
+    'strStartTimeに削除用フラグ定数文字列をセットする
+    strStartTime = LABEL_TEMP_DELETE_FLAG
     objWord.Visible = True
     ForceForeground objWord.Windows(1).hwnd
     GoTo CloseAndExit
