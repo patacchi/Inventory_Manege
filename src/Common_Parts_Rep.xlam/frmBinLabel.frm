@@ -814,6 +814,10 @@ Private Sub AddNewRStoLabelTemp()
     End If
     For Each varKeyobjDic In dicObjNameToFieldName
         Select Case True
+        '暫定対応、ラベルTableに追加しない項目もフォームに表示するようになったため
+        'Labelコントロールの場合は何もしないで抜ける
+        Case TypeName(Me.Controls(varKeyobjDic)) = "Label"
+            'ラベルコントロールの時は何もしない
         Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value)
             'Nullだった場合
             'とりあえず空文字にする
