@@ -34,7 +34,7 @@ Private Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ƒEƒBƒ“ƒhƒE‚
 Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempƒe[ƒuƒ‹‚ğíœ‚·‚é‚ÉStartTime‚ÉƒZƒbƒg‚·‚é’è”
 '------------------------------------------------------------------------------------------------------
 'SQL
-Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
+Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
@@ -378,6 +378,7 @@ Private Sub setObjToFieldNameDic()
     dicObjNameToFieldName.Add txtBox_F_INV_Label_Name_2.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Name_2_IMPrt)
     dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_1.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
     dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_2.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
+    dicObjNameToFieldName.Add lbl_F_INV_Tana_System_Text.Name, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_System_Text_IMT)
 End Sub
 'cidObjToField‚É‚ ‚éƒRƒ“ƒgƒ[ƒ‹‚Ì’l‚ğ‚·‚×‚ÄÁ‹‚·‚é
 Private Sub ClearAllContents()

@@ -248,24 +248,32 @@ End Function
 '''TableAlias           Enum_SQL_INV_Aliasの定数値
 '''strFieldName         フィルド名
 '''clsEnumField         インスタンス共有変数
+'''Optional NoQuote     Trueをセットすると[]でのクォートを行わない、デフォルトはFalse(クォートする)付けたままだと一部SETの引数でエラーになる・・？
 Public Function ReturnTableAliasPlusedFieldName(TableAlias As Enum_SQL_INV_Alias, strargFieldName As String, _
-ByRef clsEnumField As clsEnum) As String
+ByRef clsEnumField As clsEnum, Optional NoQuote As Boolean = False) As String
     If strargFieldName = "" Then
         'フィールド名が指定されてないなかったら抜ける
         DebugMsgWithTime "ReturnTahleAliasPlusedFieldName: no field name given"
         Exit Function
     End If
-'    Dim strField(2) As String
-'    strField(0) = clsEnumField.SQL_INV_Alias(TableAlias)
-'    strField(1) = "."
-'    strField(2) = strargFieldName
     '空白を含むフィールド名に対応するために[]でクオートする
+    '[]でクォートするのはフィールド名のみにしないとエラーが発生することがある？(テーブルエイリアスには付けない）
     Dim strField(4) As String
-    strField(0) = "["
-    strField(1) = clsEnumField.SQL_INV_Alias(TableAlias)
-    strField(2) = "."
-    strField(3) = strargFieldName
-    strField(4) = "]"
+    If NoQuote Then
+        'クォート無しの場合
+        strField(0) = ""
+        strField(1) = clsEnumField.SQL_INV_Alias(TableAlias)
+        strField(2) = "."
+        strField(3) = strargFieldName
+        strField(4) = ""
+    Else
+        'クォート有りの場合(デフォルト)
+        strField(0) = "["
+        strField(1) = clsEnumField.SQL_INV_Alias(TableAlias)
+        strField(2) = "."
+        strField(3) = strargFieldName
+        strField(4) = "]"
+    End If
     ReturnTableAliasPlusedFieldName = Join(strField, "")
     Exit Function
 End Function

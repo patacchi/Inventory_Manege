@@ -571,6 +571,7 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     If Not fsoUpsertPartsMaster.FileExists(strargZaikoSHFullPath) Then
         '引数で指定したファイルが存在しなかった場合
         DebugMsgWithTime "UpsertINVPartsMaster file not found: " & strargZaikoSHFullPath
+        MsgBox "引数で指定されたファイルが存在しませんでした: " & strargZaikoSHFullPath
         UpsertINVPartsMasterfromZaikoSH = 0
         GoTo CloseAndExit
     End If
@@ -582,7 +583,14 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     End If
     Dim strFilterdZaikoSh() As String
     'フィルタ処理後のファイル名を受け取る。この時、シート名を明示的にINT_CONSTから引っ張り指定してやる
-    strFilterdZaikoSh = GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME)
+    'オプション引数によりオリジナルファイルを削除するか決める
+    If Not NotDeleteSHFile Then
+'        '元ファイルを削除する時
+        strFilterdZaikoSh = GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME, , True)
+    Else
+        '元ファイルを残す場合
+        strFilterdZaikoSh = GetFilterRangeNameFromExcel(strargZaikoSHFullPath, INV_CONST.INV_SH_ZAIKO_NAME, , False)
+    End If
     '処理後に初期化されていない配列が帰ってきたら、在庫情報シートが存在しない可能性が高いので処理を中断する
     If Not IsRedim(strFilterdZaikoSh) Then
         DebugMsgWithTime "UpserINVPartsMaster: not found zaiko_info sheets origin file: " & strargZaikoSHFullPath
@@ -596,6 +604,8 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     'まずは在庫情報シートをTempTableに格納する（直接Excelファイル参照だとうまくいかなかった）
     longResultAffected = IncludeZaikoSH_to_TempTable(strFilterdZaikoSh(0, 0), strFilterdZaikoSh(0, 1))
     UpsertINVPartsMasterfromZaikoSH = longResultAffected
+    'シート情報はDBに格納されたので、フィルタ処理後のファイルを消去する
+    Kill strFilterdZaikoSh(0, 0)
     If longResultAffected < 1 Then
         '件数が1件未満だった場合は抜ける
         DebugMsgWithTime "UpsertINVPartMasterFromZaikoSH: no entry found"
@@ -623,12 +633,26 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     Set dicReplaceParam = New Dictionary
     dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME)
     dicReplaceParam.Add 1, clsSQLBcRef.addQuote(GetLocalTimeWithMilliSec)
-    clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
     'SQL実行前にConnectModeのWriteフラグを調査する
     If Not clsADORef.ConnectMode And adModeWrite Then
         clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
     End If
-    Call clsADORef.Do_SQL_with_NO_Transaction
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH : sql fail TempTable to TanaMaster"
+        MsgBox "一時テーブルから棚番マスターテーブルに登録する際にエラーが発生しました"
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseAndExit
+    End If
+    '棚番マスターでTana_Local_TextがNullになってる所は Tana_SystemTextを設定してやる
+    isCollect = SetTanaLocalNullToSystem
+    If Not isCollect Then
+        DebugMsgWithTime "UpsertINVPartsMasterfromZaikoSH : fail set tana Local to system"
+        MsgBox "表示用棚番を設定する際にエラーが発生しました"
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseAndExit
+    End If
     '次にPartsMasterを更新する
     '各種結合、抽出条件文字列作成IN句も作るの・・？
     'IN DB_Temp
@@ -700,11 +724,6 @@ Optional NotDeleteSHFile As Boolean = False) As Long
         Exit Function
     End If
     'Upsert成功
-    If Not NotDeleteSHFile Then
-        '削除回避フラグが立っていない時
-        'DLした在庫情報ファイル(xls)を削除する
-        Kill strargZaikoSHFullPath
-    End If
     '処理件数を返して終了
     DebugMsgWithTime "Upsert Affected: " & clsADORef.Affected & " OriginFile: " & strargZaikoSHFullPath
     UpsertINVPartsMasterfromZaikoSH = clsADORef.Affected
@@ -720,6 +739,68 @@ CloseAndExit:
 '        'INVDB変数がNothingだった場合
 '        Set INVDBupsertINVPartMaster = Nothing
 '    End If
+    Exit Function
+End Function
+'''棚番マスターのTana_Local_TextがNullになっている所はTana_System_Textの値を設定してやる
+'''Return Bool 成功したらTrue、それ以外はFalse
+Private Function SetTanaLocalNullToSystem() As Boolean
+    On Error GoTo ErrorCatch
+    'インスタンス変数チェック
+    Dim isInitialized As Boolean
+    isInitialized = CheckInstance
+    If Not isInitialized Then
+        DebugMsgWithTime "SetTanaLocalNullToSystem : class Instance not Initialized"
+        SetTanaLocalNullToSystem = False
+        GoTo CloseAndExit
+    End If
+    'Set
+    Dim strSetCondition As String
+    Dim strarrSetCondition(2) As String
+    '何故かここは[]クォート外さないと動かない・・？
+    strarrSetCondition(0) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumRef.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumRef, True)
+    strarrSetCondition(1) = " = "
+    strarrSetCondition(2) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumRef.INVMasterTana(F_INV_Tana_System_Text_IMT), clsEnumRef)
+    strSetCondition = Join(strarrSetCondition, "")
+    'WHERE
+    Dim strWHEREcondition As String
+    Dim strarrWhere(2) As String
+    strarrWhere(0) = "AND "
+    strarrWhere(1) = clsSQLBcRef.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumRef.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumRef)
+    strarrWhere(2) = " IS NULL"
+    strWHEREcondition = Join(strarrWhere, "")
+    '置換用dictionary構築
+    Dim dicReplaceWHERE As Dictionary
+    Set dicReplaceWHERE = New Dictionary
+    dicReplaceWHERE.Add 0, INV_CONST.T_INV_M_Tana
+    dicReplaceWHERE.Add 1, clsEnumRef.SQL_INV_Alias(INVDB_Tana_Alias_sia)
+    dicReplaceWHERE.Add 2, strSetCondition
+    dicReplaceWHERE.Add 3, strWHEREcondition
+    'DBPathをデフォルトへ
+    clsADORef.SetDBPathandFilenameDefault
+    'プロパティにSQL設定
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM, dicReplaceWHERE)
+    '実行前にConnectModeにWriteフラグ立てる
+    clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
+    'SQL実行
+    Dim isCollect As Boolean
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    'Writeフラグを下げる
+    clsADORef.ConnectMode = clsADORef.ConnectMode And Not adModeWrite
+    If Not isCollect Then
+        'SQL実行失敗
+        DebugMsgWithTime "btnTehai_Text_Local_Set_All_Click : SQL Execute fail..."
+        SetTanaLocalNullToSystem = False
+        GoTo CloseAndExit
+    End If
+    '成功
+    DebugMsgWithTime "SetTanaLocalNullToSystem : Update affect : " & clsADORef.Affected
+    SetTanaLocalNullToSystem = True
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SetTanaLocalNullToSystem code: " & err.Number & " Description: " & err.Description
+    SetTanaLocalNullToSystem = False
+    GoTo CloseAndExit
+CloseAndExit:
     Exit Function
 End Function
 '''棚卸CSVファイルからDBに登録するメソッド
@@ -1001,7 +1082,7 @@ Private Function SELECT_ToTempTable(strargDistinctFieldName As String) As Boolea
     Dim isInitialized As Boolean
     isInitialized = CheckInstance
     If Not isInitialized Then
-        DebugMsgWithTime "SELECT_ToTempTable : inctance not Initialized"
+        DebugMsgWithTime "SELECT_ToTempTable : instance not Initialized"
         GoTo CloseAndExit
         SELECT_ToTempTable = False
         Exit Function

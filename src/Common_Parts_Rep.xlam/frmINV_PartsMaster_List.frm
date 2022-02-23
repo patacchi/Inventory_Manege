@@ -45,15 +45,11 @@ Private Sub btnTehai_Text_Local_Set_All_Click()
     If clsSQLBc Is Nothing Then
         Set clsSQLBc = CreateclsSQLStringBuilder
     End If
-'{0}    T_INV_M_Tana
-'{1}    TDBTana
-'{2}    (SET condition) TDBTana.F_INV_LOCAL_TEXT = TDBTana.F_INV_SYSTEM_Text
-'{3}    (WHERE condition) AND TDBTana.LOCAL_TExt IS NULL
-'Public Const SQL_INV_TANA_SET_LOCAL_TEXT_BY_SYSTEM As String = "UPDATE {0} AS {1} " & vbCrLf
     'Set
     Dim strSetCondition As String
     Dim strarrSetCondition(2) As String
-    strarrSetCondition(0) = clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumPMList)
+    '何故かここは[]クォート外さないと動かない・・？
+    strarrSetCondition(0) = clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_Local_Text_IMT), clsEnumPMList, True)
     strarrSetCondition(1) = " = "
     strarrSetCondition(2) = clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Tana_Alias_sia, clsEnumPMList.INVMasterTana(F_INV_Tana_System_Text_IMT), clsEnumPMList)
     strSetCondition = Join(strarrSetCondition, "")
@@ -101,6 +97,13 @@ Private Sub btnUpdateOriginData_Click()
     strOldTehaiCode = txtBox_F_INV_Tehai_Code.Text
     '全項目消去
     ClearAllTextBoxAndLabel
+    'getIEとobjExcelインスタンス変数がNothingだったら初期化する
+    If clsGetIEfrmPMList Is Nothing Then
+        Set clsGetIEfrmPMList = CreateclsGetIE
+    End If
+    If objExcelfrmPMList Is Nothing Then
+        Set objExcelfrmPMList = New Excel.Application
+    End If
     '手配コードを指定し、在庫情報シートをDLしフルパスを取得する
     Dim strZaikoSHFullPath As String
 #If NoIEConnect Then
@@ -108,6 +111,10 @@ Private Sub btnUpdateOriginData_Click()
     'ファイル選択してもらう、ディレクトリはデータベースディレクトリ
     Call ChCurrentDirW(clsADOfrmPMList.DBPath)
     strZaikoSHFullPath = Application.GetOpenFilename
+    If strZaikoSHFullPath = "False" Then
+        MsgBox "キャンセルされました"
+        Exit Sub
+    End If
 #Else
     'Webから情報取得できる環境の時
     strZaikoSHFullPath = modZaikoSerch.ZaikoSerchbyTehaiCode(strOldTehaiCode, clsGetIEfrmPMList)
@@ -118,11 +125,12 @@ Private Sub btnUpdateOriginData_Click()
         'クラス変数が初期化されていなかったら初期化する
         Set objExcelfrmPMList = New Excel.Application
     End If
-#If NoIEConnect Then
-    'ファイル残すとき
+#If NoDeleteOriginSH Then
+    '在庫情報SHファイル残すとき
+    MsgBox "NoDeleteOriginSH 有効"
     longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExcelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, True)
 #Else
-    'ファイル削除するとき
+    '在庫情報SHファイル削除するとき(デフォルト動作)
     longAffected = clsINVDBfrmPMList.UpsertINVPartsMasterfromZaikoSH(strZaikoSHFullPath, objExcelfrmPMList, clsINVDBfrmPMList, clsADOfrmPMList, clsEnumPMList, clsSQLBc, False)
 #End If
     MsgBox longAffected & " 件のデータを更新しました。"
