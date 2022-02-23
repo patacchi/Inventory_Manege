@@ -190,6 +190,24 @@ ErrorCatch:
 CloseAndExit:
     Exit Sub
 End Sub
+'パラメータセット済みの別のフォーム表示できるかテスト
+Private Sub btnShowParmSetLabelfrm_Click()
+    If txtBox_F_INV_Tehai_Code.Text = "" Then
+        Exit Sub
+    End If
+    Load frmBinLabel
+    If frmBinLabel.UpdateMode Then
+        MsgBox "表示項目編集完了まで値のセットはできません"
+        Exit Sub
+    End If
+    'Enterイベントを発生させてclsIncremantalの初期化をするためにSetFocus
+    frmBinLabel.txtBox_F_INV_Tehai_Code.SetFocus
+    frmBinLabel.txtBox_F_INV_Tehai_Code.Text = Me.txtBox_F_INV_Tehai_Code.Text
+    'RSから情報をセットするためにインクリメンタルリストのClickイベントを発生させる(決め打ちで一番上のを選ぶ)
+    frmBinLabel.lstBox_Incremental.ListIndex = 0
+    frmBinLabel.lstBox_Incremental.Visible = False
+    frmBinLabel.Show
+End Sub
 Private Sub lstBox_Incremental_Enter()
     clsIncrementalParts.Incremental_LstBox_Enter
 End Sub

@@ -25,7 +25,7 @@ Private clsIncrementalfrmBIN As clsIncrementalSerch
 Private confrmBIN As ADODB.Connection
 Private rsLabelTemp As ADODB.Recordset
 Private StopEvents As Boolean
-Private UpdateMode As Boolean                                       '編集可能状態になってるときはTrueをセット
+Public UpdateMode As Boolean                                       '編集可能状態になってるときはTrueをセット
 Private strStartTime As String
 '定数
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
@@ -86,6 +86,18 @@ End Sub
 Private Sub btnCreateMailmergeDoc_Click()
     MailMergeDocCreate
 End Sub
+'手配コードをセットしたパーツマスター画面を表示する
+Private Sub btnShowPMList_Click()
+    If txtBox_F_INV_Tehai_Code.Text = "" Then
+        Exit Sub
+    End If
+    Load frmINV_PartsMaster_List
+    frmINV_PartsMaster_List.txtBox_F_INV_Tehai_Code.SetFocus
+    frmINV_PartsMaster_List.txtBox_F_INV_Tehai_Code.Text = frmBinLabel.txtBox_F_INV_Tehai_Code.Text
+    frmINV_PartsMaster_List.lstBox_Incremental.ListIndex = 0
+    frmINV_PartsMaster_List.lstBox_Incremental.Visible = False
+    frmINV_PartsMaster_List.Show
+End Sub
 'インクリメンタルリストClick
 Private Sub lstBox_Incremental_Click()
     If StopEvents Or UpdateMode Then
@@ -121,8 +133,8 @@ Private Sub txtBox_F_INV_Tehai_Code_Change()
     'イベント停止する
     StopEvents = True
     'テキストにUcaseかける
-    If ActiveControl.TextLength >= 1 Then
-        ActiveControl.Text = UCase(ActiveControl.Text)
+    If frmBinLabel.txtBox_F_INV_Tehai_Code.TextLength >= 1 Then
+        frmBinLabel.txtBox_F_INV_Tehai_Code.Text = UCase(frmBinLabel.txtBox_F_INV_Tehai_Code.Text)
     End If
     'インクリメンタル実行
     clsIncrementalfrmBIN.Incremental_TextBox_Change
@@ -246,7 +258,7 @@ Private Sub txtBox_F_INV_Tehai_Code_Enter()
     'イベント停止する
     StopEvents = True
     'インクリメンタル実行、リストを表示するのが目的
-    clsIncrementalfrmBIN.Incremental_TextBox_Enter ActiveControl, lstBox_Incremental
+    clsIncrementalfrmBIN.Incremental_TextBox_Enter frmBinLabel.txtBox_F_INV_Tehai_Code, frmBinLabel.lstBox_Incremental
     'イベント再開する
     StopEvents = False
     Exit Sub
