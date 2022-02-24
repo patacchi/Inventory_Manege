@@ -168,6 +168,16 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
+    'Ucase
+    If frmBinLabel.txtBox_F_INV_Tana_Local_Text.TextLength >= 1 Then
+        '文字が入力されていたらUcase掛ける
+        'イベント停止
+        StopEvents = True
+        'Ucase
+        frmBinLabel.txtBox_F_INV_Tana_Local_Text.Text = UCase(frmBinLabel.txtBox_F_INV_Tana_Local_Text.Text)
+        'イベント再開
+        StopEvents = False
+    End If
     Select Case UpdateMode
     Case True
         'アップデートモードの時
@@ -506,6 +516,8 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         UpdateMode = True
         btnDoUpdate.Enabled = True
         btnCancelUpdate.Enabled = True
+        '手配コードテキストボックスはLockedにする
+        txtBox_F_INV_Tehai_Code.Locked = True
         'LockedをFalseにして、BackColoreを薄緑にする
         txtBox_F_INV_Tana_Local_Text.Locked = False
         txtBox_F_INV_Tana_Local_Text.BackColor = TXTBOX_BACKCOLORE_EDITABLE
@@ -525,6 +537,8 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         'UpdateBatckボタンをFalseに
         btnDoUpdate.Enabled = False
         btnCancelUpdate.Enabled = False
+        '手配コードテキストボックスのLockedを解除する(インクリメンタル向けに入力できるようにする)
+        txtBox_F_INV_Tehai_Code.Locked = False
         'LockedをTrueにして、BackColoreを標準背景色にする
         '棚番テキストボックスは編集不可モードの時はインクリメンタルに使うのでLockはしない
 '        txtBox_F_INV_Tana_Local_Text.Locked = True
