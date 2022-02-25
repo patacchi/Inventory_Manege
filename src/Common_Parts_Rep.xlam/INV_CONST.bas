@@ -7,6 +7,8 @@ Public Const T_INV_TEMP As String = "T_INV_Temp"                                
 Public Const T_INV_SELECT_TEMP As String = "T_INV_Select_Temp"                  'Selectした結果を格納するテーブル名、一旦テーブルに格納しないと
                                                                                 '更新可能なクエリが・・・とか言われるため
 Public Const INV_DOC_LABEL_MAILMERGE As String = "INV_Label_Mailmerge_Local.docm"   'ラベル差し込み印刷のフィールド設定済みWordDocument名
+Public Const INV_DOC_LABEL_PLANE As String = "INV_Label_MailmergePlain_Local.docm"  'ラベル差し込みの出力用空白Document名
+Public Const INV_DOC_LABEL_GENPIN_SMALL As String = "INV_Genpin_Small_Local.docx"   '現品票(小)の差し込み印刷テンプレート
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
@@ -201,6 +203,8 @@ Public Enum Enum_INV_CSV_Need_Trim
 End Enum
 'ラベル出力用一時テーブル名
 Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                                        'ラベル出力用の差し込み印刷用テーブルの名前
+'ラベル出力用一時テーブル専用フィールド定義
+Public Const F_INV_LABEL_TEMP_TEHAICODE_LENGTH As String = "F_INV_Tehaicode_Length"                 'ラベル出力のみに使用する計算列、手配コードの文字列数を格納
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -395,7 +399,8 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{5} F_INV_Label_Remark_1
 '{6} F_INV_Label_Remark_2
 '{7} InputDate
+'{8} INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {1} CHAR(10),{2} CHAR(50)," & vbCrLf & _
+"    {1} CHAR(10),{2} CHAR(50),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{7} CHAR(23)" & vbCrLf & _
 ")"

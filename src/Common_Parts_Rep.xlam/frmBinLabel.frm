@@ -83,8 +83,56 @@ Private Sub btnAddnewLabelTemp_Click()
     AddNewRStoLabelTemp
 End Sub
 'DBからデータを引っ張り、差し込み印刷の結果のDocを表示する
-Private Sub btnCreateMailmergeDoc_Click()
-    MailMergeDocCreate
+'ラベルプリンタ用BINカード表示ラベル
+Private Sub btnCreateLabelDoc_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'ラベル印刷時はプリンタの設定が必要(イベント駆動)なので、Planeファイルも指定必須
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE), _
+                    fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_PLANE)
+ErrorCatch:
+    DebugMsgWithTime "btnCreateLabelDoc_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
+'現品票(小)作成
+Private Sub btnCreateGenpinSmall_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_GENPIN_SMALL)
+ErrorCatch:
+    DebugMsgWithTime "btnCreateGenpinSmall_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
 End Sub
 '手配コードをセットしたパーツマスター画面を表示する
 Private Sub btnShowPMList_Click()
@@ -764,6 +812,7 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 5, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
         dicReplaceLabelTemp.Add 6, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
         dicReplaceLabelTemp.Add 7, PublicConst.INPUT_DATE
+        dicReplaceLabelTemp.Add 8, INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
@@ -812,7 +861,7 @@ CloseAndExit:
     End If
     Exit Function
 End Function
-'現在のRSのデータをラベルテーブルに追加する
+'''現在のRSのデータをラベルテーブルに追加する
 Private Sub AddNewRStoLabelTemp()
     On Error GoTo ErrorCatch
     If Not rsLabelTemp.State And ObjectStateEnum.adStateOpen Then
@@ -845,6 +894,8 @@ Private Sub AddNewRStoLabelTemp()
     Next varKeyobjDic
     '今回のフォームスタート時間をInputDateとして入力
     rsLabelTemp.Fields(PublicConst.INPUT_DATE).Value = strStartTime
+    '手配コードの文字列数をセット
+    rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH).Value = Len(Trim(rsLabelTemp.Fields(clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)).Value))
     'UpdateでローカルのRSを確定する
     rsLabelTemp.Update
     'rsLabelのFilterをPendingRecords、変更を未送信に設定し、UpdateBatchをかけ、DBに反映する
@@ -866,7 +917,11 @@ CloseAndExit:
     Exit Sub
 End Sub
 '''Label Tempテーブルから差し込み印刷を実行する
-Private Sub MailMergeDocCreate()
+'''args
+'''strargTemplateWordFile               差し込み印刷フィールド設定済みテンプレート文書
+'''Optional strargPlaneDocTemplete      プリンタ変更が必要なテンプレート等、Applicaionイベントを使用したい場合に指定する、空のファイル
+'''                                     空ファイルの要件は､イベントに必要なmodLabel_BINとclsWordAppEventsクラスを実装していること
+Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional strargPlaneDocTemplete As String)
     On Error GoTo ErrorCatch
     'テンプレート文書の存在確認
     Dim fsoMailMerge As FileSystemObject
@@ -876,7 +931,7 @@ Private Sub MailMergeDocCreate()
     Set clsADOMailMerge = CreateclsADOHandleInstance
     'DBPathをデフォルトに
     clsADOMailMerge.SetDBPathandFilenameDefault
-    If Not fsoMailMerge.FileExists(fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE)) Then
+    If Not fsoMailMerge.FileExists(strargMailMergeTemplateFile) Then
         'ファイルが存在しなかった
         MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
         GoTo CloseAndExit
@@ -889,17 +944,22 @@ Private Sub MailMergeDocCreate()
         GoTo CloseAndExit
     End If
     'wordDocumentsを得る
-'    Dim objWord As Word.Application
-'    set objWord = new Word.Application
+#If RefWord Then
+    'wordの参照設定がされている場合
+    Dim objWord As Word.Application
+    Set objWord = New Word.Application
+#Else
     Dim objWord As Object
     Set objWord = CreateObject("Word.Application")
-'    Dim docMailMerge As Word.Document
-    Dim docMailMerge As Object
-    Set docMailMerge = objWord.Documents.Open(Filename:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE))
+#End If
+'    Dim docTemplateMailMerge As Word.Document
+    Dim docTemplateMailMerge As Object
+    'ラベルプリント用テンプレートを開く
+    Set docTemplateMailMerge = objWord.Documents.Open(Filename:=strargMailMergeTemplateFile)
     'SQLを設定
     Dim strSQL As String
     strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
-    With docMailMerge.MailMerge
+    With docTemplateMailMerge.MailMerge
         'データソースを開く
         .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), ReadOnly:=True, sqlstatement:=strSQL
         '結果は新規ドキュメントへ
@@ -907,8 +967,49 @@ Private Sub MailMergeDocCreate()
         '差し込み印刷実行
         .Execute
     End With
+    '差し込み印刷の結果のDocumentを取得
+#If RefWord Then
+    'Wordが参照設定されている場合
+    Dim docNewMailMerge As Word.Document
+#Else
+    'wordが参照設定されていない場合
+    Dim docNewMailMerge As Object
+#End If
+    Set docNewMailMerge = objWord.ActiveDocument
     'オリジナルのDocumentは保存せずに閉じる
-    docMailMerge.Close savechanges:=False
+    docTemplateMailMerge.Close savechanges:=False
+    'ここから先の処理はApplicationイベントを処理する必要のあるファイルのみ
+    If Not strargPlaneDocTemplete = "" Then
+        '差し込み結果を一時保存するためのファイル名を取得
+        Dim strTempMailmergeFullPath As String
+        strTempMailmergeFullPath = fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, GetTimeForFileNameWithMilliSec & "_Local.docx")
+        '差し込み結果を一時ファイルに保存、保存形式はdoc Xmlフォーマット(デフォルトを明示的に指定)
+        docNewMailMerge.SaveAs2 Filename:=strTempMailmergeFullPath, FileFormat:=16              'wdFormatDocumentDefault 16
+        '保存が終わったらDocumentを閉じる
+        docNewMailMerge.Close savechanges:=False
+        'ラベル印刷用Plane文書を開き、Documentオブジェクトを得る
+#If RefWord Then
+        'Word参照設定がされている場合
+        Dim docLabelPlane As Word.Document
+#Else
+        '参照設定なしの場合
+        Dim docLabelPlane As Object
+#End If
+        'Label用Plane文書をテンプレートして新規文書を開く
+        objWord.Documents.Add Template:=strargPlaneDocTemplete
+        '新規文書のDobumentオブジェクトを得る
+        Set docLabelPlane = objWord.ActiveDocument
+        '閲覧モードで開かないようにする
+'        objWord.ActiveWindow.View.ReadingLayout = False
+        'Applicatoinイベントハンドラ用に、objWordのApplication参照をセットしてやる
+        objWord.Run "modLabel_BIN.SetAppRefForEvent", objWord
+        '開いたPlane文書の先頭に差し込み結果をインポートする
+            docLabelPlane.Range(0, 0).InsertFile Filename:=strTempMailmergeFullPath, link:=False, attachment:=False
+            'インポート完了したら一時保存した差し込み結果ファイルを削除する
+        Kill strTempMailmergeFullPath
+    End If
+    'ここから共通処理
+    objWord.Visible = True
     'LabelTempテーブルは削除しちゃう
     Dim isCollect As Boolean
     isCollect = clsADOMailMerge.DropTable(INV_CONST.T_INV_LABEL_TEMP)
@@ -921,7 +1022,6 @@ Private Sub MailMergeDocCreate()
     End If
     'strStartTimeに削除用フラグ定数文字列をセットする
     strStartTime = LABEL_TEMP_DELETE_FLAG
-    objWord.Visible = True
     ForceForeground objWord.Windows(1).hwnd
     GoTo CloseAndExit
 ErrorCatch:
