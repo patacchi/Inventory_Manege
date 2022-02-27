@@ -1,5 +1,5 @@
 Attribute VB_Name = "INV_CONST"
-'''在庫管理関係の定数を定義する
+''''在庫管理関係の定数を定義する
 Option Explicit
 '在庫情報DBに関する定数
 Public Const INV_DB_FILENAME As String = "INV_Manege.accdb"                     '在庫情報のDBファイル名

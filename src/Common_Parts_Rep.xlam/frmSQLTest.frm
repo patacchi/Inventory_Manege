@@ -78,11 +78,11 @@ Private Sub btnSingleTest_Click()
 '    Set adoSingle = CreateclsADOHandleInstance
 '    Dim clsEnumSingle As clsEnum
 '    Set clsEnumSingle = CreateclsEnum
-CloseAndExit:
-    Set clsEnumSingle = Nothing
-    Set InvDBTest = Nothing
-    Set fsoDBTest = Nothing
-    Exit Sub
+'CloseAndExit:
+'    Set clsEnumSingle = Nothing
+'    Set InvDBTest = Nothing
+'    Set fsoDBTest = Nothing
+'    Exit Sub
 '    Dim logBeki As Double
 '''''32ビットまで順番にフラグを立てて、Longでどう表現されるか
 ''

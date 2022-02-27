@@ -73,4 +73,8 @@ End Sub
 '''frmBinLabeoShow
 Public Sub ShowfrmBinLabel()
     frmBinLabel.Show
+End Sub
+'''棚番新規登録フォーム表示(モーダル)
+Public Sub ShowFrmRegistNewLocation()
+    frmRegistNewLocation.Show vbModal
 End Sub

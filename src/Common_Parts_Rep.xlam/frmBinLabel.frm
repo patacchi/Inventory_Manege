@@ -25,12 +25,11 @@ Private clsIncrementalfrmBIN As clsIncrementalSerch
 Private confrmBIN As ADODB.Connection
 Private rsLabelTemp As ADODB.Recordset
 Private StopEvents As Boolean
-Public UpdateMode As Boolean                                       '編集可能状態になってるときはTrueをセット
+Public UpdateMode As Boolean                                        '編集可能状態になってるときはTrueをセット
+Private AddnewMode As Boolean                                       '新規追加モードの時にTrueをセット
 Private strStartTime As String
 '定数
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
-Private Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0         '薄い緑
-Private Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ウィンドウの背景
 Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempテーブルを削除する時にStartTimeにセットする定数
 '------------------------------------------------------------------------------------------------------
 'SQL
@@ -38,12 +37,22 @@ Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
+'新規追加時のSQL、ポイントはT_INV_N_TANAをRightJoinし、未登録の棚番もRSに含める点
+'棚番リストはFilterでM_PartsでTana_IDがNullの物を抽出する
+Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+"FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
+"    RIGHT JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
+"    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
+"    WHERE TDBPrt.F_INV_Tana_ID IS NULL"
+Private Sub btnAddNewTehaiCode_Click()
+    SwitchAddNewMode True
+End Sub
 '------------------------------------------------------------------------------------------------------
 'イベント
 'Form Initial
 Private Sub UserForm_Initialize()
     'フォーム初期化時
-    Constructor
+    ConstRuctor
 End Sub
 'Form Terminate
 Private Sub UserForm_Terminate()
@@ -146,28 +155,53 @@ Private Sub btnShowPMList_Click()
     frmINV_PartsMaster_List.lstBox_Incremental.Visible = False
     frmINV_PartsMaster_List.Show
 End Sub
+'新規棚番登録画面表示
+Private Sub btnRegistNewLocationfrmShow_Click()
+    modCreateInstanceforAddin.ShowFrmRegistNewLocation
+End Sub
 'インクリメンタルリストClick
 Private Sub lstBox_Incremental_Click()
-    If StopEvents Or UpdateMode Then
-        'イベントストップかUpdateModeの時は抜ける
+    If (StopEvents Or UpdateMode) And Not AddnewMode Then
+        'イベントストップかUpdateModeで、更にAddNewModeじゃない時は抜ける
+        Exit Sub
+    End If
+    If AddnewMode And clsIncrementalfrmBIN.txtBoxRef.Name <> txtBox_F_INV_Tana_Local_Text.Name Then
+        'AddnewModeの時、相手にするのは棚番テキストボックスの実なので、それ以外の場合は単純にリスト消去して終わり
+        lstBox_Incremental.Visible = False
         Exit Sub
     End If
     If clsIncrementalfrmBIN.Incremental_LstBox_Click Then
         'この中に入ってる時点でRSにフィルターが適用されている
         'イベント停止
         StopEvents = True
-        'RSから値取得
-        GetValuFromRS
-        '非表示はkeyupイベントで行うことにした
-'        'リストを非表示にする
-'        lstBox_Incremental.ListIndex = -1
-'        If lstBox_Incremental.ListCount >= 2 Then
-'            lstBox_Incremental.Visible = False
-'        Else
-'            lstBox_Incremental.Height = 0
-'        End If
-        'ここまでで値の取得が完了しているので、通常の編集不可モードへ
-        SwitchtBoxEditmode False
+        'AddnewModeの状態の応じて処理を分岐
+        Select Case AddnewMode And clsIncrementalfrmBIN.txtBoxRef.Name = txtBox_F_INV_Tana_Local_Text.Name
+        Case True
+            'AddNewModeの時
+            'AddNewの時はRSからデータ取得するのは棚番のみなのでここで直接値をセットしてしまう
+            'Tana_Local
+            txtBox_F_INV_Tana_Local_Text.Text = _
+            clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(txtBox_F_INV_Tana_Local_Text.Name)).Value
+            'Tana_System
+            lbl_F_INV_Tana_System_Text.Caption = _
+            clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(lbl_F_INV_Tana_System_Text.Name)).Value
+            'ここでインクリメンタルリスト非表示にしてしまう
+            lstBox_Incremental.Visible = False
+        Case False
+            '通常動作
+            'RSから値取得
+            GetValuFromRS
+            '非表示はkeyupイベントで行うことにした
+    '        'リストを非表示にする
+    '        lstBox_Incremental.ListIndex = -1
+    '        If lstBox_Incremental.ListCount >= 2 Then
+    '            lstBox_Incremental.Visible = False
+    '        Else
+    '            lstBox_Incremental.Height = 0
+    '        End If
+            'ここまでで値の取得が完了しているので、通常の編集不可モードへ
+            SwitchtBoxEditmode False
+        End Select
         'イベント再開
         StopEvents = False
     End If
@@ -175,7 +209,7 @@ End Sub
 'Change
 Private Sub txtBox_F_INV_Tehai_Code_Change()
     'イベント停止状態ではなく、更にアップデートモードでもないときにインクリメンタル実行
-    If StopEvents Or UpdateMode Then
+    If (StopEvents Or UpdateMode) And Not AddnewMode Then
         Exit Sub
     End If
     'イベント停止する
@@ -184,14 +218,25 @@ Private Sub txtBox_F_INV_Tehai_Code_Change()
     If frmBinLabel.txtBox_F_INV_Tehai_Code.TextLength >= 1 Then
         frmBinLabel.txtBox_F_INV_Tehai_Code.Text = UCase(frmBinLabel.txtBox_F_INV_Tehai_Code.Text)
     End If
-    'インクリメンタル実行
-    clsIncrementalfrmBIN.Incremental_TextBox_Change
+    Select Case AddnewMode
+    Case True
+        'AddNewModeの時(結果が0件になってもメッセージ表示せず、そのままリストを非表示にする)
+        clsIncrementalfrmBIN.Incremental_TextBox_Change True, , True
+    Case False
+        '通常モードの時(結果0件になったらメッセージ表示)
+        'インクリメンタル実行
+        clsIncrementalfrmBIN.Incremental_TextBox_Change False
+    End Select
     'イベント再開する
     StopEvents = False
 End Sub
 'keyup
 'インクリメンタルリストKeyUp
 Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If AddnewMode Then
+        '新規追加モードの時は抜ける
+        Exit Sub
+    End If
     'イベント停止
     StopEvents = True
     'インクリメンタルに丸投げ
@@ -202,6 +247,10 @@ End Sub
 'mouseup
 'インクリメンタルリストMouseUP
 Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    '新規追加モードの時は抜ける
+    If AddnewMode Then
+        Exit Sub
+    End If
     'イベント停止
     StopEvents = True
     'インクリメンタル
@@ -226,13 +275,18 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
         'イベント再開
         StopEvents = False
     End If
-    Select Case UpdateMode
-    Case True
-        'アップデートモードの時
+    Select Case True
+    Case (UpdateMode = True) And (AddnewMode = False)
+        'アップデートモードで、なおかつAddNewModeじゃない時
+        'RSに現在の値を設定する
         UpdateRSFromContrl ActiveControl
         Exit Sub
-    Case False
-        '検索モード(?)の時
+    Case (UpdateMode = False) Or (AddnewMode = True)
+        '検索モード(?)の時か、AddNewModeの時(インクリメンタルを使用するモード)
+        If TypeName(ActiveControl) <> "TextBox" Then
+            'アクティブコントロールがテキストボックスじゃなかったら抜ける
+            Exit Sub
+        End If
         'イベント停止
         StopEvents = True
         'RSから内容を取得(listboxのClickイベントで呼ばれるはず)されるまでUpdateModeにしてはいけない
@@ -242,7 +296,20 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
         If ActiveControl.TextLength >= 1 Then
             ActiveControl.Text = UCase(ActiveControl.Text)
         End If
-        clsIncrementalfrmBIN.Incremental_TextBox_Change
+        Select Case AddnewMode
+        Case True
+            'AddNewModeの時、Changeしても他のテキストボックスの値を消去しない
+            clsIncrementalfrmBIN.Incremental_TextBox_Change , , True
+        Case False
+            '通常動作
+            clsIncrementalfrmBIN.Incremental_TextBox_Change
+        End Select
+        If AddnewMode And lstBox_Incremental.ListCount = 1 Then
+            '新規追加モードで、なおかつ候補が残り1個になった場合
+            '棚番ボックスにリストの値を設定し、リストを非表示にしてしまう
+            txtBox_F_INV_Tana_Local_Text.Text = lstBox_Incremental.List(0)
+            lstBox_Incremental.Visible = False
+        End If
         'イベント再開
         StopEvents = False
         Exit Sub
@@ -295,27 +362,48 @@ End Sub
 'Enter
 '棚番テキストボックスEnter
 Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
-    If StopEvents Or UpdateMode Then
-        'StopEvent か UpdateModeだったら抜ける
+    If (StopEvents Or UpdateMode) And Not AddnewMode Then
+        'StopEvent か UpdateModeで、なおかつAddNewModeじゃなかったら抜ける
         Exit Sub
     End If
     'イベント停止する
     StopEvents = True
-    'インクリメンタル実行、Enter
-    clsIncrementalfrmBIN.Incremental_TextBox_Enter txtBox_F_INV_Tana_Local_Text, lstBox_Incremental
+    If AddnewMode And chkBoxShowUnUseLocationOnly.Value Then
+        'AddNewModeでなおかつ未使用棚番のみ表示オプションがセットされていたら、最初に元データのSQLを変更し、データ再取得する
+        If clsADOfrmBIN.RS.State = ObjectStateEnum.adStateOpen Then
+            clsADOfrmBIN.RS.Close
+        End If
+        clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_ADDNEW_TEHAI_CODE
+        clsADOfrmBIN.RS.Open
+        clsADOfrmBIN.RS.Filter = ""
+        'インクリメンタル実行、Enter、フィルタ追加モード
+        clsIncrementalfrmBIN.Incremental_TextBox_Enter txtBox_F_INV_Tana_Local_Text, lstBox_Incremental, True
+    Else
+        '通常動作
+        'インクリメンタル実行、Enter
+        clsIncrementalfrmBIN.Incremental_TextBox_Enter txtBox_F_INV_Tana_Local_Text, lstBox_Incremental, False
+    End If
     'イベント再開
     StopEvents = False
     Exit Sub
 End Sub
 Private Sub txtBox_F_INV_Tehai_Code_Enter()
     'イベント停止状態ではなく、更にアップデートモードでもないときにインクリメンタル実行
-    If StopEvents Or UpdateMode Then
-        'StopEventsかUpdateModeの時は抜ける
+    If (StopEvents Or UpdateMode) And Not AddnewMode Then
+        'StopEventsかUpdateModeでなおかつAddnewModeじゃない時は抜ける
         Exit Sub
     End If
     'イベント停止する
     StopEvents = True
     'インクリメンタル実行、リストを表示するのが目的
+    If AddnewMode Then
+        'AddNewModeの時はSQLを一旦通常のものに変えてRequeryする
+        If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+            clsADOfrmBIN.RS.Close
+        End If
+        clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+        clsADOfrmBIN.RS.Open
+    End If
     clsIncrementalfrmBIN.Incremental_TextBox_Enter frmBinLabel.txtBox_F_INV_Tehai_Code, frmBinLabel.lstBox_Incremental
     'イベント再開する
     StopEvents = False
@@ -334,7 +422,7 @@ End Sub
 '------------------------------------------------------------------------------------------------------
 'メソッド
 '''コンストラクタ
-Private Sub Constructor()
+Private Sub ConstRuctor()
     'インスタンス共有変数の初期化
     If clsADOfrmBIN Is Nothing Then
         Set clsADOfrmBIN = CreateclsADOHandleInstance
@@ -363,7 +451,7 @@ Private Sub Constructor()
     SetDefaultValuetoRS
     'objToFieldNameを設定
     setObjToFieldNameDic
-    clsIncrementalfrmBIN.Constructor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
+    clsIncrementalfrmBIN.ConstRuctor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
     'RSのデータを取得する
     'ここでは取得しないで、インクリメンタルサーチに任せる
 '    GetValuFromRS
@@ -399,7 +487,8 @@ Private Sub Destructor()
     Unload Me
 End Sub
 '''メンバ変数のRecordSetに初期データを設定する
-'''
+'''args
+'''AddNewMode(クラス変数)      Trueがセットされていたら、途中のJoinがRight Joinになり、未使用の棚番もRSに含まれるようになる
 Private Sub SetDefaultValuetoRS()
     '最初にclsadoのDBPathとDBFilnameをデフォルトに
     clsADOfrmBIN.SetDBPathandFilenameDefault
@@ -420,7 +509,16 @@ Private Sub SetDefaultValuetoRS()
     clsADOfrmBIN.RS.LockType = adLockBatchOptimistic
     clsADOfrmBIN.RS.CursorType = adOpenStatic
     'rsのSourceにSQL設定(後でパラメータ対応する)
-    clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+    'AddNewModeにより処理を分岐
+    Select Case AddnewMode
+    Case True
+        '新規追加モード
+        'Tana_がRightJoinになる
+        clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_ADDNEW_TEHAI_CODE
+    Case False
+        '通常動作
+        clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+    End Select
     'rsのActiveConnectionにConnectionオブジェクト指定
     Set clsADOfrmBIN.RS.ActiveConnection = confrmBIN
     'rsオープン
@@ -568,15 +666,15 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         txtBox_F_INV_Tehai_Code.Locked = True
         'LockedをFalseにして、BackColoreを薄緑にする
         txtBox_F_INV_Tana_Local_Text.Locked = False
-        txtBox_F_INV_Tana_Local_Text.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Tana_Local_Text.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         txtBox_F_INV_Label_Name_1.Locked = False
-        txtBox_F_INV_Label_Name_1.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Name_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         txtBox_F_INV_Label_Name_2.Locked = False
-        txtBox_F_INV_Label_Name_2.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Name_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         txtBox_F_INV_Label_Remark_1.Locked = False
-        txtBox_F_INV_Label_Remark_1.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Remark_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         txtBox_F_INV_Label_Remark_2.Locked = False
-        txtBox_F_INV_Label_Remark_2.BackColor = TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Label_Remark_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         '編集可能設定ボタンを無効に
         btnEnableEdit.Enabled = False
     Case False
@@ -590,24 +688,89 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         'LockedをTrueにして、BackColoreを標準背景色にする
         '棚番テキストボックスは編集不可モードの時はインクリメンタルに使うのでLockはしない
 '        txtBox_F_INV_Tana_Local_Text.Locked = True
-        txtBox_F_INV_Tana_Local_Text.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Tana_Local_Text.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         txtBox_F_INV_Label_Name_1.Locked = True
-        txtBox_F_INV_Label_Name_1.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Name_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         txtBox_F_INV_Label_Name_2.Locked = True
-        txtBox_F_INV_Label_Name_2.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Name_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         txtBox_F_INV_Label_Remark_1.Locked = True
-        txtBox_F_INV_Label_Remark_1.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Remark_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         txtBox_F_INV_Label_Remark_2.Locked = True
-        txtBox_F_INV_Label_Remark_2.BackColor = TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Label_Remark_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         '編集可能設定ボタンを有効に
         btnEnableEdit.Enabled = True
     End Select
+End Sub
+'''新規追加モードと通常モードをスイッチする
+'''このメソッドを呼ぶたびにRSのデータはリセットされる
+'''args
+'''IsAddNewMode     Trueにセットすると新規追加モード、Falseにすると通常モード
+Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
+    On Error GoTo ErrorCatch
+    'イベント停止する
+    StopEvents = True
+    'clsIncrementalのイベントも一時停止する
+    clsIncrementalfrmBIN.StopEvent = True
+    '全項目消去
+    ClearAllContents
+    'インクリメンタルリストのVisibleもFalseに
+    lstBox_Incremental.Visible = False
+    Select Case IsAddNewMode
+    Case True
+        '新規追加モードにする場合
+        'AddNewフラグを立てる
+        AddnewMode = True
+        'UpdateModeをセットする
+        SwitchtBoxEditmode True
+        '新規追加モードボタンEnabledをFalseに
+        btnAddNewTehaiCode.Enabled = False
+        '未使用棚番チェックボックスEnabled True
+        chkBoxShowUnUseLocationOnly.Enabled = True
+        '追加で手配コードボックスも編集可能にする
+        txtBox_F_INV_Tehai_Code.Locked = False
+        txtBox_F_INV_Tehai_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
+        'DBよりデータ再取得
+        SetDefaultValuetoRS
+        '一旦フォーカスを棚番テキストボックスから外す
+        txtBox_F_INV_Tehai_Code.SetFocus
+    Case False
+        '通常モードにする場合
+        'AddNewフラグを下げる
+        AddnewMode = False
+        SwitchtBoxEditmode False
+        '新規追加モードボタンを使用可能に
+        btnAddNewTehaiCode.Enabled = True
+        '未使用棚番チェックボックスEnabled False
+        chkBoxShowUnUseLocationOnly.Enabled = False
+        '手配コードボックスを編集不可に戻す
+        'インクリメンタルで使用するのでLockedはそのまま
+        '色だけ戻す
+        txtBox_F_INV_Tehai_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
+        'DBよりデータ再取得
+        SetDefaultValuetoRS
+    End Select
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SwitchAddNewMode code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    'イベント再開する
+    StopEvents = False
+    '棚番テキストボックスにフォーカスセット(イニシャル値セットされるはず)
+    txtBox_F_INV_Tana_Local_Text.SetFocus
+    'clsIncrementalのイベントも再開する
+    clsIncrementalfrmBIN.StopEvent = False
+    Exit Sub
 End Sub
 '各コントロールの値をRSにセットする
 Private Sub UpdateRSFromContrl(argCtrl As Control)
     On Error GoTo ErrorCatch
     If Not dicObjNameToFieldName.Exists(argCtrl.Name) Then
         'dicobjToFieldに存在しないコントロール名の場合は抜ける
+        Exit Sub
+    End If
+    If AddnewMode And clsADOfrmBIN.RS.RecordCount >= 1 Then
+        '新規追加モードで、RecordCountが1以上(既存データあり)の場合は抜ける
         Exit Sub
     End If
     Select Case True
@@ -712,6 +875,10 @@ Private Sub CancelUpdateBatch()
         End If
         '編集不可モードへ
         SwitchtBoxEditmode False
+        If AddnewMode Then
+            'AddNewModeの時はこっちも解除してやる
+            SwitchAddNewMode False
+        End If
         GoTo CloseAndExit
     Case clsADOfrmBIN.RS.Status And adRecModified
         'Statusが変更有になっている
@@ -742,6 +909,10 @@ Private Sub CancelUpdateBatch()
             End If
             '編集不可モードへ
             SwitchtBoxEditmode False
+            If AddnewMode Then
+                'AddNewModeの時はこっちも解除してやる
+                SwitchAddNewMode False
+            End If
             'RSより値を取得する
             GetValuFromRS
             GoTo CloseAndExit

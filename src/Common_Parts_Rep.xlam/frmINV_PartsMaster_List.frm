@@ -135,7 +135,7 @@ Private Sub btnUpdateOriginData_Click()
 #End If
     MsgBox longAffected & " 件のデータを更新しました。"
     'DBからRSにデータ取得しなおす
-    SetDefaultDatatoRS
+    setDefaultDatatoRS
     'イベント再開
     clsIncrementalParts.StopEvent = False
     '手配コードを戻してやる
@@ -276,7 +276,7 @@ Private Sub UserForm_Initialize()
         Set clsIncrementalParts = CreateclsIncrementalSerch
     End If
     'DBからRSにデータ取得する
-    SetDefaultDatatoRS
+    setDefaultDatatoRS
     '棚番テキストボックスにフォーカスを移動
     txtBox_F_INV_Tana_Local_Text.SetFocus
     '初期化が終わる前に全消去しようとすると、Dictionary等の準備ができてないのにTxtBox_Changeイベントが先に発生してしまうので消去は最後に
@@ -341,7 +341,7 @@ Private Sub InitializeFieldNameDic()
     dicObjNameToFieldName.Add lbl_F_INV_Tehai_ID.Name, clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumPMList.INVMasterParts(F_Tehai_ID_IMPrt), clsEnumPMList)
     Exit Sub
 End Sub
-Private Sub SetDefaultDatatoRS()
+Private Sub setDefaultDatatoRS()
     On Error GoTo ErrorCatch
     '初期化完了するまでイベントストップする
     clsIncrementalParts.StopEvent = True
@@ -353,7 +353,7 @@ Private Sub SetDefaultDatatoRS()
     'オブジェクト名→フィールド名のDictionaryの設定を行う
     InitializeFieldNameDic
     'clsIncrementalSerchのコンストラクタ
-    clsIncrementalParts.Constructor Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
+    clsIncrementalParts.ConstRuctor Me, dicObjNameToFieldName, clsADOfrmPMList, clsEnumPMList, clsSQLBc
     'ここでフィルタ前の全情報を取得する、Where条件は今回はなし
     'ReplaceDicを設定する
     clsIncrementalParts.SetReplaceParmDic dicReplacePartsMaster, clsSQLBc.GetSELECTfieldListFromDicObjctToFieldName(dicObjNameToFieldName)

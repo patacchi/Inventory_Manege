@@ -138,7 +138,7 @@ ErrorCatch:
     Exit Sub
 CloseAndExit:
     'RS再取得
-    SetDefaultDatatoRS (lstBoxEndDay.List(lstBoxEndDay.ListIndex))
+    setDefaultDatatoRS (lstBoxEndDay.List(lstBoxEndDay.ListIndex))
     'RSよりデータ取得
     getValueFromRS
     'イベント再開
@@ -184,7 +184,7 @@ Private Sub lstBoxEndDay_Click()
     '締切日リスト選択された
     '選択された締切日からデータ取得し、メンバ変数のrsにセットしてやる
     Dim isCollect As Boolean
-    isCollect = SetDefaultDatatoRS(lstBoxEndDay.List(lstBoxEndDay.ListIndex))
+    isCollect = setDefaultDatatoRS(lstBoxEndDay.List(lstBoxEndDay.ListIndex))
     If Not isCollect Then
         MsgBox "棚卸締切日: " & lstBoxEndDay.List(lstBoxEndDay.ListIndex) & " のデータの取得に失敗しました"
         Exit Sub
@@ -521,7 +521,7 @@ Private Sub ConstRactor()
     'divObjToFieldを設定
     setDicObjToField
     'clsIncrementalSerchコンストラクタ
-    clsIncrementalfrmBIN.Constructor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
+    clsIncrementalfrmBIN.ConstRuctor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
     Exit Sub
 End Sub
 'フォーム終了時に実行するプロシージャ
@@ -865,7 +865,7 @@ End Sub
 '''args
 '''strargEndDay        締切日の10文字
 '''strargAditionalWhere 追加のWhere条件をStringで指定
-Private Function SetDefaultDatatoRS(strargEndDay As String, Optional strargAditionalWhere As String) As Boolean
+Private Function setDefaultDatatoRS(strargEndDay As String, Optional strargAditionalWhere As String) As Boolean
     On Error GoTo ErrorCatch
     '設定された引数を元にSQLを組み立てる
 ''棚卸チェック用デフォルトデータ取得SQL
@@ -966,20 +966,20 @@ Private Function SetDefaultDatatoRS(strargEndDay As String, Optional strargAditi
     'ここでBOF、EOFが共にTrueになってたら取得失敗している
     If clsADOfrmBIN.RS.BOF And clsADOfrmBIN.RS.EOF Then
         '取得失敗(0件)
-        SetDefaultDatatoRS = False
+        setDefaultDatatoRS = False
         GoTo CloseAndExit
     Else
         '取得成功
         'フィルタ解除し、最初のレコードに移動
         clsADOfrmBIN.RS.Filter = adFilterNone
         clsADOfrmBIN.RS.MoveFirst
-        SetDefaultDatatoRS = True
+        setDefaultDatatoRS = True
         GoTo CloseAndExit
     End If
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "setDefaultDataToRS code: " & err.Number & " Description: " & err.Description
-    SetDefaultDatatoRS = False
+    setDefaultDatatoRS = False
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -1294,7 +1294,7 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
     clsADOfrmBIN.RS.Filter = adFilterNone
     '指定した条件で条件を指定し、大元のデータを更新してやる
     Dim isCollect As Boolean
-    isCollect = SetDefaultDatatoRS(lstBoxEndDay.List(lstBoxEndDay.ListIndex), Join(strarrAddWhere, " AND "))
+    isCollect = setDefaultDatatoRS(lstBoxEndDay.List(lstBoxEndDay.ListIndex), Join(strarrAddWhere, " AND "))
     If Not isCollect Then
         MsgBox "指定条件で適合するレコードがありませんでした。絞り込み条件を元に戻し、データ再取得します。"
         'イベント停止

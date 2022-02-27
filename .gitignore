@@ -22,5 +22,6 @@ src/*/*.frx
 !src/Common_Parts_Rep.xlam/frmINV_PartsMaster_List.*
 #!src/Common_Parts_Rep.xlam/frmTanaBincard.*
 !src/Common_Parts_Rep.xlam/frmBinLabel.*
+!src/Common_Parts_Rep.xlam/frmRegistNewLocation.*
 TempDB/
 #/x64/

@@ -1,5 +1,9 @@
 Attribute VB_Name = "FormCommon"
 Option Explicit
+'フォーム共通定数定義
+'テキストボックス関係
+Public Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0         '薄い緑
+Public Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ウィンドウの背景
 'フォーム処理で共通の処理をまとめていく予定
 Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal arglongIndex As Long = 0, Optional ByVal boolMaxLengthFind As Boolean) As String
     '指定したデータ、行数（Index）から、ListBoxの幅（ポイント数を;で区切った文字列）として返す

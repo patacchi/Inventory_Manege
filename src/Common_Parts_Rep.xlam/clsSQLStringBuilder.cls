@@ -461,8 +461,9 @@ Public Function Get1DimentionVarArrFromRS(ByRef argRS As ADODB.Recordset, strarg
         Exit Function
     End If
     'フィルタが指定されていればフィルタかけてやる
-    If Not strargFilter = "" Then
-        'フィルタ文字列あり
+    Select Case True
+    Case strargFilter <> ""
+        'フィル文字列が指定されている場合
         Dim strarrFilter(3) As String
         strarrFilter(0) = strargFieldName
         strarrFilter(1) = " Like '%"
@@ -470,13 +471,15 @@ Public Function Get1DimentionVarArrFromRS(ByRef argRS As ADODB.Recordset, strarg
         strarrFilter(3) = "%'"
         'RSのFilterにセットしてやる
         argRS.Filter = Join(strarrFilter, "")
-        'フィルタ処理後レコードなければ抜ける
-        If argRS.BOF And argRS.EOF Then
-            MsgBox "フィルタ処理後のレコード件数が0でした。"
-            Get1DimentionVarArrFromRS = Empty
-            GoTo CloseAndExit
-            Exit Function
-        End If
+    End Select
+    'フィルタ処理後レコードなければ抜ける
+    If argRS.BOF And argRS.EOF Then
+        DebugMsgWithTime "Get1DimentionVarArrFromRS : No recored found filter: " & argRS.Filter
+        'ここではメッセージボックスは表示しない、新規追加時など件数0が正の動きをするものがあるため
+'            MsgBox "フィルタ処理後のレコード件数が0でした。"
+        Get1DimentionVarArrFromRS = Empty
+        GoTo CloseAndExit
+        Exit Function
     End If
     If argRS.CursorLocation = adUseClient Then
         'クライアントカーソルの場合

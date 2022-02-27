@@ -93,7 +93,7 @@ End Property
 '''me.clsadohandleref            AdoHandleのインスタンス参照
 '''me.clsenumref
 '''clsSQLStringBuilder
-Public Sub Constructor(ByRef argFrmParent As UserForm, dicargObjectToFieldName As Dictionary, _
+Public Sub ConstRuctor(ByRef argFrmParent As UserForm, dicargObjectToFieldName As Dictionary, _
 clsADOargIncremental As clsADOHandle, clsEnumargIncremental As clsEnum, clsSQLBargIncremental As clsSQLStringBuilder)
     If argFrmParent Is Nothing Or dicargObjectToFieldName Is Nothing Or _
     clsADOargIncremental Is Nothing Or clsEnumargIncremental Is Nothing Or clsSQLBargIncremental Is Nothing Then
@@ -147,7 +147,10 @@ End Sub
 '''Changeイベント
 '''文字が入力されたら、リストの絞り込みを行い、結果が1件のみになったらリストを消去する
 '''args
-Public Sub Incremental_TextBox_Change()
+'''Optional AutoHideList_Unmatch        結果件数が0だった場合は、警告なしにリストボックスを非表示にする、使いどころは新規追加時のチェックのみにインクリメンタルを使用している時
+'''Optional ReuseFilterValue            RSにフィルタセットする時、既存のフィルタに追加してやる時はTrueをセット、デフォルトはFalse
+'''Optional DontHideOther               Changeイベントの際に、他のテキストボックスの値を消去しない場合はTrueをセット、デフォルトはFalse、主にAddNewの時に使う
+Public Sub Incremental_TextBox_Change(Optional AutoHideList_Unmatch As Boolean, Optional ReuseFilterValue As Boolean = False, Optional DontHideOther As Boolean = False)
     On Error GoTo ErrorCatch
     'StopEventがセットされていたら何もしないで抜ける
     If Me.StopEvent Then
@@ -170,8 +173,10 @@ Public Sub Incremental_TextBox_Change()
     End If
     'イベント受付を停止する
     Me.StopEvent = True
-    '既に前に確定してデータが入っていたら判別しにくいので、自身のテキストボックス以外データ消去
-    ClearAllContents Me.txtBoxRef.Name
+    If Not DontHideOther Then
+        'DonHideフラグが立っていなくて、既に前に確定してデータが入っていたら判別しにくいので、自身のテキストボックス以外データ消去
+        ClearAllContents Me.txtBoxRef.Name
+    End If
     'リストボックスの選択状態を解除する
 '    If Not IsRedim(varSourceArray) Then
 '        'まだ配列が初期化されてなかった場合
@@ -188,7 +193,14 @@ Public Sub Incremental_TextBox_Change()
 '    If Not IsRedim(varSourceArray) Or UBound(varSourceArray) < LBound(varSourceArray) Then
     If Not IsRedim(varSourceArray) Then
         '見つからなかった場合？
-        DebugMsgWithTime "Incremental_TextBox_Change: No result found"
+'        DebugMsgWithTime "Incremental_TextBox_Change: No result found"
+        If AutoHideList_Unmatch Then
+            '自動リスト非表示フラグが立っていた場合
+            Me.LstBoxRef.Visible = False
+            GoTo CloseAndExit
+            Exit Sub
+        End If
+        MsgBox "フィルタ処理後のレコード件数が0でした"
         'テキストボックスにまだ文字が残っている場合は最後の1文字を削除して、再設定してやる(自身再帰呼び出しになるはず)
         If Me.txtBoxRef.TextLength > 1 Then
             '一旦イベント再開
@@ -243,7 +255,8 @@ End Sub
 '''args
 '''me.txtBoxRef                 ターゲットとなるテキストボックスの参照
 '''me.lstboxref           インクリメンタルサーチ用のリストボックスの参照
-Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, ByRef lstBoxarg_Incremental As MSForms.ListBox)
+'''Optional ReuseFilterValue    RSのフィルターを既存のものに追記する場合はTrueをセット、デフォルトはFalse
+Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, ByRef lstBoxarg_Incremental As MSForms.ListBox, Optional ReuseFilterValue As Boolean = False)
     On Error GoTo ErrorCatch
     '各引数のチェック、Nothingじゃなかったらクラスのプロパティにセットする
     If txtBoxargTarget Is Nothing Or lstBoxarg_Incremental Is Nothing Then
