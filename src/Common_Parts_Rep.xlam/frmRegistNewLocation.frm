@@ -280,21 +280,21 @@ Private Sub GetValuFromRS()
     On Error GoTo CloseAndExit
     'イベント停止する
     StopEvents = True
-    Dim varKeydicObjToField As Variant
+    Dim varKeyDicObjtoField As Variant
     'cidObjToFieldの全要素をループ
-    For Each varKeydicObjToField In dicObjToFieldName
+    For Each varKeyDicObjtoField In dicObjToFieldName
         'コントロールの種類により処理を分岐
         Select Case True
-        Case TypeName(frmRegistNewLocation.Controls(varKeydicObjToField)) = "Label"
+        Case TypeName(frmRegistNewLocation.Controls(varKeyDicObjtoField)) = "Label"
             'ラベルだった場合
-            frmRegistNewLocation.Controls(varKeydicObjToField).Caption = _
-            clsADONewLocation.RS.Fields(dicObjToFieldName(varKeydicObjToField)).Value
-        Case TypeName(frmRegistNewLocation.Controls(varKeydicObjToField)) = "TextBox"
+            frmRegistNewLocation.Controls(varKeyDicObjtoField).Caption = _
+            clsADONewLocation.RS.Fields(dicObjToFieldName(varKeyDicObjtoField)).Value
+        Case TypeName(frmRegistNewLocation.Controls(varKeyDicObjtoField)) = "TextBox"
             'テキストボックスだった場合
-            frmRegistNewLocation.Controls(varKeydicObjToField).Text = _
-            clsADONewLocation.RS.Fields(dicObjToFieldName(varKeydicObjToField)).Value
+            frmRegistNewLocation.Controls(varKeyDicObjtoField).Text = _
+            clsADONewLocation.RS.Fields(dicObjToFieldName(varKeyDicObjtoField)).Value
         End Select
-    Next varKeydicObjToField
+    Next varKeyDicObjtoField
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "GetValuFromRS code: " & err.Number & " Description: " & err.Description

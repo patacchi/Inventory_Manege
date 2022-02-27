@@ -39,11 +39,14 @@ Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
 '新規追加時のSQL、ポイントはT_INV_N_TANAをRightJoinし、未登録の棚番もRSに含める点
 '棚番リストはFilterでM_PartsでTana_IDがNullの物を抽出する
-Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBPrt.F_INV_Tana_ID AS TDBPrts_F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    RIGHT JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
 "    WHERE TDBPrt.F_INV_Tana_ID IS NULL"
+'AddNewでうまくいかなかったので、M_Parts単独のSelect文
+Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
+"FROM T_INV_M_Parts AS TDBPrt "
 Private Sub btnAddNewTehaiCode_Click()
     SwitchAddNewMode True
 End Sub
@@ -317,7 +320,7 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
 End Sub
 '品名1
 Private Sub txtBox_F_INV_Label_Name_1_Change()
-    If StopEvents Then
+    If StopEvents Or AddnewMode Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
@@ -328,7 +331,7 @@ Private Sub txtBox_F_INV_Label_Name_1_Change()
 End Sub
 '品名2
 Private Sub txtBox_F_INV_Label_Name_2_Change()
-    If StopEvents Then
+    If StopEvents Or AddnewMode Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
@@ -339,7 +342,7 @@ Private Sub txtBox_F_INV_Label_Name_2_Change()
 End Sub
 '備考1
 Private Sub txtBox_F_INV_Label_Remark_1_Change()
-    If StopEvents Then
+    If StopEvents Or AddnewMode Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
@@ -350,7 +353,7 @@ Private Sub txtBox_F_INV_Label_Remark_1_Change()
 End Sub
 '備考2
 Private Sub txtBox_F_INV_Label_Remark_2_Change()
-    If StopEvents Then
+    If StopEvents Or AddnewMode Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
@@ -799,6 +802,11 @@ Private Sub DoUpdateBatch()
     On Error GoTo ErrorCatch
     'イベント停止する
     StopEvents = True
+    If AddnewMode Then
+        'AddNewModeの時は別プロシージャへ(帰ってこない)
+        AddnewUpdateDB
+        Exit Sub
+    End If
     Dim varOldFilter As Variant
     Dim varBookMark As Variant
     '現在のBookMarkを取得
@@ -841,6 +849,111 @@ ErrorCatch:
     DebugMsgWithTime "DoUpdateBatch code: " & err.Number & " Description: " & err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    'イベント再開する
+    StopEvents = False
+    Exit Sub
+End Sub
+'''AddNewModeでDBをUpdateする
+Private Sub AddnewUpdateDB()
+    On Error GoTo ErrorCatch
+    'イベント停止する
+    StopEvents = True
+    '手配コードと棚番の組み合わせで同一のものがないかチェックする
+    'SQLを一旦標準のものへ
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+        '接続されていたら一旦切断する
+        clsADOfrmBIN.RS.Close
+    End If
+    clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+    clsADOfrmBIN.RS.Open , , , , CommandTypeEnum.adCmdText
+    'Filterをセットしてやる
+    clsADOfrmBIN.RS.Filter = dicObjNameToFieldName(txtBox_F_INV_Tana_Local_Text.Name) & " = '" & txtBox_F_INV_Tana_Local_Text.Text & "' AND " & _
+                            dicObjNameToFieldName(txtBox_F_INV_Tehai_Code.Name) & " = '" & txtBox_F_INV_Tehai_Code.Text & "'"
+    If clsADOfrmBIN.RS.RecordCount >= 1 Then
+        DebugMsgWithTime "AddnewUpdateDB : Already exist Tehaicode and LocalTana pair"
+        MsgBox "指定の手配コードと棚番の組み合わせは既に存在します" & vbCrLf & _
+            "手配コード: " & txtBox_F_INV_Tehai_Code.Text & vbCrLf & _
+            "棚番： " & txtBox_F_INV_Tana_Local_Text.Text
+        GoTo CloseAndExit
+    End If
+    'SQLをAddNewModeへ
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+        clsADOfrmBIN.RS.Close
+    End If
+    clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_ADDNEW_TEHAI_CODE
+    clsADOfrmBIN.RS.Open , , , , CommandTypeEnum.adCmdText
+    'フィルターに棚番のテキストを設定
+    clsADOfrmBIN.RS.Filter = dicObjNameToFieldName(txtBox_F_INV_Tana_Local_Text.Name) & " = '" & txtBox_F_INV_Tana_Local_Text.Text & "'"
+    If clsADOfrmBIN.RecordCount < 1 Then
+        MsgBox "指定の棚番が見つかりませんでした。棚番新規登録画面で登録しなおしてみて下さい。"
+        GoTo CloseAndExit
+    ElseIf clsADOfrmBIN.RecordCount > 1 Then
+        MsgBox "指定の棚番で複数のレコードがありました。DBのメンテナンスが必要です。"
+        GoTo CloseAndExit
+    End If
+    '登録作業に入る
+    'tana_IDを退避
+    Dim longTanaID As Long
+    longTanaID = clsADOfrmBIN.RS.Fields(clsEnumfrmBIN.INVMasterTana(F_INV_TANA_ID_IMT)).Value
+    '登録用にPartsMasterのみのSelectでRecordSetを新たに設定
+    Dim rsOnlyPartsMaster As ADODB.Recordset
+    Set rsOnlyPartsMaster = New ADODB.Recordset
+    Set rsOnlyPartsMaster.ActiveConnection = clsADOfrmBIN.RS.ActiveConnection
+    rsOnlyPartsMaster.Source = SQL_BIN_LABEL_ONLY_PARTS
+    rsOnlyPartsMaster.LockType = adLockBatchOptimistic
+    rsOnlyPartsMaster.CursorType = adOpenStatic
+    rsOnlyPartsMaster.CursorLocation = adUseClient
+    rsOnlyPartsMaster.Open , , , , CommandTypeEnum.adCmdText
+    'まずはRSに値セット
+    Dim varKeyDicObjtoField As Variant
+    'dicObjToFieldループ
+    If dicObjNameToFieldName.Exists(Empty) Then
+        dicObjNameToFieldName.Remove Empty
+    End If
+    'AddNewする
+    rsOnlyPartsMaster.AddNew
+    'キーのtana_IDをセットする
+'    clsADOfrmBIN.RS.Fields(REPLACE(clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt), clsEnumfrmBIN, True), ".", "_")).Value = longTanaID
+    rsOnlyPartsMaster.Fields(clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt)).Value = longTanaID
+    For Each varKeyDicObjtoField In dicObjNameToFieldName
+        Select Case True
+        Case TypeName(frmBinLabel.Controls(varKeyDicObjtoField)) = "TextBox"
+            'テキストボックスの場合(当面テキストボックスのみ扱う)
+            'コントロールの値をRSに設定
+            If clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Properties("BASETABLENAME").Value = INV_CONST.T_INV_M_Parts Then
+                'BaseTable名がPartsのもののみ対象にする
+                rsOnlyPartsMaster.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Value = _
+                frmBinLabel.Controls(varKeyDicObjtoField).Text
+            End If
+        End Select
+    Next varKeyDicObjtoField
+    'RSを確定
+    rsOnlyPartsMaster.Update
+    'RSのフィルタを再設定、定数のものへ
+    rsOnlyPartsMaster.Filter = adFilterNone
+    rsOnlyPartsMaster.Filter = adFilterPendingRecords
+    If Not (rsOnlyPartsMaster.BOF And rsOnlyPartsMaster.EOF) And (rsOnlyPartsMaster.Status And ADODB.RecordStatusEnum.adRecNew) Then
+        'レコードが存在し、なおかつRSの状態が変更有の場合
+        rsOnlyPartsMaster.UpdateBatch adAffectGroup
+    End If
+    If rsOnlyPartsMaster.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
+        MsgBox "正常に追加されました"
+        '通常モードへ戻す
+        ClearAllContents
+        SwitchAddNewMode False
+    Else
+        MsgBox "追加に失敗しました"
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "AddnewUpdateDB code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    '一時的に使用したRSonlyの接続を切断する
+    If rsOnlyPartsMaster.State And ObjectStateEnum.adStateOpen Then
+        rsOnlyPartsMaster.Close
+        Set rsOnlyPartsMaster = Nothing
+    End If
     'イベント再開する
     StopEvents = False
     Exit Sub
