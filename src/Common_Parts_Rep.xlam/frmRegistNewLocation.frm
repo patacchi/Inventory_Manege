@@ -31,7 +31,8 @@ Private conADONewLocation As ADODB.Connection
 '{1}    Tana_System
 '{2}    Tana_Local
 '{3}    T_M_Tana
-Private Const SQL_DEFAULT_NEW_LOCATION_DATA As String = "SELECT DISTINCT {0},{1},{2} FROM {3} " & vbCrLf & _
+'{4}    InputDate
+Private Const SQL_DEFAULT_NEW_LOCATION_DATA As String = "SELECT DISTINCT {0},{1},{2},{4} FROM {3} " & vbCrLf & _
                                                         "WHERE {1} IS NOT NULL"
 '''------------------------------------------------------------------------------------------------------
 'イベント
@@ -182,6 +183,7 @@ Private Sub setDefaultDatatoRS()
     dicReplaceDefault.Add 1, clsEnumNewLocation.INVMasterTana(F_INV_Tana_System_Text_IMT)
     dicReplaceDefault.Add 2, clsEnumNewLocation.INVMasterTana(F_INV_Tana_Local_Text_IMT)
     dicReplaceDefault.Add 3, INV_CONST.T_INV_M_Tana
+    dicReplaceDefault.Add 4, PublicConst.INPUT_DATE
     'イベント停止する
     StopEvents = True
     'RSが未初期化の時は新たに設定してやる
@@ -245,6 +247,8 @@ Private Sub AddNewLocation()
             clsADONewLocation.RS.Fields(dicObjToFieldName(varKeydicObjt)).Value = frmRegistNewLocation.Controls(varKeydicObjt).Text
         End Select
     Next varKeydicObjt
+    'InputDate入力
+    clsADONewLocation.RS.Fields(PublicConst.INPUT_DATE).Value = GetLocalTimeWithMilliSec
     'ローカルのRSを確定させる
     clsADONewLocation.RS.Update
     '一旦フィルタ解除

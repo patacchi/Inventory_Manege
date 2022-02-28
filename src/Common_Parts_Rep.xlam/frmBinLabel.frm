@@ -24,6 +24,7 @@ Private clsIncrementalfrmBIN As clsIncrementalSerch
 'メンバ変数
 Private confrmBIN As ADODB.Connection
 Private rsLabelTemp As ADODB.Recordset
+Private rsOnlyPartsMaster As ADODB.Recordset                        '暫定対応になるかも？AddNew時に使用するPartsMasterのみをSelectした結果を格納(Addnewも)するRS
 Private StopEvents As Boolean
 Public UpdateMode As Boolean                                        '編集可能状態になってるときはTrueをセット
 Private AddnewMode As Boolean                                       '新規追加モードの時にTrueをセット
@@ -45,7 +46,7 @@ Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_T
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
 "    WHERE TDBPrt.F_INV_Tana_ID IS NULL"
 'AddNewでうまくいかなかったので、M_Parts単独のSelect文
-Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2" & vbCrLf & _
+Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,InputDate" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt "
 Private Sub btnAddNewTehaiCode_Click()
     SwitchAddNewMode True
@@ -324,10 +325,13 @@ Private Sub txtBox_F_INV_Label_Name_1_Change()
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If UpdateMode Then
+    Select Case True
+    Case UpdateMode
         'UpdateModeの時はUpdateメソッドへ
         UpdateRSFromContrl ActiveControl
-    End If
+    Case AddnewMode
+        'AddNewModeの時は
+    End Select
 End Sub
 '品名2
 Private Sub txtBox_F_INV_Label_Name_2_Change()
@@ -765,31 +769,43 @@ CloseAndExit:
     clsIncrementalfrmBIN.StopEvent = False
     Exit Sub
 End Sub
-'各コントロールの値をRSにセットする
-Private Sub UpdateRSFromContrl(argCtrl As Control)
+''''各コントロールの値をRSにセットする
+'''args
+'''Optional rsargOnlyParts          AddNewModeの時は必須、PartsMasterオンリーのSelect文に対応するRS、通常のUpdateModeでは使用しない・・・はず
+'''Optional rsargOnlyTana           オプション。そのうち棚番も一緒に新規登録するようになったら棚番オンリーのRSが必要になるかも?予約枠
+Private Sub UpdateRSFromContrl(argCtrl As Control, Optional rsargOnlyParts As ADODB.Recordset, Optional rsargOnlyTana As ADODB.Recordset)
     On Error GoTo ErrorCatch
     If Not dicObjNameToFieldName.Exists(argCtrl.Name) Then
         'dicobjToFieldに存在しないコントロール名の場合は抜ける
         Exit Sub
     End If
-    If AddnewMode And clsADOfrmBIN.RS.RecordCount >= 1 Then
-        '新規追加モードで、RecordCountが1以上(既存データあり)の場合は抜ける
+    If AddnewMode And (rsargOnlyParts Is Nothing) And (rsargOnlyTana Is Nothing) Then
+        '新規追加モードで、個別RSがどちらもNothingだったら抜ける
+        MsgBox "RecordSetが未初期化でした。処理を中断します"
         Exit Sub
     End If
     Select Case True
-    '最初に文字数チェックを行い、オーバーしていたら設定値まで切り下げる
-    Case Len(argCtrl.Text) > clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize
-        '文字数がフィールド設定値オーバー
-        MsgBox "入力された文字数が設定の " & clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize & " 文字を超えています。"
-        argCtrl.Text = Mid(argCtrl.Text, 1, clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize)
-        GoTo CloseAndExit
-    Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value), clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value <> argCtrl.Text
-        'RSの値がNullか、引数のコントロールのtextと違っている場合
-        'rsに値をセットして、Updateまでする（DBに反映するにはUpdateBatchしないとダメ）
-        clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value = _
-        argCtrl.Text
-        clsADOfrmBIN.RS.Update
-    End Select
+    Case UpdateMode
+        'UpdateModeの時
+        'RSはクラス共有変数のclsADO内のRSをそのまま使う
+        Select Case True
+        '最初に文字数チェックを行い、オーバーしていたら設定値まで切り下げる
+        Case Len(argCtrl.Text) > clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize
+            '文字数がフィールド設定値オーバー
+            MsgBox "入力された文字数が設定の " & clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize & " 文字を超えています。"
+            argCtrl.Text = Mid(argCtrl.Text, 1, clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize)
+            GoTo CloseAndExit
+        Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value), clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value <> argCtrl.Text
+            'RSの値がNullか、引数のコントロールのtextと違っている場合
+            'rsに値をセットして、Updateまでする（DBに反映するにはUpdateBatchしないとダメ）
+            clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value = _
+            argCtrl.Text
+            clsADOfrmBIN.RS.Update
+        End Select          'CheckDigit
+    Case AddnewMode
+        'AddNewMode
+        'rsがPartsとTanaに分かれているので処理を分岐しなきゃダメ
+    End Select          'ModeSelector
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "UpdateRSFromContrl code: " & err.Number & " Description: " & err.Description
@@ -895,15 +911,8 @@ Private Sub AddnewUpdateDB()
     'tana_IDを退避
     Dim longTanaID As Long
     longTanaID = clsADOfrmBIN.RS.Fields(clsEnumfrmBIN.INVMasterTana(F_INV_TANA_ID_IMT)).Value
-    '登録用にPartsMasterのみのSelectでRecordSetを新たに設定
-    Dim rsOnlyPartsMaster As ADODB.Recordset
-    Set rsOnlyPartsMaster = New ADODB.Recordset
-    Set rsOnlyPartsMaster.ActiveConnection = clsADOfrmBIN.RS.ActiveConnection
-    rsOnlyPartsMaster.Source = SQL_BIN_LABEL_ONLY_PARTS
-    rsOnlyPartsMaster.LockType = adLockBatchOptimistic
-    rsOnlyPartsMaster.CursorType = adOpenStatic
-    rsOnlyPartsMaster.CursorLocation = adUseClient
-    rsOnlyPartsMaster.Open , , , , CommandTypeEnum.adCmdText
+    'rsOnlyPartsの初期化確認
+    rsOnlyPartsInitialize
     'まずはRSに値セット
     Dim varKeyDicObjtoField As Variant
     'dicObjToFieldループ
@@ -915,18 +924,21 @@ Private Sub AddnewUpdateDB()
     'キーのtana_IDをセットする
 '    clsADOfrmBIN.RS.Fields(REPLACE(clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt), clsEnumfrmBIN, True), ".", "_")).Value = longTanaID
     rsOnlyPartsMaster.Fields(clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt)).Value = longTanaID
-    For Each varKeyDicObjtoField In dicObjNameToFieldName
-        Select Case True
-        Case TypeName(frmBinLabel.Controls(varKeyDicObjtoField)) = "TextBox"
-            'テキストボックスの場合(当面テキストボックスのみ扱う)
-            'コントロールの値をRSに設定
-            If clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Properties("BASETABLENAME").Value = INV_CONST.T_INV_M_Parts Then
-                'BaseTable名がPartsのもののみ対象にする
-                rsOnlyPartsMaster.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Value = _
-                frmBinLabel.Controls(varKeyDicObjtoField).Text
-            End If
-        End Select
-    Next varKeyDicObjtoField
+    '以下の処理はUpdateRSFromControlプロシージャで完了する設計に変更
+'    For Each varKeyDicObjtoField In dicObjNameToFieldName
+'        Select Case True
+'        Case TypeName(frmBinLabel.Controls(varKeyDicObjtoField)) = "TextBox"
+'            'テキストボックスの場合(当面テキストボックスのみ扱う)
+'            'コントロールの値をRSに設定
+'            If clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Properties("BASETABLENAME").Value = INV_CONST.T_INV_M_Parts Then
+'                'BaseTable名がPartsのもののみ対象にする
+'                rsOnlyPartsMaster.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Value = _
+'                frmBinLabel.Controls(varKeyDicObjtoField).Text
+'            End If
+'        End Select
+'    Next varKeyDicObjtoField
+    'InputDate入力
+    rsOnlyPartsMaster.Fields(PublicConst.INPUT_DATE).Value = GetLocalTimeWithMilliSec
     'RSを確定
     rsOnlyPartsMaster.Update
     'RSのフィルタを再設定、定数のものへ
@@ -947,6 +959,9 @@ Private Sub AddnewUpdateDB()
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "AddnewUpdateDB code: " & err.Number & " Description: " & err.Description
+    MsgBox "登録時にエラーが発生しました " & vbCrLf & err.Description
+    rsOnlyPartsMaster.CancelUpdate
+    rsOnlyPartsMaster.CancelBatch
     GoTo CloseAndExit
 CloseAndExit:
     '一時的に使用したRSonlyの接続を切断する
@@ -956,6 +971,33 @@ CloseAndExit:
     End If
     'イベント再開する
     StopEvents = False
+    Exit Sub
+End Sub
+Private Sub rsOnlyPartsInitialize()
+    On Error GoTo ErrorCatch
+    If rsOnlyPartsMaster Is Nothing Then
+        '初期化されてなかったら
+        Set rsOnlyPartsMaster = New ADODB.Recordset
+    End If
+    If rsOnlyPartsMaster.State And ObjectStateEnum.adStateOpen Then
+        '接続されていたら一旦切断する
+        rsOnlyPartsMaster.Close
+    End If
+    '登録用にPartsMasterのみのSelectでRecordSetを新たに設定
+    'Connectionはクラス共有変数の物を設定
+    Set rsOnlyPartsMaster.ActiveConnection = clsADOfrmBIN.RS.ActiveConnection
+    'PartsMasterオンリーのSQLをセット
+    rsOnlyPartsMaster.Source = SQL_BIN_LABEL_ONLY_PARTS
+    rsOnlyPartsMaster.LockType = adLockBatchOptimistic
+    rsOnlyPartsMaster.CursorType = adOpenStatic
+    rsOnlyPartsMaster.CursorLocation = adUseClient
+    'RSオープン
+    rsOnlyPartsMaster.Open , , , , CommandTypeEnum.adCmdText
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "rsOnlyPartsInitialize code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
     Exit Sub
 End Sub
 '変更された内容を破棄して元に戻す
