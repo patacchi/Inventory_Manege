@@ -401,6 +401,6 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{7} InputDate
 '{8} INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {1} CHAR(10),{2} CHAR(50),{8} LONG," & vbCrLf & _
+"    {1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{7} CHAR(23)" & vbCrLf & _
 ")"

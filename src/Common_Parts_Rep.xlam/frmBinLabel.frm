@@ -94,6 +94,11 @@ Private Sub btnAddnewLabelTemp_Click()
     End If
     '次にカレントレコードをTempTableに追加する
     AddNewRStoLabelTemp
+    'UpdateModeで編集状態破棄フラグ(チェックボックス)が立っていたら確認無しでキャンセルする(メモ書きで一時記入した場合等)
+    If UpdateMode And chkBoxCancelUpdateModeatLabelTemp.Value Then
+        'UpdateModeでなおかつ編集状態不可チェックボックスがTrueだった
+        CancelUpdateBatch True
+    End If
 End Sub
 'DBからデータを引っ張り、差し込み印刷の結果のDocを表示する
 'ラベルプリンタ用BINカード表示ラベル
@@ -1000,8 +1005,10 @@ ErrorCatch:
 CloseAndExit:
     Exit Sub
 End Sub
-'変更された内容を破棄して元に戻す
-Private Sub CancelUpdateBatch()
+''''変更された内容を破棄して元に戻す
+'''args
+'''Optional NoConfirm           Trueをセットすると確認無しでキャンセルする、デフォルトはFalse
+Private Sub CancelUpdateBatch(Optional NoConfirm As Boolean = False)
     On Error GoTo ErrorCatch
     'イベント停止する
     StopEvents = True
@@ -1021,7 +1028,9 @@ Private Sub CancelUpdateBatch()
     Select Case True
     Case clsADOfrmBIN.RS.BOF And clsADOfrmBIN.RS.EOF, clsADOfrmBIN.RS.Status And ADODB.RecordStatusEnum.adRecUnmodified
         'EOR,BOFが同時に立ってるか(変更レコード無し)、StatusがUnmodifiedになっているとき
-        MsgBox "変更点はありませんでした"
+        If Not NoConfirm Then
+            MsgBox "変更点はありませんでした"
+        End If
         'フィルタを戻す？
         clsADOfrmBIN.RS.Filter = varOldFilter
         If clsADOfrmBIN.RS.Supports(adBookmark) Then
@@ -1039,7 +1048,9 @@ Private Sub CancelUpdateBatch()
         'Statusが変更有になっている
         'キャンセルしていいか問い合わせ
         Dim longMsgBoxRet As Long
-        longMsgBoxRet = MsgBox("内容が変更されています、変更を破棄しても良いですか?", vbYesNo)
+        If Not NoConfirm Then
+            longMsgBoxRet = MsgBox("内容が変更されています、変更を破棄しても良いですか?", vbYesNo)
+        End If
         If longMsgBoxRet = vbNo Then
             'キャンセルされた
             MsgBox "変更の破棄をキャンセルしました。データは変更後のままです。"
@@ -1055,7 +1066,9 @@ Private Sub CancelUpdateBatch()
         clsADOfrmBIN.RS.CancelBatch adAffectGroup
 '        If (clsADOfrmBIN.RS.Status And ADODB.RecordStatusEnum.adRecUnmodified) Or (clsADOfrmBIN.RS.Status = ADODB.RecordStatusEnum.adRecOK) Then
         If (clsADOfrmBIN.RS.Status And ADODB.RecordStatusEnum.adRecUnmodified) Then
-            MsgBox "変更点を無事に破棄しました。"
+            If Not NoConfirm Then
+                MsgBox "変更点を無事に破棄しました。"
+            End If
             'フィルタを戻す？
             clsADOfrmBIN.RS.Filter = varOldFilter
             If clsADOfrmBIN.RS.Supports(adBookmark) Then
