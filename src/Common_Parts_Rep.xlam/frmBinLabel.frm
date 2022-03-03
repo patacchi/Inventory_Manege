@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmBinLabel 
    Caption         =   "BINカードラベル印刷項目編集画面"
-   ClientHeight    =   5895
+   ClientHeight    =   7275
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   8610.001
@@ -239,6 +239,18 @@ Private Sub txtBox_F_INV_Tehai_Code_Change()
     'イベント再開する
     StopEvents = False
 End Sub
+'オーダーNoテキストボックス
+Private Sub txtBox_OrderNumber_Change()
+    If StopEvents Then
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    'Ucase掛ける
+    txtBox_OrderNumber.Text = UCase(txtBox_OrderNumber.Text)
+    'イベント再開する
+    StopEvents = False
+End Sub
 'keyup
 'インクリメンタルリストKeyUp
 Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
@@ -250,6 +262,11 @@ Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByV
     StopEvents = True
     'インクリメンタルに丸投げ
     clsIncrementalfrmBIN.Incremental_LstBox_Key_UP KeyCode, Shift
+    'インクリメンタルの結果、インクリメンタルリストが非表示になっていたらオーダーNoボックスにフォーカス
+    If lstBox_Incremental.Visible = False Or lstBox_Incremental.Height = 0 Then
+        'オーダーNoボックスにSetFocus
+        txtBox_OrderNumber.SetFocus
+    End If
     'イベント再開
     StopEvents = False
 End Sub
@@ -264,6 +281,11 @@ Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As I
     StopEvents = True
     'インクリメンタル
     clsIncrementalfrmBIN.Incremental_LstBox_Mouse_UP Button
+    'インクリメンタルの結果、インクリメンタルリストが非表示になっていたらオーダーNoボックスにフォーカス
+    If lstBox_Incremental.Visible = False Then
+        'オーダーNoボックスにSetFocus
+        txtBox_OrderNumber.SetFocus
+    End If
     'イベント再開
     StopEvents = False
 End Sub
@@ -467,6 +489,13 @@ Private Sub ConstRuctor()
     'RSのデータを取得する
     'ここでは取得しないで、インクリメンタルサーチに任せる
 '    GetValuFromRS
+    'ラベル追加枚数コンボボックスの初期化
+    Dim longRowCounter As Long
+    Dim longarrAddCount(9) As Long
+    For longRowCounter = 0 To 9
+        longarrAddCount(longRowCounter) = longRowCounter + 1
+    Next longRowCounter
+    cmbBox_AddLabelCount.List = longarrAddCount
     'イベント再開する
     StopEvents = False
 #If DebugDB Then
@@ -574,6 +603,10 @@ Private Sub ClearAllContents()
             Me.Controls(varKeyobjDic).Caption = ""
         End Select
     Next varKeyobjDic
+    '単独でオーダーNo消去
+    txtBox_OrderNumber.Text = ""
+    '枚数リストボックスListIndexを0(1枚)に
+    cmbBox_AddLabelCount.ListIndex = 0
 End Sub
 'RSから値をとってくる
 Private Sub GetValuFromRS()
@@ -844,6 +877,8 @@ Private Sub DoUpdateBatch()
         MsgBox "変更点はありませんでした。"
         'フィルタを戻してやる
         clsADOfrmBIN.RS.Filter = varOldFilter
+        '通常モード(編集不可モード)に戻す
+        SwitchtBoxEditmode False
         GoTo CloseAndExit
     Case clsADOfrmBIN.RS.Status And adRecModified
         'UpdateBatckで引数を与えないとうまく更新できないことがあるみたいなので、adAffectGroup、rs.filter(定数)で抽出されたレコードだけに影響あるやつで
@@ -855,10 +890,14 @@ Private Sub DoUpdateBatch()
         clsADOfrmBIN.RS.Bookmark = varBookMark
         If (clsADOfrmBIN.RS.Status And ADODB.RecordStatusEnum.adRecUnmodified) Then
             MsgBox "正常に更新されました"
+            'FilterをNoneにする
+            clsADOfrmBIN.RS.Filter = adFilterNone
             '編集不可モードへ
             SwitchtBoxEditmode False
-            'RSよりデータを取得する
-            GetValuFromRS
+'            'RSよりデータを取得する
+'            GetValuFromRS
+            'BookMarkを戻す
+            clsADOfrmBIN.RS.Bookmark = varBookMark
             GoTo CloseAndExit
         Else
             MsgBox "更新に失敗した可能性があります RSStasus: " & clsADOfrmBIN.RS.Status
@@ -1092,6 +1131,10 @@ Private Sub CancelUpdateBatch(Optional NoConfirm As Boolean = False)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "CancelUpdateBatch code: " & err.Number & " Description: " & err.Description
+    If err.Number = -2147217906 Then
+        'ブックマークが無効ですのエラーの時は(変更後等でブックマークが移動)編集不可モードへ戻してやる
+        SwitchtBoxEditmode False
+    End If
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -1152,6 +1195,7 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 6, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
         dicReplaceLabelTemp.Add 7, PublicConst.INPUT_DATE
         dicReplaceLabelTemp.Add 8, INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
+        dicReplaceLabelTemp.Add 9, INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
@@ -1207,43 +1251,57 @@ Private Sub AddNewRStoLabelTemp()
         '接続していなかったら接続する
         rsLabelTemp.Open
     End If
-    '新規レコードを追加する
-    rsLabelTemp.AddNew
-    Dim varKeyobjDic As Variant
-    'dicObjtoFieldをループし、rsLabelTempにデータを設定する
-    If dicObjNameToFieldName.Exists(Empty) Then
-        dicObjNameToFieldName.Remove Empty
+    '枚数選択されてなかったら抜ける
+    If cmbBox_AddLabelCount.ListIndex = -1 Then
+        MsgBox "追加する枚数を選択して下さい"
+        cmbBox_AddLabelCount.SetFocus
+        Exit Sub
     End If
-    For Each varKeyobjDic In dicObjNameToFieldName
-        Select Case True
-        '暫定対応、ラベルTableに追加しない項目もフォームに表示するようになったため
-        'Labelコントロールの場合は何もしないで抜ける
-        Case TypeName(Me.Controls(varKeyobjDic)) = "Label"
-            'ラベルコントロールの時は何もしない
-        Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value)
-            'Nullだった場合
-            'とりあえず空文字にする
-            rsLabelTemp.Fields(dicObjNameToFieldName(varKeyobjDic)).Value = ""
-        Case Else
-            'データがあった場合
-            'RSのデータをそのまま適用する
-            rsLabelTemp.Fields(dicObjNameToFieldName(varKeyobjDic)).Value = _
-            clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value
-        End Select
-    Next varKeyobjDic
-    '今回のフォームスタート時間をInputDateとして入力
-    rsLabelTemp.Fields(PublicConst.INPUT_DATE).Value = strStartTime
-    '手配コードの文字列数をセット
-    rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH).Value = Len(Trim(rsLabelTemp.Fields(clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)).Value))
-    'UpdateでローカルのRSを確定する
-    rsLabelTemp.Update
+    '枚数コンボボックス分追加する
+    Dim longAddCount As Long
+    For longAddCount = 1 To cmbBox_AddLabelCount.List(cmbBox_AddLabelCount.ListIndex)
+        '新規レコードを追加する
+        rsLabelTemp.AddNew
+        Dim varKeyobjDic As Variant
+        'dicObjtoFieldをループし、rsLabelTempにデータを設定する
+        If dicObjNameToFieldName.Exists(Empty) Then
+            dicObjNameToFieldName.Remove Empty
+        End If
+        For Each varKeyobjDic In dicObjNameToFieldName
+            Select Case True
+            '暫定対応、ラベルTableに追加しない項目もフォームに表示するようになったため
+            'Labelコントロールの場合は何もしないで抜ける
+            Case TypeName(Me.Controls(varKeyobjDic)) = "Label"
+                'ラベルコントロールの時は何もしない
+            Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value)
+                'Nullだった場合
+                'とりあえず空文字にする
+                rsLabelTemp.Fields(dicObjNameToFieldName(varKeyobjDic)).Value = ""
+            Case Else
+                'データがあった場合
+                'RSのデータをそのまま適用する
+                rsLabelTemp.Fields(dicObjNameToFieldName(varKeyobjDic)).Value = _
+                clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value
+            End Select
+        Next varKeyobjDic
+        '今回のフォームスタート時間をInputDateとして入力
+        rsLabelTemp.Fields(PublicConst.INPUT_DATE).Value = strStartTime
+        '手配コードの文字列数をセット
+        rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH).Value = Len(Trim(rsLabelTemp.Fields(clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)).Value))
+        'オーダーNoをセット、先頭からフィールドサイズ分まで
+        rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_ORDERNUM).Value = Mid(txtBox_OrderNumber.Text, 1, rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_ORDERNUM).DefinedSize)
+        'UpdateでローカルのRSを確定する
+        rsLabelTemp.Update
+    Next longAddCount
     'rsLabelのFilterをPendingRecords、変更を未送信に設定し、UpdateBatchをかけ、DBに反映する
     rsLabelTemp.Filter = adFilterNone
     rsLabelTemp.Filter = adFilterPendingRecords
     rsLabelTemp.UpdateBatch adAffectGroup
     rsLabelTemp.Filter = adFilterNone
     If rsLabelTemp.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
-        MsgBox "正常に一時テーブルに追加されました"
+        MsgBox "正常に " & cmbBox_AddLabelCount.List(cmbBox_AddLabelCount.ListIndex) & " 枚一時テーブルに追加されました"
+        '次の連続指定のために棚番テキストボックスにSetFocus
+        txtBox_F_INV_Tana_Local_Text.SetFocus
     End If
     GoTo CloseAndExit
     Exit Sub
@@ -1298,6 +1356,11 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
     'SQLを設定
     Dim strSQL As String
     strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
+    '昇順ソートオプションが指定されていたらSQLに追記してやる
+    If chkBox_SortByLocationASC.Value Then
+        '棚番昇順ソート指定がなされていた
+        strSQL = strSQL & vbCrLf & " ORDER BY [" & clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT) & "] ASC"
+    End If
     With docTemplateMailMerge.MailMerge
         'データソースを開く
         .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), ReadOnly:=True, sqlstatement:=strSQL

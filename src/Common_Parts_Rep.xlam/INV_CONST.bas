@@ -205,6 +205,7 @@ End Enum
 Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                                        'ラベル出力用の差し込み印刷用テーブルの名前
 'ラベル出力用一時テーブル専用フィールド定義
 Public Const F_INV_LABEL_TEMP_TEHAICODE_LENGTH As String = "F_INV_Tehaicode_Length"                 'ラベル出力のみに使用する計算列、手配コードの文字列数を格納
+Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "OrderNumber"                                    'ラベル出力のみに使用するオーダーNo列
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -400,7 +401,8 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{6} F_INV_Label_Remark_2
 '{7} InputDate
 '{8} INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
+'{9} INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
 "    {1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
-"    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{7} CHAR(23)" & vbCrLf & _
+"    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
 ")"
