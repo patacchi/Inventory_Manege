@@ -152,6 +152,31 @@ CloseAndExit:
     End If
     Exit Sub
 End Sub
+'詳細現品票(小)作成、表示
+Private Sub btnCreateSpecSheetSmall_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_SPECSHEET_Small)
+ErrorCatch:
+    DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & err.Number & " Description: " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
 '手配コードをセットしたパーツマスター画面を表示する
 Private Sub btnShowPMList_Click()
     If txtBox_F_INV_Tehai_Code.Text = "" Then
@@ -418,6 +443,13 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
         clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_ADDNEW_TEHAI_CODE
         clsADOfrmBIN.RS.Open
         clsADOfrmBIN.RS.Filter = ""
+        If clsADOfrmBIN.RS.RecordCount < 1 Then
+            '未使用の棚番が無いときはRecordCountが0になってるはず
+            MsgBox "未使用の棚番がありませんでした"
+            'AddNewMode解除
+            SwitchAddNewMode False
+            Exit Sub
+        End If
         'インクリメンタル実行、Enter、フィルタ追加モード
         clsIncrementalfrmBIN.Incremental_TextBox_Enter txtBox_F_INV_Tana_Local_Text, lstBox_Incremental, True
     Else
@@ -775,13 +807,13 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
         AddnewMode = True
         'UpdateModeをセットする
         SwitchtBoxEditmode True
+        '追加で手配コードボックスも編集可能にする
+        txtBox_F_INV_Tehai_Code.Locked = False
+        txtBox_F_INV_Tehai_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         '新規追加モードボタンEnabledをFalseに
         btnAddNewTehaiCode.Enabled = False
         '未使用棚番チェックボックスEnabled True
         chkBoxShowUnUseLocationOnly.Enabled = True
-        '追加で手配コードボックスも編集可能にする
-        txtBox_F_INV_Tehai_Code.Locked = False
-        txtBox_F_INV_Tehai_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         'DBよりデータ再取得
         SetDefaultValuetoRS
         '一旦フォーカスを棚番テキストボックスから外す
@@ -973,7 +1005,7 @@ Private Sub AddnewUpdateDB()
     End Select
     'RSの初期化、AddNewStatusの確認
     Select Case True
-    Case rsOnlyPartsInitialize Is Nothing, Not CBool(rsOnlyPartsMaster.Status And RecordStatusEnum.dbRecordNew)
+    Case rsOnlyPartsMaster Is Nothing, Not CBool(rsOnlyPartsMaster.Status And RecordStatusEnum.dbRecordNew)
         'rsOnlyが未初期化か、NewRecordのフラグが立っていなかったら抜ける
         MsgBox "登録用rsが未初期化、または新規レコードが見つかりません"
         GoTo CloseAndExit
@@ -1422,7 +1454,8 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
     '昇順ソートオプションが指定されていたらSQLに追記してやる
     If chkBox_SortByLocationASC.Value Then
         '棚番昇順ソート指定がなされていた
-        strSQL = strSQL & vbCrLf & " ORDER BY [" & clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT) & "] ASC"
+        strSQL = strSQL & vbCrLf & " ORDER BY [" & clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT) & "] ASC" & _
+        ",[" & INV_CONST.F_INV_LABEL_TEMP_ORDERNUM & "] ASC"
     End If
     With docTemplateMailMerge.MailMerge
         'データソースを開く
