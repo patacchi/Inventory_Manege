@@ -2,8 +2,17 @@ Attribute VB_Name = "FormCommon"
 Option Explicit
 'フォーム共通定数定義
 'テキストボックス関係
-Public Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0         '薄い緑
-Public Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005         'ウィンドウの背景
+Public Const TXTBOX_BACKCOLORE_EDITABLE As Long = &HC0FFC0          '薄い緑
+Public Const TXTBOX_BACKCOLORE_NORMAL As Long = &H80000005          'ウィンドウの背景
+Public Const TEXT_NORMAL_BLACK As Long = &H80000012                 '文字色、標準黒
+Public Const TEXT_NOT_ENABLE_GRAY As Long = &H80000010              '文字色、EnableがFalseされた色に近い、薄グレー
+Public Const BACK_COLOR_NORMAL_BACKCOLOR_GRAY As Long = &H8000000F  'フォームの標準背景色、ボタンの標準色
+Public Const BACK_COLOR_SELECTABLE_PINK As Long = &HFFC0FF          '選択可能な何か、ピンク
+Public Const BACK_COLOR_SATURDAY_BLUE As Long = &H80000002          '土曜の背景色、グレーっぽいブルー
+Public Const BACK_COLOR_SUNDAY_RED As Long = &H8080FF               '日曜の背景色、赤っぽい朱色かなにか
+'DatePicker関係
+Public Const LABEL_DAY_PRIFIX As String = "lbl_Day"         '日付ラベルの共通Prefix、この後に数字2桁が続く
+Public datePickerResult As Date                             'DatePickerの結果のDateを格納
 'フォーム処理で共通の処理をまとめていく予定
 Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal arglongIndex As Long = 0, Optional ByVal boolMaxLengthFind As Boolean) As String
     '指定したデータ、行数（Index）から、ListBoxの幅（ポイント数を;で区切った文字列）として返す

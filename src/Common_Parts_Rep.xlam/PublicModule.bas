@@ -212,4 +212,15 @@ Public Sub ForceForeground(ByVal longptrhWnd As LongPtr)
     Call SystemParametersInfo(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, longptrTimeout, SPIF_SENDCHANGE)
     'スレッドのインプット状態を切り離す
     Call AttachThreadInput(longTargetID, longForegroundID, False)
-End Sub
+End Sub
+'''DatePickerフォームを使用して、日付をDate型で返す
+'''Return Date  成功していたらDate、失敗していたらEmptyが返る
+Public Function GetDateUseDatePicker() As Date
+    frmDatePicker.Show vbModal
+    If CDbl(FormCommon.datePickerResult) = 0 Then
+        MsgBox "日付の取得に失敗したようです"
+    End If
+    '成功でも失敗でも取得した結果をそのまま返す(失敗してたらどっちにしてもEmptyのDateが返る)
+    GetDateUseDatePicker = FormCommon.datePickerResult
+    Exit Function
+End Function

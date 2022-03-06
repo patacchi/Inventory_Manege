@@ -60,7 +60,7 @@ Private Sub UserForm_Initialize()
 End Sub
 'Form Terminate
 Private Sub UserForm_Terminate()
-    Destructor
+    DestRuctor
 End Sub
 'Click
 Private Sub btnMovePrevious_Click()
@@ -240,42 +240,6 @@ Private Sub lstBox_Incremental_Click()
         StopEvents = False
     End If
 End Sub
-'Change
-Private Sub txtBox_F_INV_Tehai_Code_Change()
-    'イベント停止状態ではなく、更にアップデートモードでもないときにインクリメンタル実行
-    If (StopEvents Or UpdateMode) And Not AddnewMode Then
-        Exit Sub
-    End If
-    'イベント停止する
-    StopEvents = True
-    'テキストにUcaseかける
-    If frmBinLabel.txtBox_F_INV_Tehai_Code.TextLength >= 1 Then
-        frmBinLabel.txtBox_F_INV_Tehai_Code.Text = UCase(frmBinLabel.txtBox_F_INV_Tehai_Code.Text)
-    End If
-    Select Case AddnewMode
-    Case True
-        'AddNewModeの時(結果が0件になってもメッセージ表示せず、そのままリストを非表示にする)
-        clsIncrementalfrmBIN.Incremental_TextBox_Change True, , True
-    Case False
-        '通常モードの時(結果0件になったらメッセージ表示)
-        'インクリメンタル実行
-        clsIncrementalfrmBIN.Incremental_TextBox_Change False
-    End Select
-    'イベント再開する
-    StopEvents = False
-End Sub
-'オーダーNoテキストボックス
-Private Sub txtBox_OrderNumber_Change()
-    If StopEvents Then
-        Exit Sub
-    End If
-    'イベント停止する
-    StopEvents = True
-    'Ucase掛ける
-    txtBox_OrderNumber.Text = UCase(txtBox_OrderNumber.Text)
-    'イベント再開する
-    StopEvents = False
-End Sub
 'keyup
 'インクリメンタルリストKeyUp
 Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
@@ -314,7 +278,45 @@ Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As I
     'イベント再開
     StopEvents = False
 End Sub
-'RSに値セットするテキストボックス
+'Change
+'オーダーNoテキストボックス
+Private Sub txtBox_OrderNumber_Change()
+    If StopEvents Then
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    'Ucase掛ける
+    txtBox_OrderNumber.Text = UCase(txtBox_OrderNumber.Text)
+    'イベント再開する
+    StopEvents = False
+End Sub
+'手配コード
+Private Sub txtBox_F_INV_Tehai_Code_Change()
+    'イベント停止状態ではなく、更にアップデートモードでもないときにインクリメンタル実行
+    If (StopEvents Or UpdateMode) And Not AddnewMode Then
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    'テキストにUcaseかける
+    If frmBinLabel.txtBox_F_INV_Tehai_Code.TextLength >= 1 Then
+        frmBinLabel.txtBox_F_INV_Tehai_Code.Text = UCase(frmBinLabel.txtBox_F_INV_Tehai_Code.Text)
+    End If
+    Select Case AddnewMode
+    Case True
+        'AddNewModeの時(結果が0件になってもメッセージ表示せず、そのままリストを非表示にする)
+        clsIncrementalfrmBIN.Incremental_TextBox_Change True, , True
+        'RSに反映させる
+        UpdateRSFromContrl ActiveControl
+    Case False
+        '通常モードの時(結果0件になったらメッセージ表示)
+        'インクリメンタル実行
+        clsIncrementalfrmBIN.Incremental_TextBox_Change False
+    End Select
+    'イベント再開する
+    StopEvents = False
+End Sub
 '棚番
 Private Sub txtBox_F_INV_Tana_Local_Text_Change()
     If StopEvents Then
@@ -379,52 +381,49 @@ Private Sub txtBox_F_INV_Label_Name_1_Change()
     End If
     'イベント停止する
     StopEvents = True
-    Select Case True
-    Case AddnewMode
-        'AddNewModeの時は
-        'rsOnlyPartsとrsOnlyTanaの初期化状態をチェック、新規レコードチェックフラグON
-        rsOnlyPartsInitialize True
-        'UpdateRSメソッドに引数としてrsOnly・・・を渡してやる
-        UpdateRSFromContrl ActiveControl, rsOnlyPartsMaster
-    Case UpdateMode
-        'UpdateModeの時はRSのUpdateメソッドへ
-        UpdateRSFromContrl ActiveControl
-    End Select
+    'RSのUpdateメソッドへ
+    UpdateRSFromContrl ActiveControl
     'イベント再開する
     StopEvents = False
 End Sub
 '品名2
 Private Sub txtBox_F_INV_Label_Name_2_Change()
-    If StopEvents Or AddnewMode Then
+    If StopEvents Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If UpdateMode Then
-        'UpdateModeの時はUpdateメソッドへ
-        UpdateRSFromContrl ActiveControl
-    End If
+    'イベント停止する
+    StopEvents = True
+    'RSのUpdateメソッドへ
+    UpdateRSFromContrl ActiveControl
+    'イベント再開する
+    StopEvents = False
 End Sub
 '備考1
 Private Sub txtBox_F_INV_Label_Remark_1_Change()
-    If StopEvents Or AddnewMode Then
+    If StopEvents Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If UpdateMode Then
-        'UpdateModeの時はUpdateメソッドへ
-        UpdateRSFromContrl ActiveControl
-    End If
+    'イベント停止する
+    StopEvents = True
+    'RSのUpdateメソッドへ
+    UpdateRSFromContrl ActiveControl
+    'イベント再開する
+    StopEvents = False
 End Sub
 '備考2
 Private Sub txtBox_F_INV_Label_Remark_2_Change()
-    If StopEvents Or AddnewMode Then
+    If StopEvents Then
         'イベント停止フラグが立ってたら中止
         Exit Sub
     End If
-    If UpdateMode Then
-        'UpdateModeの時はUpdateメソッドへ
-        UpdateRSFromContrl ActiveControl
-    End If
+    'イベント停止する
+    StopEvents = True
+    'RSのUpdateメソッドへ
+    UpdateRSFromContrl ActiveControl
+    'イベント再開する
+    StopEvents = False
 End Sub
 'Enter
 '棚番テキストボックスEnter
@@ -445,7 +444,7 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
         clsADOfrmBIN.RS.Filter = ""
         If clsADOfrmBIN.RS.RecordCount < 1 Then
             '未使用の棚番が無いときはRecordCountが0になってるはず
-            MsgBox "未使用の棚番がありませんでした"
+            MsgBox "未使用の棚番がありませんでした。新規棚番登録ボタンから登録して下さい。"
             'AddNewMode解除
             SwitchAddNewMode False
             Exit Sub
@@ -543,7 +542,7 @@ Private Sub ConstRuctor()
 #End If
 End Sub
 '''デストラクタ
-Private Sub Destructor()
+Private Sub DestRuctor()
     'メンバ変数の解放、特に接続が関連しているものは重点的に
     If Not clsADOfrmBIN.RS Is Nothing Then
         clsADOfrmBIN.RS.ActiveConnection.Close
@@ -631,6 +630,8 @@ Private Sub setObjToFieldNameDic()
 End Sub
 'cidObjToFieldにあるコントロールの値をすべて消去する
 Private Sub ClearAllContents()
+    'イベント停止する
+    StopEvents = True
     Dim varKeyobjDic As Variant
     'dicObjtoFieldループ
     For Each varKeyobjDic In dicObjNameToFieldName
@@ -796,8 +797,6 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
     StopEvents = True
     'clsIncrementalのイベントも一時停止する
     clsIncrementalfrmBIN.StopEvent = True
-    '全項目消去
-    ClearAllContents
     'インクリメンタルリストのVisibleもFalseに
     lstBox_Incremental.Visible = False
     Select Case IsAddNewMode
@@ -814,6 +813,8 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
         btnAddNewTehaiCode.Enabled = False
         '未使用棚番チェックボックスEnabled True
         chkBoxShowUnUseLocationOnly.Enabled = True
+        '全項目消去
+        ClearAllContents
         'DBよりデータ再取得
         SetDefaultValuetoRS
         '一旦フォーカスを棚番テキストボックスから外す
@@ -831,6 +832,8 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
         'インクリメンタルで使用するのでLockedはそのまま
         '色だけ戻す
         txtBox_F_INV_Tehai_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
+        '全項目消去
+        ClearAllContents
         'DBよりデータ再取得
         SetDefaultValuetoRS
     End Select
@@ -853,6 +856,11 @@ End Sub
 '''Optional rsargOnlyTana           オプション。そのうち棚番も一緒に新規登録するようになったら棚番オンリーのRSが必要になるかも?予約枠
 Private Sub UpdateRSFromContrl(argCtrl As Control, Optional ByRef rsargOnlyParts As ADODB.Recordset, Optional ByRef rsargOnlyTana As ADODB.Recordset)
     On Error GoTo ErrorCatch
+    If AddnewMode Then
+        'AddNewModeの時,rsOnlyPartsとrsOnlyTanaの初期化状態をチェック、新規レコードチェックフラグON
+        rsOnlyPartsInitialize True
+        Set rsargOnlyParts = rsOnlyPartsMaster
+    End If
     If Not dicObjNameToFieldName.Exists(argCtrl.Name) Then
         'dicobjToFieldに存在しないコントロール名の場合は抜ける
         Exit Sub
@@ -870,8 +878,6 @@ Private Sub UpdateRSFromContrl(argCtrl As Control, Optional ByRef rsargOnlyParts
         'UpdateModeの時
         '対象にするRSはclsADOのもの
         Set rsRefLocal = clsADOfrmBIN.RS
-        'UpdateModeの時
-        'RSはクラス共有変数のclsADO内のRSをそのまま使う
     Case AddnewMode
         'AddNewMode
         Select Case True
@@ -887,20 +893,6 @@ Private Sub UpdateRSFromContrl(argCtrl As Control, Optional ByRef rsargOnlyParts
         DebugMsgWithTime "UpdateRSRromContrl : refRS is nothing"
         GoTo CloseAndExit
     End If
-'    Select Case True
-'    '最初に文字数チェックを行い、オーバーしていたら設定値まで切り下げる
-'    Case Len(argCtrl.Text) > clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize
-'        '文字数がフィールド設定値オーバー
-'        MsgBox "入力された文字数が設定の " & clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize & " 文字を超えています。"
-'        argCtrl.Text = Mid(argCtrl.Text, 1, clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).DefinedSize)
-'        GoTo CloseAndExit
-'    Case IsNull(clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value), clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value <> argCtrl.Text
-'        'RSの値がNullか、引数のコントロールのtextと違っている場合
-'        'rsに値をセットして、Updateまでする（DBに反映するにはUpdateBatchしないとダメ）
-'        clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(argCtrl.Name)).Value = _
-'        argCtrl.Text
-'        clsADOfrmBIN.RS.Update
-'    End Select          'CheckDigit
     '取得したRS参照に対して処理を行う
     Select Case True
     '最初に文字数チェックを行い、オーバーしていたら設定値まで切り下げる
@@ -1005,7 +997,7 @@ Private Sub AddnewUpdateDB()
     End Select
     'RSの初期化、AddNewStatusの確認
     Select Case True
-    Case rsOnlyPartsMaster Is Nothing, Not CBool(rsOnlyPartsMaster.Status And RecordStatusEnum.dbRecordNew)
+    Case rsOnlyPartsMaster Is Nothing, Not CBool(rsOnlyPartsMaster.Status And ADODB.RecordStatusEnum.adRecNew)
         'rsOnlyが未初期化か、NewRecordのフラグが立っていなかったら抜ける
         MsgBox "登録用rsが未初期化、または新規レコードが見つかりません"
         GoTo CloseAndExit
@@ -1041,30 +1033,8 @@ Private Sub AddnewUpdateDB()
     longTanaID = clsADOfrmBIN.RS.Fields(clsEnumfrmBIN.INVMasterTana(F_INV_TANA_ID_IMT)).Value
     'rsOnlyPartsの初期化確認
     rsOnlyPartsInitialize
-    'まずはRSに値セット
-'    Dim varKeyDicObjtoField As Variant
-'    'dicObjToFieldループ
-'    If dicObjNameToFieldName.Exists(Empty) Then
-'        dicObjNameToFieldName.Remove Empty
-'    End If
-'    'AddNewする
-'    rsOnlyPartsMaster.AddNew
-    'キーのtana_IDをセットする
-'    clsADOfrmBIN.RS.Fields(REPLACE(clsSQLBc.ReturnTableAliasPlusedFieldName(INVDB_Parts_Alias_sia, clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt), clsEnumfrmBIN, True), ".", "_")).Value = longTanaID
+    'PartsOnlyに退避したTanaIDを設定
     rsOnlyPartsMaster.Fields(clsEnumfrmBIN.INVMasterParts(F_Tana_ID_IMPrt)).Value = longTanaID
-    '以下の処理はUpdateRSFromControlプロシージャで完了する設計に変更
-'    For Each varKeyDicObjtoField In dicObjNameToFieldName
-'        Select Case True
-'        Case TypeName(frmBinLabel.Controls(varKeyDicObjtoField)) = "TextBox"
-'            'テキストボックスの場合(当面テキストボックスのみ扱う)
-'            'コントロールの値をRSに設定
-'            If clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Properties("BASETABLENAME").Value = INV_CONST.T_INV_M_Parts Then
-'                'BaseTable名がPartsのもののみ対象にする
-'                rsOnlyPartsMaster.Fields(dicObjNameToFieldName(varKeyDicObjtoField)).Value = _
-'                frmBinLabel.Controls(varKeyDicObjtoField).Text
-'            End If
-'        End Select
-'    Next varKeyDicObjtoField
     'InputDate入力
     rsOnlyPartsMaster.Fields(PublicConst.INPUT_DATE).Value = GetLocalTimeWithMilliSec
     'RSを確定
@@ -1073,14 +1043,17 @@ Private Sub AddnewUpdateDB()
     rsOnlyPartsMaster.Filter = adFilterNone
     rsOnlyPartsMaster.Filter = adFilterPendingRecords
     If Not CBool(rsOnlyPartsMaster.BOF And rsOnlyPartsMaster.EOF) And CBool(rsOnlyPartsMaster.Status And ADODB.RecordStatusEnum.adRecNew) Then
-        'レコードが存在し、なおかつRSの状態が変更有の場合
+        'レコードが存在し、なおかつRSの状態が新規レコード有の場合
         rsOnlyPartsMaster.UpdateBatch adAffectGroup
     End If
     If rsOnlyPartsMaster.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
         MsgBox "正常に追加されました"
+        '改めてイベント停止する
+        StopEvents = True
         '通常モードへ戻す
-        ClearAllContents
         SwitchAddNewMode False
+        'イベント再開する
+        StopEvents = False
     Else
         MsgBox "追加に失敗しました"
     End If

@@ -202,7 +202,11 @@ Public Sub Incremental_TextBox_Change(Optional AutoHideList_Unmatch As Boolean, 
         End If
         MsgBox "フィルタ処理後のレコード件数が0でした"
         'テキストボックスにまだ文字が残っている場合は最後の1文字を削除して、再設定してやる(自身再帰呼び出しになるはず)
-        If Me.txtBoxRef.TextLength > 1 Then
+        If Me.txtBoxRef.TextLength > 0 Then
+            'モードレス表示の場合は一旦他のコントロールにフォーカスを移動しないと入力可能に戻せない
+            '入力していたテキストボックスにフォーカスを戻す
+            Me.frmRef.Controls(Me.LstBoxRef.Name).SetFocus
+            Me.frmRef.Controls(Me.txtBoxRef.Name).SetFocus
             '一旦イベント再開
             Me.StopEvent = False
             Me.txtBoxRef.Text = Mid(Me.txtBoxRef, 1, Me.txtBoxRef.TextLength - 1)
@@ -288,7 +292,8 @@ Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, B
     '一旦リストを非表示にし、選択を解除してやる
     Me.LstBoxRef.Visible = False
     Me.LstBoxRef.ListIndex = -1
-    Me.LstBoxRef.Font.Size = LISTBOX_FONT_SIZE
+'    Me.LstBoxRef.Font.Size = LISTBOX_FONT_SIZE
+    Set Me.LstBoxRef.Font = Me.txtBoxRef.Font
 '    '以下SQLを使用していた時の参考
 '    'ReplaceDicを設定する
 '    '今回はWhere条件はなし→X
@@ -565,7 +570,7 @@ Private Sub SetListBoxStyle(varArrayList As Variant)
     With Me.LstBoxRef
         .ListStyle = fmListStylePlain
         .BorderStyle = fmBorderStyleSingle
-        .Font.Size = LISTBOX_FONT_SIZE
+        Set .Font = txtBoxRef.Font
         'サイズ調整し、テキストボックスのすぐ下に表示するようにする
         .Top = Me.txtBoxRef.Top + Me.txtBoxRef.Height
         .Width = Me.txtBoxRef.Width
@@ -606,9 +611,9 @@ CloseAndExit:
 End Function
 'デストラクタ
 Private Sub Class_Terminate()
-    Destructor
+    DestRuctor
 End Sub
-Private Sub Destructor()
+Private Sub DestRuctor()
     If Not frmParent Is Nothing Then
         Set frmParent = Nothing
     End If

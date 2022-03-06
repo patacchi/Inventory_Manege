@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmRegistNewLocation 
    Caption         =   "新規棚番登録画面"
-   ClientHeight    =   3045
+   ClientHeight    =   3435
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   8100
@@ -42,7 +42,7 @@ Private Sub UserForm_Initialize()
 End Sub
 'Teminate
 Private Sub UserForm_Terminate()
-    Destructor
+    DestRuctor
 End Sub
 'TextBoxEnter
 Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
@@ -58,6 +58,12 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
     StopEvents = False
 End Sub
 'TextBoxChange
+'tana_System
+Private Sub txtBox_F_INV_Tana_System_Text_Change()
+    'tana_SystemがChangeしたら表示用のラベルのCaptionに同じ項目を設定してやる
+    lblSystemTextView.Width = txtBox_F_INV_Tana_System_Text.Width
+    lblSystemTextView.Caption = txtBox_F_INV_Tana_System_Text.Text
+End Sub
 Private Sub txtBox_F_INV_Tana_Local_Text_Change()
     On Error GoTo ErrorCatch
     If StopEvents Then
@@ -69,19 +75,26 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
     txtBox_F_INV_Tana_Local_Text.Text = UCase(txtBox_F_INV_Tana_Local_Text.Text)
     'Incremental Textbox Change
     clsIncrementalNewLocation.Incremental_TextBox_Change True
-    'ここでlstIncremantalのVisibleがFalseだったら新規レコードなのでSystem_LocationのTextを設定してやる
-    If lstBoxIncremantal.Visible = False Then
-        '存在しないレコードだった場合
-        'RegExpオブジェクトを定義
-        Dim objRegExp As Object
-        Set objRegExp = CreateObject("VBScript.RegExp")
-        'パターンとして空白文字を設定
-        '\s [\t\r\n\v\f]と等価
-        objRegExp.Pattern = "\s"
-        '文字列全体を検索
-        objRegExp.Global = True
+    'LocalTextからスペースを除去し、SystemTextを得る
+    Dim strSystemText As String
+    'RegExpオブジェクトを定義
+    Dim objRegExp As Object
+    Set objRegExp = CreateObject("VBScript.RegExp")
+    'パターンとして空白文字を設定
+    '\s [\t\r\n\v\f]と等価
+    objRegExp.Pattern = "\s"
+    '文字列全体を検索
+    objRegExp.Global = True
+    strSystemText = objRegExp.REPLACE(txtBox_F_INV_Tana_Local_Text.Text, "")
+    '一旦現在のRSのFilterを退避
+    Dim varOldFilter As Variant
+    varOldFilter = clsADONewLocation.RS.Filter
+    'RSのFilterに取得したSystemTextをセットする
+    clsADONewLocation.RS.Filter = dicObjToFieldName(txtBox_F_INV_Tana_System_Text.Name) & " = '" & strSystemText & "'"
+    'Filter掛けた後RecordCountが1未満だったら新規レコード
+    If clsADONewLocation.RS.RecordCount < 1 Then
         'tana_systemとしてスペースを空文字で置換したものをセット
-        txtBox_F_INV_Tana_System_Text.Text = objRegExp.REPLACE(txtBox_F_INV_Tana_Local_Text.Text, "")
+        txtBox_F_INV_Tana_System_Text.Text = strSystemText
         '新規登録ボタンのEnableをTrueに
         btnAdNewLocation.Enabled = True
     Else
@@ -90,6 +103,8 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
         '新規登録ボタンのEnableをFalseに
         btnAdNewLocation.Enabled = False
     End If
+    'フィルタを戻す
+    clsADONewLocation.RS.Filter = varOldFilter
     'イベント再開する
     StopEvents = False
     GoTo CloseAndExit
@@ -138,7 +153,7 @@ Private Sub ConstRuctor()
     End If
 End Sub
 'デストラクタ
-Private Sub Destructor()
+Private Sub DestRuctor()
     'クラスRS
     If Not clsADONewLocation.RS Is Nothing Then
         If clsADONewLocation.RS.State And ObjectStateEnum.adStateOpen Then
@@ -228,9 +243,19 @@ Private Sub AddNewLocation()
     On Error GoTo ErrorCatch
     'イベント停止する
     StopEvents = True
+    '現在のフィルターを退避
+    Dim varOldFilter As Variant
+    varOldFilter = clsADONewLocation.RS.Filter
+    'SystemTextでFilterを設定
+    clsADONewLocation.RS.Filter = dicObjToFieldName(txtBox_F_INV_Tana_System_Text.Name) & " = '" & txtBox_F_INV_Tana_System_Text.Text & "'"
     If clsADONewLocation.RS.RecordCount >= 1 Then
         'RecordCountが1以上の場合は既存のデータがあるので処理を中断
         MsgBox "既に同名の棚番が存在します。処理を中断します"
+        'フィルタを戻す
+        clsADONewLocation.RS.Filter = varOldFilter
+        'TanaLocalにSetFocus
+        txtBox_F_INV_Tana_Local_Text.SetFocus
+        GoTo CloseAndExit
         Exit Sub
     End If
     'RSに新規レコードを追加
@@ -238,6 +263,10 @@ Private Sub AddNewLocation()
     '新規レコードに値をセットしていく
     Dim varKeydicObjt As Variant
     'dicObjToFieldをループ
+    '空データ削除
+    If dicObjToFieldName.Exists(Empty) Then
+        dicObjToFieldName.Remove (Empty)
+    End If
     For Each varKeydicObjt In dicObjToFieldName
         'オブジェクトの種類で処理を分岐
         Select Case True
@@ -265,6 +294,8 @@ Private Sub AddNewLocation()
             MsgBox "正常に更新されました"
             '現在のレコードの値をフォームに反映させる
             GetValuFromRS
+            '連続入力に対応するため、TanaLocalにSetFocus
+            txtBox_F_INV_Tana_Local_Text.SetFocus
         Else
             DebugMsgWithTime "AddNewLocation : fail update batch Location_Local: " & txtBox_F_INV_Tana_Local_Text.Text
             MsgBox "正常に更新されなかった可能性があります 棚番: " & txtBox_F_INV_Tana_Local_Text.Text
