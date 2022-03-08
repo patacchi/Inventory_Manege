@@ -28,6 +28,8 @@ Private objExcelfrmPMList As Excel.Application
 Private dicObjNameToFieldName As Dictionary
 'Replace用Dictionary
 Private dicReplacePartsMaster As Dictionary
+'イベント停止フラグ
+Private StopEvents As Boolean
 '定数定義
 Private Const TEXT_BOX_NAME_PREFIX As String = "txtBox_"
 Private Const LABEL_NAME_PREFIX As String = "lbl_"
@@ -209,7 +211,15 @@ Private Sub btnShowParmSetLabelfrm_Click()
     frmBinLabel.Show
 End Sub
 Private Sub lstBox_Incremental_Enter()
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
     clsIncrementalParts.Incremental_LstBox_Enter
+    'イベント再開する
+    StopEvents = False
 End Sub
 Private Sub lstBox_Incremental_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     'キーボードの場合はこっち
@@ -220,34 +230,63 @@ Private Sub lstBox_Incremental_MouseUp(ByVal Button As Integer, ByVal Shift As I
     clsIncrementalParts.Incremental_LstBox_Mouse_UP Button
 End Sub
 Private Sub txtBox_F_INV_Tana_Local_Text_Change()
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     If Me.txtBox_F_INV_Tana_Local_Text.Text = "" Then
         'テキストが空白だったら何もしない
 '        Exit Sub
     End If
+    'イベント停止する
+    StopEvents = True
     '全て大文字に変換する
     Me.txtBox_F_INV_Tana_Local_Text.Text = UCase(Me.txtBox_F_INV_Tana_Local_Text.Text)
-    '自身以外の項目を消去する
-'    ClearAllTextBoxAndLabel Me.txtBox_F_INV_Tana_Local_Text.Name
-    'インクリメンタルサーチ実行
     clsIncrementalParts.Incremental_TextBox_Change
+    'イベント再開
+    StopEvents = False
 End Sub
 Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
     '棚番表示用 Enterイベント
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
     clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tana_Local_Text, lstBox_Incremental
+    'イベント再開する
+    StopEvents = False
 End Sub
 Private Sub txtBox_F_INV_Tehai_Code_Change()
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     If Me.txtBox_F_INV_Tehai_Code.Text = "" Then
         'テキストが空白だったら何もしない
     End If
+    'イベント停止する
+    StopEvents = True
     '全て大文字に変換する
     Me.txtBox_F_INV_Tehai_Code.Text = UCase(Me.txtBox_F_INV_Tehai_Code.Text)
 '    ClearAllTextBoxAndLabel Me.txtBox_F_INV_Tehai_Code.Name
     'インクリメンタルサーチ実行
     clsIncrementalParts.Incremental_TextBox_Change
+    'イベント再開する
+    StopEvents = False
 End Sub
 Private Sub txtBox_F_INV_Tehai_Code_Enter()
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
     'インクリメンタルサーチ Enterイベント
     clsIncrementalParts.Incremental_TextBox_Enter Me.txtBox_F_INV_Tehai_Code, lstBox_Incremental
+    'イベント再開する
+    StopEvents = False
 End Sub
 '-----------------------------------------------------------------------------------------
 'メソッド定義
@@ -277,6 +316,8 @@ Private Sub UserForm_Initialize()
     End If
     'DBからRSにデータ取得する
     setDefaultDatatoRS
+    'イベント受付開始
+    StopEvents = False
     '棚番テキストボックスにフォーカスを移動
     txtBox_F_INV_Tana_Local_Text.SetFocus
     '初期化が終わる前に全消去しようとすると、Dictionary等の準備ができてないのにTxtBox_Changeイベントが先に発生してしまうので消去は最後に
