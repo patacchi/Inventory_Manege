@@ -207,6 +207,7 @@ Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                    
 'ラベル出力用一時テーブル専用フィールド定義
 Public Const F_INV_LABEL_TEMP_TEHAICODE_LENGTH As String = "F_INV_Tehaicode_Length"                 'ラベル出力のみに使用する計算列、手配コードの文字列数を格納
 Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "F_INV_OrderNumber"                              'ラベル出力のみに使用するオーダーNo列
+Public Const F_INV_LABEL_TEMP_SAVEPOINT As String = "F_INT_Label_Savepoint"                         'ラベル出力のみに使用するSavepoint、出力リストの判別に使用する
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -393,17 +394,18 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '    F_INV_Tana_Local_Text CHAR(10),F_INV_Tehai_Code CHAR(50),
 '    F_INV_Label_Name_1 CHAR(18),F_INV_Label_Name_2 CHAR(18),F_INV_Label_Remark_1 CHAR(18),F_INV_Label_Remark_2 CHAR(18),InputDate CHAR(23)
 ')
-'{0} T_INV_LABEL_TEMP
-'{1} F_INV_Tana_Local_Text
-'{2} F_INV_Tehai_Code
-'{3} F_INV_Label_Name_1
-'{4} F_INV_Label_Name_2
-'{5} F_INV_Label_Remark_1
-'{6} F_INV_Label_Remark_2
-'{7} InputDate
-'{8} INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
-'{9} INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
+'{0}    T_INV_LABEL_TEMP
+'{1}    F_INV_Tana_Local_Text
+'{2}    F_INV_Tehai_Code
+'{3}    F_INV_Label_Name_1
+'{4}    F_INV_Label_Name_2
+'{5}    F_INV_Label_Remark_1
+'{6}    F_INV_Label_Remark_2
+'{7}    InputDate
+'{8}    INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
+'{9}    INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
+'{10}   INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
+"    {10} CHAR(23),{1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
 ")"

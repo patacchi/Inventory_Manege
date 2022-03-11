@@ -29,6 +29,7 @@ Private StopEvents As Boolean
 Public UpdateMode As Boolean                                        '編集可能状態になってるときはTrueをセット
 Private AddnewMode As Boolean                                       '新規追加モードの時にTrueをセット
 Private strStartTime As String
+Private strSavePoint As String                                      'LabelTempに追加する際のSavePoint文字列
 '定数
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
 Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempテーブルを削除する時にStartTimeにセットする定数
@@ -1264,6 +1265,7 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 7, PublicConst.INPUT_DATE
         dicReplaceLabelTemp.Add 8, INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
         dicReplaceLabelTemp.Add 9, INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
+        dicReplaceLabelTemp.Add 10, INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
@@ -1509,4 +1511,42 @@ CloseAndExit:
     End If
     Set fsoMailMerge = Nothing
     Exit Sub
-End Sub
+End Sub
+''' LabelTempテーブルに保存する際のSavePointの確認、設定
+'''Return bool  成功したらTrue、それ以外はFalse
+Private Function CheckandSetSavePoint() As Boolean
+    On Error GoTo ErrorCatch
+    'ここのみで使用するAdoなので個別宣言する
+    Dim clsadoSavePoint As clsADOHandle
+    Set clsadoSavePoint = CreateclsADOHandleInstance
+    'デフォルトディレクトリへ
+    clsadoSavePoint.SetDBPathandFilenameDefault
+    'DBファイル名のみ一時DBの物へ
+    clsadoSavePoint.DBFileName = PublicConst.TEMP_DB_FILENAME
+    'LabelTempテーブルの存在をチェックし、無ければ作成する
+    If Not clsadoSavePoint.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        'LabelTempTableが存在しなかった
+        RecreateLabelTempTable
+    End If
+    'SQL設定、Group By SavePoint
+    clsadoSavePoint.SQL = "SELECT " & INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT & " FROM " & vbCrLf & _
+    INV_CONST.T_INV_LABEL_TEMP & vbCrLf & _
+    " GROPU BY " & INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+    Select Case clsadoSavePoint.RecordCount
+    Case 0
+        'レコード無しの場合
+    Case 1
+    Case Is >= 2
+    End Select
+ErrorCatch:
+    CheckandSetSavePoint = False
+    DebugMsgWithTime "CheckandSetSavePoint code: " & err.Number & " Description " & err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsadoSavePoint Is Nothing Then
+        '接続切断とインスタンス破棄
+        clsadoSavePoint.CloseClassConnection
+        Set clsadoSavePoint = Nothing
+    End If
+    Exit Function
+End Function

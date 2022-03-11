@@ -23,7 +23,7 @@ src/*/*.frx
 #!src/Common_Parts_Rep.xlam/frmTanaBincard.*
 !src/Common_Parts_Rep.xlam/frmBinLabel.*
 !src/Common_Parts_Rep.xlam/frmRegistNewLocation.*
-!src/Common_Parts_Rep.xlam/frmDatePicker.frx
+#!src/Common_Parts_Rep.xlam/frmDatePicker.frx
 !src/Common_Parts_Rep.xlam/frmInputStocINDate.frx
 TempDB/
 #/x64/
