@@ -61,7 +61,7 @@ Property Set commonControl(argCtrl As MSForms.Control)
     "親フォーム名： " & argCtrl.Parent.Name
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "set commonControl code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "set commonControl code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Property
@@ -110,7 +110,7 @@ Private Sub common_DatePicker_Label_Click()
     Unload frmDatePicker
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "common_DatePicker_Label_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "common_DatePicker_Label_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -223,7 +223,7 @@ Private Sub common_DatePicker_cmbBox_Change()
     Next ContrlEach
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "common_DatePicker_cmbBox_Change code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "common_DatePicker_cmbBox_Change code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub

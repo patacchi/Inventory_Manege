@@ -114,7 +114,7 @@ Private Function GetDayArrayFromCurrentMonth() As Integer()
     GetDayArrayFromCurrentMonth = intDay
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetDayArrayFromCurrentMonth code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetDayArrayFromCurrentMonth code: " & Err.Number & " Description: " & Err.Description
     GetDayArrayFromCurrentMonth = Empty
     GoTo CloseAndExit
 CloseAndExit:

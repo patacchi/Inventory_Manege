@@ -213,7 +213,7 @@ ByRef clsargEnum As clsEnum, ByRef clsargclsSQLBcRef As clsSQLStringBuilder) As 
     SetShareInsance = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SetShareInsance code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SetShareInsance code: " & Err.Number & " Description: " & Err.Description
     SetShareInsance = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -304,14 +304,14 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
             strargSheetName = wkbFilter.Worksheets(1).Name
         End If
         '存在しないシート名を開いた場合はErr.Number = 9 、インデックス外エラーが発生するので、エラートラップを行う
-        err.Clear
+        Err.Clear
         Dim shtFilter As Worksheet
         '在庫情報シートのオブジェクトを取得する、このタイミングでシートが存在しない場合はエラーが発生する
         On Error Resume Next
-        err.Clear
+        Err.Clear
         Set shtFilter = wkbFilter.Worksheets(strargSheetName)
         'Err.Numberが0以外の時は処理を中断
-        If err.Number <> 0 Then
+        If Err.Number <> 0 Then
             DebugMsgWithTime "GetFilterRangeNameFromExcel: sheet not found: " & strargSheetName
             GoTo CloseAndExit
             Exit Function
@@ -416,7 +416,7 @@ Private Function GetFilterRangeNameFromExcel(Optional strargExcelFileFullpath As
         GoTo CloseAndExit
     End Select
 ErrorCatch:
-    DebugMsgWithTime "GetFilterRangeNameFromExcel code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetFilterRangeNameFromExcel code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
     Exit Function
 CloseAndExit:
@@ -503,7 +503,7 @@ Private Function CSVFileSaveAsXlsxFileandPasteValues(strargCSVFileFullPath As St
     GoTo CloseAndExit
 ErrorCatch:
     CSVFileSaveAsXlsxFileandPasteValues = ""
-    DebugMsgWithTime "CSVFileSaveAsXlsxFileandPasteValues code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "CSVFileSaveAsXlsxFileandPasteValues code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set shXlsx = Nothing
@@ -729,7 +729,7 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     UpsertINVPartsMasterfromZaikoSH = clsADORef.Affected
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "UpsertINBPartMasterFromZaikoSH code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set fsoUpsertPartsMaster = Nothing
@@ -797,7 +797,7 @@ Private Function SetTanaLocalNullToSystem() As Boolean
     SetTanaLocalNullToSystem = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SetTanaLocalNullToSystem code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SetTanaLocalNullToSystem code: " & Err.Number & " Description: " & Err.Description
     SetTanaLocalNullToSystem = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -904,7 +904,7 @@ Private Function TanaCSVFileToT_INV_CSV(strargTanaCSVFullPath As String, Optiona
     TanaCSVFileToT_INV_CSV = "棚卸CSVから 棚卸締切日： " & strTanaEndDay & " 分として " & clsADORef.Affected & " 件のデータを追加しました"
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "TanaCSVFileToT_INV_CSV code : " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set fsoTanaCSV = Nothing
@@ -997,7 +997,7 @@ Private Function AddEndDayFieldAndInputDate(strargEndDay As String) As Boolean
     AddEndDayFieldAndInputDate = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "AddEndDayFieldAndInputDate code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "AddEndDayFieldAndInputDate code: " & Err.Number & " Description: " & Err.Description
     AddEndDayFieldAndInputDate = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -1038,7 +1038,7 @@ Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As Str
     isCollect = clsADORef.DropTable(INV_CONST.T_INV_TEMP, PublicConst.TEMP_DB_FILENAME)
     If Not isCollect Then
         DebugMsgWithTime "IncludeZaikoSH_to_TempTable: Do sql fail..."
-        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & err.Description
+        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & Err.Description
         GoTo CloseAndExit
     End If
     'SQL文の組み立て
@@ -1057,14 +1057,14 @@ Private Function IncludeZaikoSH_to_TempTable(strargFilterdZaikoSHFullPath As Str
     isCollect = clsADORef.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         DebugMsgWithTime "IncludeZaikoSH_to_TempTable: Do sql fail..."
-        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & err.Description
+        MsgBox "IncludeZaikoSH_to_TempTable でSQLの実行に失敗しました。" & Err.Description
         GoTo CloseAndExit
     End If
     '結果の件数を返して終わり
     IncludeZaikoSH_to_TempTable = clsADORef.Affected
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "IncludeZaikoSH_to_TempTable code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "IncludeZaikoSH_to_TempTable code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
     Exit Function
 CloseAndExit:
@@ -1119,7 +1119,7 @@ Private Function SELECT_ToTempTable(strargDistinctFieldName As String) As Boolea
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "SELECT_ToTempTable code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SELECT_ToTempTable code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceParm = Nothing
@@ -1196,7 +1196,7 @@ Private Function ReturnNdigitTehaiCodeFromCSV(strargDailyTanaCSVFullPath As Stri
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "Return4digitTtehaiCodeFromCSV code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Return4digitTtehaiCodeFromCSV code: " & Err.Number & " Description: " & Err.Description
 CloseAndExit:
     Set fso4Digit = Nothing
     Set dicReplaceParm = Nothing
@@ -1328,7 +1328,7 @@ Public Function SetDBDatatoTanaCSV(strargSHCSVFullPath As String, strargEndDay A
     Kill strarrSetCSV(0, 0)
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SetDBDatatoTanaCSV code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SetDBDatatoTanaCSV code: " & Err.Number & " Description: " & Err.Description
     SetDBDatatoTanaCSV = ""
     GoTo CloseAndExit
 CloseAndExit:
@@ -1416,7 +1416,7 @@ Private Function SavesomefileToExelFile(strargOriginFile As String, strargSaveto
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "SavesomefileToExelFile code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SavesomefileToExelFile code: " & Err.Number & " Description: " & Err.Description
     SavesomefileToExelFile = False
     GoTo CloseAndExit
 CloseAndExit:

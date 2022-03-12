@@ -288,8 +288,8 @@ Private Sub AddResultdicHTML(ByRef argHTMLDoc As HTMLDocument, Optional ByRef st
             On Error Resume Next
             Set frameDoc = argHTMLDoc.frames(intFrameCount).Document
             'エラー発生してたらデバッグ出力する
-            If err.Number <> 0 Then
-                DebugMsgWithTime "AddResultdicHTML code: " & err.Number & " Description: " & err.Description
+            If Err.Number <> 0 Then
+                DebugMsgWithTime "AddResultdicHTML code: " & Err.Number & " Description: " & Err.Description
             End If
             On Error GoTo 0
             If Not frameDoc Is Nothing Then
@@ -385,7 +385,7 @@ Public Function getTextArrayByTagName(argHTMLDoc As HTMLDocument, argTopTagName 
     getTextArrayByTagName = localarrString
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "getTestArrayByTagNae code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "getTestArrayByTagNae code: " & Err.Number & " Description: " & Err.Description
     getTextArrayByTagName = localarrString
     Exit Function
 End Function
@@ -428,7 +428,7 @@ Public Function GetHTMLdicBydicHTMLDocandTagName(ByRef argdicHTML As Dictionary,
     Set dicResult = Nothing
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "GetHTMLdicBydicHTMLDocandTagName: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetHTMLdicBydicHTMLDocandTagName: " & Err.Number & " Description: " & Err.Description
     Set GetHTMLdicBydicHTMLDocandTagName = dicResult
     Exit Function
 End Function
@@ -547,7 +547,7 @@ Public Function DownloadNotificationBarSaveAs(ByVal strargSaveFilePath As String
     Set uiAuto = Nothing
     Exit Function
 ErrorCatch:
-    Debug.Print Now() & " DownloadNotificationBarSaveAs code: " & err.Number & " Description: " & err.Description
+    Debug.Print Now() & " DownloadNotificationBarSaveAs code: " & Err.Number & " Description: " & Err.Description
     DownloadNotificationBarSaveAs = ""
     Exit Function
 End Function
@@ -587,7 +587,7 @@ Private Function PressSave_NotificationBar(ByRef argUIAuto As CUIAutomation, ByV
     PressSave_NotificationBar = True
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "PressSave_NotificaionBar code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "PressSave_NotificaionBar code: " & Err.Number & " Description: " & Err.Description
     PressSave_NotificationBar = False
     Exit Function
 End Function
@@ -643,7 +643,7 @@ Private Function PressSaveAsNotificationBar(ByRef argUIAuto As CUIAutomation, By
     PressSaveAsNotificationBar = True
     Exit Function
 ErrorCatch:
-    Debug.Print "PressSaveAsNothificationBar code: " & err.Number & " Description: = " & err.Description
+    Debug.Print "PressSaveAsNothificationBar code: " & Err.Number & " Description: = " & Err.Description
     PressSaveAsNotificationBar = False
     Exit Function
 End Function
@@ -715,7 +715,7 @@ Private Function GetSaveSplitButton(ByRef argUIAuto As CUIAutomation, ByVal hIEW
     Set GetSaveSplitButton = elmSplitButtonLocal
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "GetSaveSplitButton code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetSaveSplitButton code: " & Err.Number & " Description: " & Err.Description
     Set GetSaveSplitButton = Nothing
     Exit Function
 End Function
@@ -782,7 +782,7 @@ Private Function SaveAsFilenameDialog(ByRef argUIAuto As CUIAutomation, ByVal st
     SaveAsFilenameDialog = True
     Exit Function
 ErrorCatch:
-    Debug.Print "SaveAsFilenameDialog code: " & err.Number & " Description: " & err.Description
+    Debug.Print "SaveAsFilenameDialog code: " & Err.Number & " Description: " & Err.Description
     SaveAsFilenameDialog = False
     Exit Function
 End Function
@@ -891,7 +891,7 @@ Private Function ClosingNotificationBar(ByRef argUIAuto As CUIAutomation, ByVal 
         Exit Function
     End If
 ErrorCatch:
-    Debug.Print "ClosingNotificationBar code: " & err.Number & " Description: " & err.Description
+    Debug.Print "ClosingNotificationBar code: " & Err.Number & " Description: " & Err.Description
     ClosingNotificationBar = ""
     Exit Function
 End Function

@@ -61,7 +61,7 @@ Public Function ReplaceParm(strargOriginString As String, dicargParm As Dictiona
     Exit Function
 ErrorCatch:
     Set objBuilder = Nothing
-    DebugMsgWithTime "ReplaceParm code: " & err.Number & vbCrLf & " Description: " & err.Description
+    DebugMsgWithTime "ReplaceParm code: " & Err.Number & vbCrLf & " Description: " & Err.Description
     Exit Function
 End Function
 '''------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ Private Function Append(ByVal strargOrignString As String, ByRef varAryString As
     Append = Join(strarrBuf, strDelimiter)
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "Append Error code: " & err.Number & "Description: " & err.Description
+    DebugMsgWithTime "Append Error code: " & Err.Number & "Description: " & Err.Description
 End Function
 Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal strQuote As String = """") As String
     '与えられた文字列に、エスケープ処理をする
@@ -110,7 +110,7 @@ Public Function addQuote(ByVal strargOriginalString As String, Optional ByVal st
     addQuote = Append("", strBuf, "")
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "addQuote Error code: " & err.Number & "Description: " & err.Description
+    DebugMsgWithTime "addQuote Error code: " & Err.Number & "Description: " & Err.Description
 End Function
 '''INVPartMasterテーブルと対応する在庫情報シートのフィールド名から UPDATE の SET パラメータや WHERE パラメータを作成する
 '''対応フィールドを配列引数で受け取るよう変更 2022_01_27 Daisuke Oota
@@ -237,7 +237,7 @@ ConnectEnum As Enum_SQL_F_Condition, ByRef clsEnumCondition As clsEnum) As Strin
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ReturnCommonFieldCondition code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "ReturnCommonFieldCondition code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -319,7 +319,7 @@ Public Function CreateAfterIN_WordFromSHFullPath(strargDBFileFullPah As String, 
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "CreateAfterINWordFromSHFullPath code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceParm = Nothing
@@ -351,7 +351,7 @@ Public Function SQLResutArrayto1Dimmention(varargArr2Demmention As Variant) As V
     SQLResutArrayto1Dimmention = vararr1Dimmention
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SQLResultArrayto1Dimention code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -407,7 +407,7 @@ Public Function GetSELECTfieldListFromDicObjctToFieldName(ByRef argdicObjToField
     GetSELECTfieldListFromDicObjctToFieldName = Join(strarrSELECTfield, ",")
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & err.Number & " Descriptoin: " & err.Description
+    DebugMsgWithTime "GetSELECTfieldListFromDicObjctToFieldName code: " & Err.Number & " Descriptoin: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Function
@@ -429,7 +429,7 @@ Public Function RepDotField(ByRef dicargObjToField As Dictionary, strargContrlNa
     RepDotField = REPLACE(REPLACE(REPLACE(dicargObjToField(strargContrlName), "[", ""), "]", ""), ".", "_")
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "RepDotField coce: " & err.Number & " Description:" & err.Description
+    DebugMsgWithTime "RepDotField coce: " & Err.Number & " Description:" & Err.Description
     RepDotField = ""
     GoTo CloseAndExit
 CloseAndExit:
@@ -530,10 +530,50 @@ Public Function Get1DimentionVarArrFromRS(ByRef argRS As ADODB.Recordset, strarg
     Get1DimentionVarArrFromRS = vararrResult
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Get1DimentionVarArrFromRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Get1DimentionVarArrFromRS code: " & Err.Number & " Description: " & Err.Description
     Set Get1DimentionVarArrFromRS = Nothing
     GoTo CloseAndExit
 CloseAndExit:
     Set dicResult = Nothing
     Exit Function
+End Function
+'''配列を引数として、binLabelのMailMergeのWhere条件の設定
+'''テーブルプリフィックスなし、フィールド名順序固定等簡素化した内容になっている
+'''Return String    Where の条件、フィールド間は AND で結合し、 条件間はORで結合する
+'''args
+'''varargArray      元になる配列、1次元目はSavePoint、2次元目はInpuDate
+Public Function ReturnMailMergeWhere(varargArray As Variant) As String
+    If Not IsRedim(varargArray) Then
+        '配列じゃないっぽいのが返ってきた
+        DebugMsgWithTime "ReturnMailMergeWhere : arg not array"
+        MsgBox "ReturnMailMergeWhere : 引数が配列では有りませんでした"
+        ReturnMailMergeWhere = ""
+        Exit Function
+    End If
+    If getArryDimmensions(varargArray) < 2 Then
+        MsgBox "配列の次元数が少なすぎます"
+        ReturnMailMergeWhere = ""
+    End If
+    '引数の要素分のString配列を定義
+    Dim strarrWork() As String
+    ReDim strarrWork(UBound(varargArray, 1))
+    Dim longArrayRowCounter As Long
+    '引数の全要素ループ
+    For longArrayRowCounter = LBound(varargArray, 1) To UBound(varargArray, 1)
+        'Quoteした文字列をセット
+        '(SavePoint = xx AND InputDate = YY) OR (・・・
+        Dim strarrPart(8) As String
+        strarrPart(0) = "(["
+        strarrPart(1) = INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+        strarrPart(2) = "] = "
+        strarrPart(3) = addQuote(varargArray(longArrayRowCounter, 0))
+        strarrPart(4) = " AND ["
+        strarrPart(5) = PublicConst.INPUT_DATE
+        strarrPart(6) = "] = "
+        strarrPart(7) = addQuote(varargArray(longArrayRowCounter, 1))
+        strarrPart(8) = ")"
+        strarrWork(longArrayRowCounter) = Join(strarrPart, "")
+    Next longArrayRowCounter
+    'Joinした結果を返す
+    ReturnMailMergeWhere = Join(strarrWork, " OR ")
 End Function

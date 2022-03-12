@@ -462,7 +462,7 @@ End If
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "INV_Enum_Initialize code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "INV_Enum_Initialize code: " & Err.Number & " Description: " & Err.Description
 CloseAndExit:
     Exit Sub
 End Sub

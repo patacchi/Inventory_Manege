@@ -366,7 +366,7 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     If rsMyRecord.State = adStateClosed Then
         'Recordsetが閉じていた場合
         'DROP TABLE , SELECT INTO ... 等が該当？
-        If err.Number = 0 Then
+        If Err.Number = 0 Then
             '正常終了？
             Do_SQL_with_NO_Transaction = True
             ReDim varMyArray(1, 0)
@@ -389,8 +389,8 @@ Public Function Do_SQL_with_NO_Transaction(Optional ByVal strargSQL As String, O
     Do_SQL_with_NO_Transaction = True
     Exit Function
 ErrorCatch:
-    MsgBox "Do_SQL_with_NO_Transaction code: " & err.Number & vbCrLf & "Description: " & err.Description
-    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & err.Number & " Description: " & err.Description
+    MsgBox "Do_SQL_with_NO_Transaction code: " & Err.Number & vbCrLf & "Description: " & Err.Description
+    DebugMsgWithTime "Do_SQL_with_NO_Transaction code: " & Err.Number & " Description: " & Err.Description
     Exit Function
 End Function
 '''Write Daisuke_Oota
@@ -632,7 +632,7 @@ ErrorCatch:
         OpenConnection = False
         Exit Function
     End If
-    DebugMsgWithTime "OpenConnection code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "OpenConnection code: " & Err.Number & " Description: " & Err.Description
     OpenConnection = False
     Exit Function
 End Function
@@ -672,8 +672,8 @@ Private Function ChCurrentToDBDirectory(Optional strargDBPath As String = "") As
     ChCurrentToDBDirectory = True
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "ChCurrenttoDB code: " & err.Number & " Description: " & err.Description
-    If err.Number = 76 Then
+    DebugMsgWithTime "ChCurrenttoDB code: " & Err.Number & " Description: " & Err.Description
+    If Err.Number = 76 Then
         'パスが見つかりません、mkdirでエラーが出た = ネットワークダメなんだね
         MsgBox "DBディレクトリ作成失敗（多分ネットワーク問題）処理を中断します"
     End If
@@ -703,8 +703,8 @@ Private Function InitialDBCreate(Optional strargDBFileName As String) As Boolean
     InitialDBCreate = True
     Exit Function
 ErrorCatch:
-    If err.Number <> 0 Then
-        MsgBox err.Number & vbCrLf & err.Description
+    If Err.Number <> 0 Then
+        MsgBox Err.Number & vbCrLf & Err.Description
     End If
     Exit Function
 End Function
@@ -1121,7 +1121,7 @@ ErrorCatch:
     End If
     Set conTableExists = Nothing
     IsTableExists = False
-    DebugMsgWithTime "IsTableExists code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "IsTableExists code: " & Err.Number & " Description: " & Err.Description
     Exit Function
 End Function
 '''Authour Daisuke Oota 2021_12_16
@@ -1221,7 +1221,7 @@ ErrorCatch:
     End If
     Set conFieldExists = Nothing
     IsFieldExists = False
-    DebugMsgWithTime "IsFielsExists code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "IsFielsExists code: " & Err.Number & " Description: " & Err.Description
     Exit Function
 End Function
 '''Author Patacchi 2022_01_16
@@ -1296,7 +1296,7 @@ Public Function GetTableList(Optional strargDBFileName As String, Optional strar
     GetTableList = arrstrTables
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetTableList code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetTableList code: " & Err.Number & " Description: " & Err.Description
     Dim arrError() As String
     GetTableList = arrError
     GoTo CloseAndExit
@@ -1335,7 +1335,7 @@ Private Sub CreateandCheckTempDB(Optional strargDBPath As String)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "CreateTempDB code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "CreateTempDB code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set adoxTempDB = Nothing

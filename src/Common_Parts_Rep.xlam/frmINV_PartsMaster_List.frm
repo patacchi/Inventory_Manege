@@ -187,7 +187,7 @@ Private Sub lstBox_Incremental_Click()
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "IncremantalList_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "IncremantalList_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -329,7 +329,7 @@ Private Sub UserForm_Initialize()
     '実際の値の入れ込みはインクリメンタルサーチの中で行う
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "frmPartsMaster_Initialize code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "frmPartsMaster_Initialize code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -417,7 +417,7 @@ Private Sub setDefaultDatatoRS()
     'イベント再開
     clsIncrementalParts.StopEvent = False
 ErrorCatch:
-    DebugMsgWithTime "SetDefaultDatatoRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SetDefaultDatatoRS code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub

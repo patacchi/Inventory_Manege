@@ -133,7 +133,7 @@ Private Sub btnSaveDBtoCSV_Click()
     MsgBox strSaveToFileName & vbCrLf & " ファイルに追記を行い、オリジナルのファイルは次の名前にリネームしました " & vbCrLf & strBackUpFilePath
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "btnSaveDBtoCSV code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "btnSaveDBtoCSV code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
     Exit Sub
 CloseAndExit:
@@ -221,7 +221,7 @@ Private Sub lstBox_IncrementalSerch_Click()
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "lstBox_IncrementalSerch_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "lstBox_IncrementalSerch_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -701,7 +701,7 @@ Private Sub getValueFromRS(Optional NotMoveFocus As Boolean = False)
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "getValueFromRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "getValueFromRS code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -774,7 +774,7 @@ Private Sub StatusCheck()
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "StatusCheck code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "StatusCheck code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -819,7 +819,7 @@ Private Function setEndDayList() As Boolean
     setEndDayList = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "setEndDayList code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "setEndDayList code: " & Err.Number & " Description: " & Err.Description
     setEndDayList = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -855,7 +855,7 @@ Private Sub setDicObjToField()
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "dicObjNameToFieldName code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "dicObjNameToFieldName code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -978,7 +978,7 @@ Private Function setDefaultDatatoRS(strargEndDay As String, Optional strargAditi
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "setDefaultDataToRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "setDefaultDataToRS code: " & Err.Number & " Description: " & Err.Description
     setDefaultDatatoRS = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -1027,7 +1027,7 @@ Private Sub MoveRecord(argKeyCode As Integer)
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "MoveRecord code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "MoveRecord code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -1095,7 +1095,7 @@ Private Sub CheckDataAndUpdateDB(ByRef argTxtBox As MSForms.TextBox)
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "CheckDataAndUpdateDB code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "CheckDataAndUpdateDB code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -1128,7 +1128,7 @@ Private Sub UpdateSpecificField(ByRef argTxtBox As MSForms.TextBox, Optional For
         GoTo CloseAndExit
     End Select
 ErrorCatch:
-    DebugMsgWithTime "UpdateSpecificField code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "UpdateSpecificField code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -1189,7 +1189,7 @@ Private Sub ChekStatusAndSetFlag()
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ChekStatusAndSetFlag code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "ChekStatusAndSetFlag code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -1221,7 +1221,7 @@ Private Function UpdateDBfromRS() As Boolean
     UpdateDBfromRS = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "UpdateDBfromRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "UpdateDBfromRS code: " & Err.Number & " Description: " & Err.Description
     UpdateDBfromRS = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -1349,7 +1349,7 @@ Private Sub AditionalWhereFilter(ByRef argSouceCtrl As Control)
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "AditionalWhereFilter code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "AditionalWhereFilter code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceAddWhere = Nothing

@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmBinLabel 
    Caption         =   "BINカードラベル印刷項目編集画面"
-   ClientHeight    =   7275
+   ClientHeight    =   7500
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   8610.001
@@ -29,12 +29,14 @@ Private StopEvents As Boolean
 Public UpdateMode As Boolean                                        '編集可能状態になってるときはTrueをセット
 Private AddnewMode As Boolean                                       '新規追加モードの時にTrueをセット
 Private strStartTime As String
-Private strSavePoint As String                                      'LabelTempに追加する際のSavePoint文字列
+Public strSavePoint As String                                       'LabelTempに追加する際のSavePoint文字列
+Public varstrarrSelectedSavepoint As Variant                        '印刷対象となるSavePointを格納したstring配列
 '定数
 Private Const MAX_LABEL_TEXT_LENGTH As Long = 18
 Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempテーブルを削除する時にStartTimeにセットする定数
 '------------------------------------------------------------------------------------------------------
 'SQL
+'binLabelの基礎データ取得SQL
 Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
@@ -49,6 +51,11 @@ Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_T
 'AddNewでうまくいかなかったので、M_Parts単独のSelect文
 Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,InputDate" & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt "
+'印刷完了(SavePoint 選択済み)のデータを削除する
+'{0}    INV_CONST.T_INV_LABEL_TEMP
+'{1}    (MailMergeWhere)
+Private Const SQL_DELET_COMP_DATA_FROM_LABEL_TEMP As String = "DELETE FROM {0} " & vbCrLf & _
+"WHERE {1}"
 Private Sub btnAddNewTehaiCode_Click()
     SwitchAddNewMode True
 End Sub
@@ -64,14 +71,6 @@ Private Sub UserForm_Terminate()
     DestRuctor
 End Sub
 'Click
-Private Sub btnMovePrevious_Click()
-    '前へ戻る
-    MoveRecord vbKeyLeft
-End Sub
-Private Sub btnMoveNext_Click()
-    '次へ進む
-    MoveRecord vbKeyRight
-End Sub
 '編集制限解除
 Private Sub btnEnableEdit_Click()
     SwitchtBoxEditmode True
@@ -84,6 +83,22 @@ End Sub
 Private Sub btnCancelUpdate_Click()
     CancelUpdateBatch
 End Sub
+'新規識別名にチェンジ
+Private Sub btnNewSavePoint_Click()
+    Dim longMsgBoxReturn As Long
+    longMsgBoxReturn = MsgBox("ラベル一時テーブル登録時の識別名を変更しますか？(出力先用紙を変更する時など)", vbYesNo)
+    Select Case longMsgBoxReturn
+    Case vbYes
+        '変更する場合
+        strSavePoint = ""
+        SetSavePoint
+        Exit Sub
+    Case vbNo
+        'キャンセルした場合
+        MsgBox "キャンセルしました"
+        Exit Sub
+    End Select
+End Sub
 'ラベル一時テーブルに追加する
 Private Sub btnAddnewLabelTemp_Click()
     Dim isCollect As Boolean
@@ -93,6 +108,8 @@ Private Sub btnAddnewLabelTemp_Click()
         MsgBox "一時テーブル作成に失敗したため、処理を中断します"
         Exit Sub
     End If
+    'SavePointの設定
+    SetSavePoint
     '次にカレントレコードをTempTableに追加する
     AddNewRStoLabelTemp
     'UpdateModeで編集状態破棄フラグ(チェックボックス)が立っていたら確認無しでキャンセルする(メモ書きで一時記入した場合等)
@@ -116,7 +133,7 @@ Private Sub btnCreateLabelDoc_Click()
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE), _
                     fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_PLANE)
 ErrorCatch:
-    DebugMsgWithTime "btnCreateLabelDoc_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "btnCreateLabelDoc_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOMailMerge Is Nothing Then
@@ -141,7 +158,7 @@ Private Sub btnCreateGenpinSmall_Click()
     'MailMerge実行
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_GENPIN_SMALL)
 ErrorCatch:
-    DebugMsgWithTime "btnCreateGenpinSmall_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "btnCreateGenpinSmall_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOMailMerge Is Nothing Then
@@ -165,8 +182,9 @@ Private Sub btnCreateSpecSheetSmall_Click()
     clsADOMailMerge.SetDBPathandFilenameDefault
     'MailMerge実行
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_SPECSHEET_Small)
+    GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOMailMerge Is Nothing Then
@@ -695,7 +713,7 @@ Private Sub GetValuFromRS()
     Next varKeyobjDic
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetValuFromRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetValuFromRS code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開
@@ -732,7 +750,7 @@ Private Sub MoveRecord(intargKeyCode As Integer)
     GetValuFromRS
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "MoveRecord code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "MoveRecord code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -840,7 +858,7 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "SwitchAddNewMode code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SwitchAddNewMode code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -914,7 +932,7 @@ Private Sub UpdateRSFromContrl(argCtrl As Control, Optional ByRef rsargOnlyParts
     End Select          'CheckDigit
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "UpdateRSFromContrl code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "UpdateRSFromContrl code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -974,7 +992,7 @@ Private Sub DoUpdateBatch()
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "DoUpdateBatch code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "DoUpdateBatch code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -1060,8 +1078,8 @@ Private Sub AddnewUpdateDB()
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "AddnewUpdateDB code: " & err.Number & " Description: " & err.Description
-    MsgBox "登録時にエラーが発生しました " & vbCrLf & err.Description
+    DebugMsgWithTime "AddnewUpdateDB code: " & Err.Number & " Description: " & Err.Description
+    MsgBox "登録時にエラーが発生しました " & vbCrLf & Err.Description
     rsOnlyPartsMaster.CancelUpdate
     rsOnlyPartsMaster.CancelBatch
     GoTo CloseAndExit
@@ -1108,7 +1126,7 @@ Private Sub rsOnlyPartsInitialize(Optional CheckNewRecord As Boolean)
     End If
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "rsOnlyPartsInitialize code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "rsOnlyPartsInitialize code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -1199,8 +1217,8 @@ Private Sub CancelUpdateBatch(Optional NoConfirm As Boolean = False)
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "CancelUpdateBatch code: " & err.Number & " Description: " & err.Description
-    If err.Number = -2147217906 Then
+    DebugMsgWithTime "CancelUpdateBatch code: " & Err.Number & " Description: " & Err.Description
+    If Err.Number = -2147217906 Then
         'ブックマークが無効ですのエラーの時は(変更後等でブックマークが移動)編集不可モードへ戻してやる
         SwitchtBoxEditmode False
     End If
@@ -1220,36 +1238,37 @@ Private Function RecreateLabelTempTable() As Boolean
     'DBPathはデフォルト、DBFilenameは一時テーブル格納DBのものにする
     clsADOLabelTemp.SetDBPathandFilenameDefault
     clsADOLabelTemp.DBFileName = PublicConst.TEMP_DB_FILENAME
-    'ラベル一時テーブルの存在有無をチェック
-    If clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
-        'LabelTempテーブルが存在していたら
-        'StartTimeの文字列により処理を分岐
-        Dim longDeleteConfirm As Long
-        If strStartTime = "" Then
-            'StartTimeが空文字なのにテーブルが存在していた
-            '前回リストに追加したのに印刷忘れたのかも？ダイアログ表示
-            longDeleteConfirm = MsgBox("ラベル印刷前のデータが残っているようです。削除してもいいですか？", vbYesNo)
-        End If
-        Select Case True
-        Case strStartTime = LABEL_TEMP_DELETE_FLAG, longDeleteConfirm = vbYes
-            'StartTimeにLabelTemp削除フラグが立っている場合か、削除確認でYesが選択された
-            '既存のラベル一時テーブルを削除
-            Dim isCollect As Boolean
-            isCollect = clsADOLabelTemp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
-            If Not isCollect Then
-                DebugMsgWithTime "RecreateLabelTempTable : fail delete already label tamp table"
-                MsgBox "ラベル出力一時テーブルの作成に失敗しました"
-                RecreateLabelTempTable = False
-                GoTo CloseAndExit
-                Exit Function
-            End If
-        Case longDeleteConfirm = vbNo
-            '既存のテーブル削除NGだった
-            'フォームスタート時間を設定し、処理を続行
-            strStartTime = GetLocalTimeWithMilliSec
-        End Select
-    End If
-    'ここまでで削除が必要なテーブルは削除完了してるはずなので、改めてテーブル存在チェックし、無かったら作成する
+'    'SavePoint導入により、テーブル削除は別プロシージャで判断する
+'    'ラベル一時テーブルの存在有無をチェック
+'    If clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+'        'LabelTempテーブルが存在していたら
+'        'StartTimeの文字列により処理を分岐
+'        Dim longDeleteConfirm As Long
+'        If strStartTime = "" Then
+'            'StartTimeが空文字なのにテーブルが存在していた
+'            '前回リストに追加したのに印刷忘れたのかも？ダイアログ表示
+'            longDeleteConfirm = MsgBox("ラベル印刷前のデータが残っているようです。削除してもいいですか？", vbYesNo)
+'        End If
+'        Select Case True
+'        Case strStartTime = LABEL_TEMP_DELETE_FLAG
+'            'StartTimeにLabelTemp削除フラグが立っている場合か、削除確認でYesが選択された
+'            '既存のラベル一時テーブルを削除
+'            Dim isCollect As Boolean
+'            isCollect = clsADOLabelTemp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
+'            If Not isCollect Then
+'                DebugMsgWithTime "RecreateLabelTempTable : fail delete already label tamp table"
+'                MsgBox "ラベル出力一時テーブルの作成に失敗しました"
+'                RecreateLabelTempTable = False
+'                GoTo CloseAndExit
+'                Exit Function
+'            End If
+'        Case longDeleteConfirm = vbNo
+'            '既存のテーブル削除NGだった
+'            'フォームスタート時間を設定し、処理を続行
+'            strStartTime = GetLocalTimeWithMilliSec
+'        End Select
+'    End If
+    'テーブル存在チェックし、無かったら作成する
     If Not clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
         'ラベル一時テーブルが存在しなかった
         'ラベル一時テーブルを作成する
@@ -1271,6 +1290,7 @@ Private Function RecreateLabelTempTable() As Boolean
         'Writeフラグ立てる
         clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode Or adModeWrite
         'SQL実行
+        Dim isCollect As Boolean
         isCollect = clsADOLabelTemp.Do_SQL_with_NO_Transaction
         'Writeフラグ下げる
         clsADOLabelTemp.ConnectMode = clsADOLabelTemp.ConnectMode And Not adModeWrite
@@ -1281,8 +1301,6 @@ Private Function RecreateLabelTempTable() As Boolean
             RecreateLabelTempTable = False
             GoTo CloseAndExit
         End If
-        'フォームスタート時間を設定する
-        strStartTime = GetLocalTimeWithMilliSec
     End If
     'メンバ変数のRecordSetに一時テーブルの内容を反映する
     If rsLabelTemp Is Nothing Then
@@ -1304,7 +1322,7 @@ Private Function RecreateLabelTempTable() As Boolean
     GoTo CloseAndExit
     Exit Function
 ErrorCatch:
-    DebugMsgWithTime "RecreateLabelTempTable code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "RecreateLabelTempTable code: " & Err.Number & " Description: " & Err.Description
     RecreateLabelTempTable = False
     GoTo CloseAndExit
 CloseAndExit:
@@ -1360,6 +1378,8 @@ Private Sub AddNewRStoLabelTemp()
         rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH).Value = Len(Trim(rsLabelTemp.Fields(clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)).Value))
         'オーダーNoをセット、先頭からフィールドサイズ分まで
         rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_ORDERNUM).Value = Mid(txtBox_OrderNumber.Text, 1, rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_ORDERNUM).DefinedSize)
+        'SavePointをセット、先頭からフィールドサイズ分まで
+        rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT).Value = Mid(strSavePoint, 1, rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT).DefinedSize)
         'UpdateでローカルのRSを確定する
         rsLabelTemp.Update
     Next longAddCount
@@ -1376,7 +1396,7 @@ Private Sub AddNewRStoLabelTemp()
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "AddNewRStoLabelTemp code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "AddNewRStoLabelTemp code: " & Err.Number & " Description: " & Err.Description
     MsgBox "ラベル印刷用一時テーブル登録時にエラーが発生したため、今回の登録はキャンセルされました"
     rsLabelTemp.CancelUpdate
     GoTo CloseAndExit
@@ -1398,18 +1418,55 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
     Set clsADOMailMerge = CreateclsADOHandleInstance
     'DBPathをデフォルトに
     clsADOMailMerge.SetDBPathandFilenameDefault
+    'DBFileNameをTempDBに
+    clsADOMailMerge.DBFileName = PublicConst.TEMP_DB_FILENAME
     If Not fsoMailMerge.FileExists(strargMailMergeTemplateFile) Then
         'ファイルが存在しなかった
         MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
         GoTo CloseAndExit
     End If
-    'Label_Tempテーブル存在確認
-    clsADOMailMerge.DBFileName = PublicConst.TEMP_DB_FILENAME
-    If Not clsADOMailMerge.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
-        'ラベルTempテーブルが見つからなかった
-        MsgBox "ラベル一時テーブルが見つかりませんでした"
+    'SavePointの確認、選択を行う
+    Dim isCollect As Boolean
+    isCollect = CheckandSelectSavePoint
+    If Not isCollect Then
+        MsgBox "印刷リストの選択でエラーが発生しました"
         GoTo CloseAndExit
     End If
+    'SQLを設定
+    Dim strSQL As String
+    Dim dicReplace As Dictionary
+    Set dicReplace = New Dictionary
+    dicReplace.RemoveAll
+'    'BinLabel MailMerge用基礎データ取得、選択結果をWhere条件で適用
+    dicReplace.Add 0, INV_CONST.T_INV_LABEL_TEMP
+    dicReplace.Add 1, clsSQLBc.ReturnMailMergeWhere(frmBinLabel.varstrarrSelectedSavepoint)
+    dicReplace.Add 2, INV_CONST.T_INV_SELECT_TEMP
+    '255文字を超えてるとMailMergeのSQLとしてはだめらしいので、一旦作業用テーブルに書き出す
+    'Writeフラグ上げる
+    clsADOMailMerge.ConnectMode = clsADOMailMerge.ConnectMode Or adModeWrite
+    'SelectTempテーブル削除
+    isCollect = clsADOMailMerge.DropTable(INV_CONST.T_INV_SELECT_TEMP)
+    If Not isCollect Then
+        MsgBox "中間種作業用テーブルの削除に失敗しました"
+        GoTo CloseAndExit
+    End If
+    clsADOMailMerge.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_LABEL_MAILMERGE_DEFAULT, dicReplace)
+    '昇順ソートオプションが指定されていたらSQLに追記してやる
+    If chkBox_SortByLocationASC.Value Then
+        '棚番昇順ソート指定がなされていた
+        clsADOMailMerge.SQL = clsADOMailMerge.SQL & vbCrLf & " ORDER BY [" & clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT) & "] ASC" & _
+        ",[" & INV_CONST.F_INV_LABEL_TEMP_ORDERNUM & "] ASC"
+    End If
+    'Seletc INTO 実行
+    isCollect = clsADOMailMerge.Do_SQL_with_NO_Transaction
+    'writeフラグ下げる
+    clsADOMailMerge.ConnectMode = clsADOMailMerge.ConnectMode And Not adModeWrite
+    If Not isCollect Then
+        MsgBox "抽出結果を中間作業用テーブルに登録する際にエラーが発生しました"
+        GoTo CloseAndExit
+    End If
+    'MailMergeはSelectedTableの全選択オンリーで
+    strSQL = "SELECT * FROM [" & INV_CONST.T_INV_SELECT_TEMP & "]"
     'wordDocumentsを得る
 #If RefWord Then
     'wordの参照設定がされている場合
@@ -1423,15 +1480,6 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
     Dim docTemplateMailMerge As Object
     'ラベルプリント用テンプレートを開く
     Set docTemplateMailMerge = objWord.Documents.Open(Filename:=strargMailMergeTemplateFile)
-    'SQLを設定
-    Dim strSQL As String
-    strSQL = "SELECT * FROM [" & INV_CONST.T_INV_LABEL_TEMP & "]"
-    '昇順ソートオプションが指定されていたらSQLに追記してやる
-    If chkBox_SortByLocationASC.Value Then
-        '棚番昇順ソート指定がなされていた
-        strSQL = strSQL & vbCrLf & " ORDER BY [" & clsEnumfrmBIN.INVMasterTana(F_INV_Tana_Local_Text_IMT) & "] ASC" & _
-        ",[" & INV_CONST.F_INV_LABEL_TEMP_ORDERNUM & "] ASC"
-    End If
     With docTemplateMailMerge.MailMerge
         'データソースを開く
         .OpenDataSource Name:=fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, PublicConst.TEMP_DB_FILENAME), ReadOnly:=True, sqlstatement:=strSQL
@@ -1472,33 +1520,21 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
         objWord.Documents.Add Template:=strargPlaneDocTemplete
         '新規文書のDobumentオブジェクトを得る
         Set docLabelPlane = objWord.ActiveDocument
-        '閲覧モードで開かないようにする
-'        objWord.ActiveWindow.View.ReadingLayout = False
         'Applicatoinイベントハンドラ用に、objWordのApplication参照をセットしてやる
         objWord.Run "modLabel_BIN.SetAppRefForEvent", objWord
         '開いたPlane文書の先頭に差し込み結果をインポートする
-            docLabelPlane.Range(0, 0).InsertFile Filename:=strTempMailmergeFullPath, link:=False, attachment:=False
-            'インポート完了したら一時保存した差し込み結果ファイルを削除する
+        docLabelPlane.Range(0, 0).InsertFile Filename:=strTempMailmergeFullPath, link:=False, attachment:=False
+        'インポート完了したら一時保存した差し込み結果ファイルを削除する
         Kill strTempMailmergeFullPath
     End If
     'ここから共通処理
     objWord.Visible = True
-    'LabelTempテーブルは削除しちゃう
-    Dim isCollect As Boolean
-    isCollect = clsADOMailMerge.DropTable(INV_CONST.T_INV_LABEL_TEMP)
-    If Not isCollect Then
-        MsgBox "一時テーブルの削除に失敗しました。"
-        'LabelTmpテーブル削除に失敗しても成果物だけは表示する
-        objWord.Visible = True
-        ForceForeground objWord.Windows(1).hwnd
-        GoTo CloseAndExit
-    End If
-    'strStartTimeに削除用フラグ定数文字列をセットする
-    strStartTime = LABEL_TEMP_DELETE_FLAG
+    'テーブル削除はプロシージャ分離する
+    DeleteCompDataFromLabelTemp
     ForceForeground objWord.Windows(1).hwnd
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "btnCreateMailmergeDoc_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "btnCreateMailmergeDoc_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOMailMerge Is Nothing Then
@@ -1512,9 +1548,9 @@ CloseAndExit:
     Set fsoMailMerge = Nothing
     Exit Sub
 End Sub
-''' LabelTempテーブルに保存する際のSavePointの確認、設定
+'''印刷する際の識別名を選択する
 '''Return bool  成功したらTrue、それ以外はFalse
-Private Function CheckandSetSavePoint() As Boolean
+Private Function CheckandSelectSavePoint() As Boolean
     On Error GoTo ErrorCatch
     'ここのみで使用するAdoなので個別宣言する
     Dim clsadoSavePoint As clsADOHandle
@@ -1528,19 +1564,61 @@ Private Function CheckandSetSavePoint() As Boolean
         'LabelTempTableが存在しなかった
         RecreateLabelTempTable
     End If
-    'SQL設定、Group By SavePoint
-    clsadoSavePoint.SQL = "SELECT " & INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT & " FROM " & vbCrLf & _
-    INV_CONST.T_INV_LABEL_TEMP & vbCrLf & _
-    " GROPU BY " & INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+    'SQL設定、Group By SavePoint,InputDate Oeder by inputdate desc,SavePoint asc
+    Dim dicReplace As Dictionary
+    Set dicReplace = New Dictionary
+    dicReplace.RemoveAll
+    dicReplace.Add 0, INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+    dicReplace.Add 1, PublicConst.INPUT_DATE
+    dicReplace.Add 2, INV_CONST.T_INV_LABEL_TEMP
+    dicReplace.Add 3, INV_CONST.F_INV_LABEL_TEMP_SAVE_FRENDLYNAME
+    dicReplace.Add 4, INV_CONST.F_INV_LABEL_TEMP_INPUT_FRENDLYNAME
+    clsadoSavePoint.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_SELECT_SAVEPOINT, dicReplace)
+    'SQL実行
+    Dim isCollect As Boolean
+    isCollect = clsadoSavePoint.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        'SQL実行失敗
+        MsgBox "CheckandSetSavePoint : ラベル一時テーブルの識別番号一覧読み取りに失敗しました"
+        CheckandSelectSavePoint = False
+        GoTo CloseAndExit
+    End If
+    '
     Select Case clsadoSavePoint.RecordCount
     Case 0
         'レコード無しの場合
+        MsgBox "ラベル一時テーブルにデータが見つかりませんでした"
+        CheckandSelectSavePoint = False
+        GoTo CloseAndExit
     Case 1
+        '1個の場合は選択画面を出さずに現在の項目をセットしてやる
+        ReDim varstrarrSelectedSavepoint(0, 1)
+        'rs.MoveFirstする
+        clsadoSavePoint.RS.MoveFirst
+        varstrarrSelectedSavepoint(0, 0) = CStr(clsadoSavePoint.RS.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVE_FRENDLYNAME).Value)
+        varstrarrSelectedSavepoint(0, 1) = CStr(clsadoSavePoint.RS.Fields(INV_CONST.F_INV_LABEL_TEMP_INPUT_FRENDLYNAME).Value)
+        CheckandSelectSavePoint = True
+        GoTo CloseAndExit
     Case Is >= 2
+        '複数個のSavePointが見つかった場合は選択画面を設定、表示する
+        Load frmSelectSavePoint
+        frmSelectSavePoint.lstBoxSavePoint.List = clsadoSavePoint.RS_Array
+        frmSelectSavePoint.lstBoxSavePoint.ColumnCount = 2
+        'Modalで選択画面を表示する(完了したら表示先のフォームで自身Unloadして処理が戻ってくるはず)
+        frmSelectSavePoint.Show vbModal
+        If IsEmpty(varstrarrSelectedSavepoint) Then
+            '結果VariantにEmptyがセットされていた、選択画面で何か失敗したっぽい
+            MsgBox "リスト識別名選択画面でエラーが発生しました"
+            CheckandSelectSavePoint = False
+            GoTo CloseAndExit
+        End If
+        'ここまで抜けてきたらとりあえず選択は上手くいったと認識
+        CheckandSelectSavePoint = True
+        GoTo CloseAndExit
     End Select
 ErrorCatch:
-    CheckandSetSavePoint = False
-    DebugMsgWithTime "CheckandSetSavePoint code: " & err.Number & " Description " & err.Description
+    CheckandSelectSavePoint = False
+    DebugMsgWithTime "CheckandSelectSavePoint code: " & Err.Number & " Description " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsadoSavePoint Is Nothing Then
@@ -1549,4 +1627,81 @@ CloseAndExit:
         Set clsadoSavePoint = Nothing
     End If
     Exit Function
-End Function
+End Function
+'''SavePointをセットする
+Private Sub SetSavePoint()
+    Select Case True
+    Case strSavePoint = ""
+        'strSavePointが空文字だったということは今回初実行なので、識別名を入力してもらう
+        strSavePoint = InputBox(prompt:="印刷一時テーブルに保存する際の識別名を変更する場合は入力して下さい(23文字まで)" & vbCrLf & _
+        "特に設定しない場合はそのままOKを押して下さい", _
+        Default:=GetLocalTimeWithMilliSec)
+        If strSavePoint = "" Then
+            '空文字が返ってきた、キャンセルされたか空文字にされたかどっちか
+            'GetLocalTimeで良いと思う
+            strSavePoint = GetLocalTimeWithMilliSec
+        End If
+        '23文字超えてたら切り下げる
+        If Len(strSavePoint) > 23 Then
+            strSavePoint = Mid(strSavePoint, 1, 23)
+        End If
+        'SavePointラベルに値をセット
+        lbl_SavePointName.Caption = strSavePoint
+        'strStartTimeに時間をセット
+        strStartTime = GetLocalTimeWithMilliSec
+        Exit Sub
+    End Select
+End Sub
+'''印刷が完了したLabelTempのデータを削除する
+'''レコードカウントが0になったらテーブルを消去する
+Private Sub DeleteCompDataFromLabelTemp()
+    On Error GoTo ErrorCatch
+    '個別にConnection張りたいので、独立してclsADOを定義
+    Dim clsAdoDeleteComp As clsADOHandle
+    Set clsAdoDeleteComp = CreateclsADOHandleInstance
+    'DBPath,DBFilenameを一時DBの物へ
+    clsAdoDeleteComp.SetDBPathandFilenameDefault
+    clsAdoDeleteComp.DBFileName = PublicConst.TEMP_DB_FILENAME
+    Dim dicRepladeDelete As Dictionary
+    Set dicRepladeDelete = New Dictionary
+    dicRepladeDelete.RemoveAll
+    dicRepladeDelete.Add 0, INV_CONST.T_INV_LABEL_TEMP
+    dicRepladeDelete.Add 1, clsSQLBc.ReturnMailMergeWhere(varstrarrSelectedSavepoint)
+    'SQL設定
+    clsAdoDeleteComp.SQL = clsSQLBc.ReplaceParm(SQL_DELET_COMP_DATA_FROM_LABEL_TEMP, dicRepladeDelete)
+    'Writeフラグ上げる
+    clsAdoDeleteComp.ConnectMode = clsAdoDeleteComp.ConnectMode Or adModeWrite
+    'SQL実行
+    Dim isCollect As Boolean
+    isCollect = clsAdoDeleteComp.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        MsgBox "印刷完了データの削除に失敗しました"
+        GoTo CloseAndExit
+    End If
+    '残りデータ0だったらテーブル削除
+    '一旦LabelTempの全データ取得
+    clsAdoDeleteComp.SQL = "SELECT * FROM " & INV_CONST.T_INV_LABEL_TEMP
+    'SQL実行
+    isCollect = clsAdoDeleteComp.Do_SQL_with_NO_Transaction
+    If clsAdoDeleteComp.RecordCount = 0 Then
+        'RecordCount0だったらテーブル削除
+        isCollect = clsAdoDeleteComp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
+    End If
+    If Not isCollect Then
+        MsgBox "一時テーブルの削除に失敗しました"
+        GoTo CloseAndExit
+    End If
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "DeleteCompDataFromLabelTemp code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsAdoDeleteComp Is Nothing Then
+        'Writeフラグ下げる
+        clsAdoDeleteComp.ConnectMode = clsAdoDeleteComp.ConnectMode And Not adModeWrite
+        'コネクション切断
+        clsAdoDeleteComp.CloseClassConnection
+        Set clsAdoDeleteComp = Nothing
+    End If
+    Exit Sub
+End Sub

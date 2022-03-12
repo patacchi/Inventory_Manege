@@ -109,7 +109,7 @@ Private Sub txtBox_F_INV_Tana_Local_Text_Change()
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "txtBox_F_INV_Tana_Local_Text_Change code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "txtBox_F_INV_Tana_Local_Text_Change code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set objRegExp = Nothing
@@ -232,7 +232,7 @@ Private Sub setDefaultDatatoRS()
     StopEvents = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "getDefaultData code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "getDefaultData code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceDefault = Nothing
@@ -303,7 +303,7 @@ Private Sub AddNewLocation()
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "AddNewLocation code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "AddNewLocation code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -332,7 +332,7 @@ Private Sub GetValuFromRS()
     Next varKeyDicObjtoField
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "GetValuFromRS code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "GetValuFromRS code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する

@@ -138,7 +138,7 @@ Private Sub ClearAllContents(Optional strargExceptCtrlName As String = "")
     Next ctlKey
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "ClearAllContents code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "ClearAllContents code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -245,7 +245,7 @@ Public Sub Incremental_TextBox_Change(Optional AutoHideList_Unmatch As Boolean, 
     Me.StopEvent = False
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Change code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_TextBox_Change code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
@@ -366,7 +366,7 @@ Public Sub Incremental_TextBox_Enter(ByRef txtBoxargTarget As MSForms.TextBox, B
     Me.StopEvent = False
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_TextBox_Enter Code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Me.StopEvent = False
@@ -439,7 +439,7 @@ Public Function Incremental_LstBox_Click() As Boolean
     Incremental_LstBox_Click = True
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremantal_LstBox_Click code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremantal_LstBox_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開
@@ -478,7 +478,7 @@ Public Sub Incremental_LstBox_Key_UP(argKeyCode As MSForms.ReturnInteger, argShi
     End Select
     GoTo CloseAndExit
 ErrorCatch:
-    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_LstBox_Key_UP code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント受付再開する
@@ -507,7 +507,7 @@ Public Sub Incremental_LstBox_Mouse_UP(argButton As Integer)
         GoTo CloseAndExit
     End Select
 ErrorCatch:
-    DebugMsgWithTime "Incremental_LstBox_Mouse_UP coe: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "Incremental_LstBox_Mouse_UP coe: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     'イベント再開する
@@ -548,7 +548,7 @@ Public Sub SetReplaceParmDic(ByRef dicargReplace As Dictionary, strargSELECTFiel
     dicargReplace.Add 6, strargWHERECondition
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "SetReplaceParmDic code: " & err.Number & " Description: " & err.Description
+    DebugMsgWithTime "SetReplaceParmDic code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     Exit Sub
@@ -586,7 +586,7 @@ Private Sub SetListBoxStyle(varArrayList As Variant)
     GoTo CloseAndExit
     Exit Sub
 ErrorCatch:
-    DebugMsgWithTime "SetListStyle code: " & err.Number & " Description : " & err.Description
+    DebugMsgWithTime "SetListStyle code: " & Err.Number & " Description : " & Err.Description
     Exit Sub
 CloseAndExit:
 End Sub
