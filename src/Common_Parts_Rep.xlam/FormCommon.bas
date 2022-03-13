@@ -13,8 +13,17 @@ Public Const BACK_COLOR_SUNDAY_RED As Long = &H8080FF               '“ú—j‚Ì”wŒi
 'DatePickerŠÖŒW
 Public Const LABEL_DAY_PRIFIX As String = "lbl_Day"         '“ú•tƒ‰ƒxƒ‹‚Ì‹¤’ÊPrefixA‚±‚ÌŒã‚É”š2Œ…‚ª‘±‚­
 Public datePickerResult As Date                             'DatePicker‚ÌŒ‹‰Ê‚ÌDate‚ğŠi”[
+'binLabelŠÖŒW
+Public strSavePointName As String                                   'frmSetSavePoint‚Ì•Ô’l‚ªŠi”[‚³‚ê‚é•Ï”
 'ƒtƒH[ƒ€ˆ—‚Å‹¤’Ê‚Ìˆ—‚ğ‚Ü‚Æ‚ß‚Ä‚¢‚­—\’è
-Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal arglongIndex As Long = 0, Optional ByVal boolMaxLengthFind As Boolean) As String
+'''Variant”z—ñ‚ğˆø”‚Æ‚µ‚ÄAŠeƒtƒB[ƒ‹ƒh‚ÌÅ’·ƒ|ƒCƒ“ƒg”‚ğæ“¾‚µAList.width‚Ìˆø”‚Ì•¶š—ñ‚ğì¬‚·‚é
+'''Retuen string    list.ColumnWidth‚Ìˆø”‚Æ‚È‚éString
+'''args
+'''argVarData                           Œ³ƒf[ƒ^‚ª“ü‚Á‚½Variant”z—ñA2ŸŒ³‚ğ‘z’è
+'''argFont                              Font‚ÌQÆ
+'''Optional ByVal boolMaxLengthFind     True‚ğƒZƒbƒg‚·‚é‚Æƒf[ƒ^‘SŒ’²‚×‚ÄÅ’·•¶š—ñ‚ğ’T‚·AƒfƒtƒHƒ‹ƒg‚ÍFalse‚ÅA1s–Ú‚Ìƒf[ƒ^‚µ‚©Œ©‚È‚¢
+'''Optional ByVal arglongIndex          “Ç‚İ‚İŠJnsEEE‚ç‚µ‚¢‚¯‚ÇŒ»ó‚Ù‚Æ‚ñ‚Çg‚Á‚Ä‚È‚¢
+Public Function GetColumnWidthString(ByRef argVarData As Variant, ByRef argFont As Object, Optional ByVal arglongIndex As Long = 0, Optional ByVal boolMaxLengthFind As Boolean = False) As String
     'w’è‚µ‚½ƒf[ƒ^As”iIndexj‚©‚çAListBox‚Ì•iƒ|ƒCƒ“ƒg”‚ğ;‚Å‹æØ‚Á‚½•¶š—ñj‚Æ‚µ‚Ä•Ô‚·
     'MaxLengthƒIƒvƒVƒ‡ƒ“‚ª•t—^‚³‚ê‚Ä‚¢‚½‚çAÅ‘å•¶š”‚ğŒŸõ‚·‚éiŒ”‚ª‘½‚¢‚Æ‘å•Ïj
     '•¶š—ñ”‚ÍAsingle”z—ñ‚Å‚Â‚±‚Æ‚É‚·‚é‚æ
@@ -22,8 +31,11 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
     Dim intFieldCounter As Integer
     Dim longRowCounter As Long
     Dim sglArrChrLength() As Single
+    Dim strarrMaxLength() As String             'ƒtƒB[ƒ‹ƒh‚²‚Æ‚ÌÅ’·•¶š—ñ‚ğŠi”[‚·‚é”z—ñ
     On Error GoTo ErrorCatch
+    'ƒtƒB[ƒ‹ƒh”•ª”z—ñ‚ğŠm•Û
     ReDim sglArrChrLength(UBound(argVarData, 2))
+    ReDim strarrMaxLength(UBound(argVarData, 2))
     '•¶š—ñ”z—ñæ“¾
     Select Case boolMaxLengthFind
     Case True
@@ -32,12 +44,16 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
         For longRowCounter = LBound(argVarData, 1) To UBound(argVarData, 1)
             For intFieldCounter = LBound(argVarData, 2) To UBound(argVarData, 2)
                 '¡‚ÌƒtƒB[ƒ‹ƒh‚ÅA”z—ñ‚Ì‚Ù‚¤‚ª’Z‚¯‚ê‚ÎXV‚µ‚Ä‚â‚é
+                '‚Â‚¢‚Å‚É‚»‚Ì‚Ì•¶š—ñ‚àŠi”[‚·‚é
                 If IsNull(argVarData(longRowCounter, intFieldCounter)) Then
                     '’†g‚ªNull‚¾‚Á‚½ê‡A‚±‚Ìƒ‹[ƒv‚Å‚Í‰½‚à‚µ‚È‚¢
 '                    Exit For
                 End If
-                If sglArrChrLength(intFieldCounter) < LenB(argVarData(longRowCounter, intFieldCounter)) Then
-                    sglArrChrLength(intFieldCounter) = LenB(argVarData(longRowCounter, intFieldCounter))
+'                If sglArrChrLength(intFieldCounter) < LenB(argVarData(longRowCounter, intFieldCounter)) Then
+                If sglArrChrLength(intFieldCounter) < modWinAPI.MesureTextWidth(CStr(argVarData(longRowCounter, intFieldCounter)), argFont.Name, argFont.Size) Then
+'                    sglArrChrLength(intFieldCounter) = LenB(argVarData(longRowCounter, intFieldCounter))
+                    sglArrChrLength(intFieldCounter) = modWinAPI.MesureTextWidth(CStr(argVarData(longRowCounter, intFieldCounter)), argFont.Name, argFont.Size)
+                    strarrMaxLength(intFieldCounter) = CStr(argVarData(longRowCounter, intFieldCounter)) & "  "
                 End If
             Next intFieldCounter
         Next longRowCounter
@@ -49,6 +65,7 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
                 Exit For
             End If
             sglArrChrLength(intFieldCounter) = LenB(argVarData(arglongIndex, intFieldCounter))
+            strarrMaxLength(intFieldCounter) = CStr(argVarData(arglongIndex, intFieldCounter)) & "  "
         Next intFieldCounter
     End Select
     strWidth = ""
@@ -60,7 +77,8 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
                     'ƒtƒB[ƒ‹ƒh’l‚ªNull‚Ìê‡‚Í•\¦‚µ‚È‚¢‚Å‚â‚Á‚Ä
                     strWidth = strWidth & "0 pt"
                 Else
-                    strWidth = strWidth & CStr(Application.WorksheetFunction.Max(longMINIMULPOINT, sglArrChrLength(intFieldCounter) * sglChrLengthToPoint)) & "pt"
+'                    strWidth = strWidth & CStr(Application.WorksheetFunction.Max(longMINIMULPOINT, sglArrChrLength(intFieldCounter) * sglChrLengthToPoint)) & "pt"
+                    strWidth = strWidth & CStr(modWinAPI.MesureTextWidth(strarrMaxLength(intFieldCounter), argFont.Name, argFont.Size)) & "pt"
                 End If
             Case Else
                 'Å‰‚©‚ç“r’†‚Ìê‡
@@ -68,7 +86,8 @@ Public Function GetColumnWidthString(ByRef argVarData As Variant, Optional ByVal
                     'Null‚¾‚Á‚½ê‡
                     strWidth = strWidth & "0 pt;"
                 Else
-                    strWidth = strWidth & CStr(Application.WorksheetFunction.Max(longMINIMULPOINT, sglArrChrLength(intFieldCounter) * sglChrLengthToPoint)) & "pt;"
+'                    strWidth = strWidth & CStr(Application.WorksheetFunction.Max(longMINIMULPOINT, sglArrChrLength(intFieldCounter) * sglChrLengthToPoint)) & "pt;"
+                    strWidth = strWidth & CStr(modWinAPI.MesureTextWidth(strarrMaxLength(intFieldCounter), argFont.Name, argFont.Size)) & "pt;"
                 End If
         End Select
     Next intFieldCounter

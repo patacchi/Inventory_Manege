@@ -210,6 +210,8 @@ Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "F_INV_OrderNumber"          
 Public Const F_INV_LABEL_TEMP_SAVEPOINT As String = "F_INV_Label_Savepoint"                         'ラベル出力のみに使用するSavepoint、出力リストの判別に使用する
 Public Const F_INV_LABEL_TEMP_SAVE_FRENDLYNAME As String = "識別名"                                 'SavePoint出力時の Savepointフレンドリーネーム
 Public Const F_INV_LABEL_TEMP_INPUT_FRENDLYNAME As String = "入力日時"                              'SavePoint出力時、InputDateフレンドリーネーム
+Public Const F_INV_LABEL_TEMP_FORMSTARTTIME As String = "F_INV_Label_FormStartTime"                 'FormStartTimeを記録
+Public Const F_INV_LABEL_TEMP_FRMSTART_FRENDLYNAME As String = "フォーム開始時間"                   'FormStartTimeフレンドリーネーム
 '------------------------------------------------------------------------------------------------------------------------------------------------------
 'DB Upsert向け定数
 Public Const SQL_ALIAS_T_INVDB_Parts As String = "TDBPrts"                                          'INV_M_Partsテーブル別名定義
@@ -407,17 +409,18 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{8}    INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
 '{9}    INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
 '{10}   INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+'{11}   INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {10} CHAR(23),{1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
+"    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
 ")"
 '------------------------------------------------------------------------------------------------
 'Label_Temp SavePoint一覧出力SQL
 '{0}    F_inv_Label_Savepoint
-'{1}    InputDate
+'{1}    FormStartTime
 '{2}    T_inv_Label_Temp
 '{3}    INV_CONST.F_INV_LABEL_TEMP_SAVE_FRENDLYNAME
-'{4}    INV_CONST.F_INV_LABEL_TEMP_INPUT_FRENDLYNAME
+'{4}    INV_CONST.F_INV_LABEL_TEMP_FRMSTART_FRENDLYNAME
 Public Const SQL_SELECT_SAVEPOINT As String = "SELECT {0} AS {3},{1} AS {4}  FROM {2} " & vbCrLf & _
 "GROUP BY {0},{1} " & vbCrLf & _
 "ORDER BY {0} DESC,{1} DESC"

@@ -26,5 +26,6 @@ src/*/*.frx
 #!src/Common_Parts_Rep.xlam/frmDatePicker.frx
 !src/Common_Parts_Rep.xlam/frmInputStocINDate.frx
 !src/Common_Parts_Rep.xlam/frmSelectSavePoint.frx
+!src/Common_Parts_Rep.xlam/frmSetSavePoint.frx
 TempDB/
 #/x64/

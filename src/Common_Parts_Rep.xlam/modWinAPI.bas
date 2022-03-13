@@ -27,6 +27,30 @@ Public Declare PtrSafe Function GetForegroundWindow Lib "user32" () As LongPtr
 Public Declare PtrSafe Function GetWindowThreadProcessId Lib "user32" (ByVal hwnd As LongPtr, lpdwProcessId As Long) As Long
 Public Declare PtrSafe Function AttachThreadInput Lib "user32" (ByVal idAttach As Long, ByVal idAttachTo As Long, ByVal fAttach As Long) As Long
 Public Declare PtrSafe Function MoveWindow Lib "user32" (ByVal hwnd As LongPtr, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
+Private Declare PtrSafe Function GetDC Lib "user32" (ByVal hwnd As LongPtr) As LongPtr
+Private Declare PtrSafe Function CreateCompatibleDC Lib "gdi32" (ByVal hdc As LongPtr) As LongPtr
+Private Declare PtrSafe Function SelectObject Lib "gdi32" (ByVal hdc As LongPtr, ByVal hObject As LongPtr) As LongPtr
+Private Declare PtrSafe Function DeleteObject Lib "gdi32" (ByVal hObject As LongPtr) As Long
+Private Declare PtrSafe Function ReleaseDC Lib "user32" (ByVal hwnd As LongPtr, ByVal hdc As LongPtr) As Long
+Private Declare PtrSafe Function CreateFont Lib "gdi32" Alias "CreateFontA" (ByVal nHeight As Long, _
+    ByVal nWidth As Long, _
+    ByVal nEscapement As Long, _
+    ByVal nOrientation As Long, _
+    ByVal fnWeight As Long, _
+    ByVal IfdwItalic As Long, _
+    ByVal fdwUnderline As Long, _
+    ByVal fdwStrikeOut As Long, _
+    ByVal fdwCharSet As Long, _
+    ByVal fdwOutputPrecision As Long, _
+    ByVal fdwClipPrecision As Long, _
+    ByVal fdwQuality As Long, _
+    ByVal fdwPitchAndFamily As Long, _
+    ByVal lpszFace As String) As LongPtr
+Private Declare PtrSafe Function DrawText Lib "user32" Alias "DrawTextA" (ByVal hdc As LongPtr, _
+    ByVal lpStr As String, _
+    ByVal nCount As Long, _
+    lpRect As RECT, _
+    ByVal wFormat As Long) As Long
 '-----------------------------------------------------------------------------------------------------------------------
 'UNC対応のため、Win32API使用
 Public Declare PtrSafe Function SetCurrentDirectoryW Lib "kernel32" (ByVal lpPathName As LongPtr) As LongPtr
@@ -45,6 +69,13 @@ Type SYSTEMTIME
         wMinute As Integer
         wSecond As Integer
         wMilliseconds As Integer
+End Type
+'RECT構造体定義
+Private Type RECT
+    Left As Long
+    Top As Long
+    Right As Long
+    Bottom As Long
 End Type
 'const GetWindowLongPtr() 及び SetWindowLongPtr()で使用する定数
 Public Const GWL_STYLE As Long = (-16)              'ウィンドウスタイルのハンドラ番号
@@ -81,6 +112,16 @@ Public Const SPI_SETFOREGROUNDLOCKTIMEOUT As Long = &H2001&
 Public Const SPIF_SENDCHANGE As Long = &H2
 'DownloadPath取得用レジストリキー
 Public Const REG_DOWNLOADPATH As String = "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders\{374DE290-123F-4565-9164-39C4925E467B}"
+'CreateFont用定数
+Private Const FW_NORMAL = 400
+Private Const FW_BOLD = 700
+Private Const DEFAULT_CHARSET = 1
+Private Const OUT_DEFAULT_PRECIS = 0
+Private Const CLIP_DEFAULT_PRECIS = 0
+Private Const DEFAULT_QUALITY = 0
+Private Const DEFAULT_PITCH = 0
+Private Const FF_SCRIPT = 64
+Private Const DT_CALCRECT = &H400
 '-----------------------------------------------------------------------------------------------------------------------
 'プロシージャ定義
 'フォームに最大化・リサイズ機能を追加する。
@@ -96,4 +137,46 @@ Public Sub FormResize(Optional hwnd As LongPtr = 0)
     '最大・最小・サイズ変更を追加する
     WndStyle = WndStyle Or WS_THICKFRAME Or WS_MAXIMIZEBOX Or WS_MINIMIZEBOX Or WS_SYSMENU
     Call SetWindowLongPtr(hwnd, GWL_STYLE, WndStyle)
-End Sub
+End Sub
+'''与えらた文字列、フォント、サイズから画面の実描画長を取得する関数
+'''Return Long      実描画ポイント数?
+'''args
+'''strargTargetText         ターゲットとなるテキスト
+'''strargFONT_NAME          フォント名
+'''longargFont_Height       フォントサイズ?縦の長さらしいけど・・・
+Public Function MesureTextWidth( _
+    strargTargetText As String, _
+    strargFONT_NAME As String, _
+    longargFont_Height As Long) As Long
+    On Error GoTo ErrorCatch
+    '画面全体の描画領域のハンドルを取得
+    Dim hwholeScreenDC As LongPtr
+    hwholeScreenDC = GetDC(0&)
+    '仮想画面描画領域のハンドルを取得
+    Dim hvirtualDC As LongPtr
+    hvirtualDC = CreateCompatibleDC(hwholeScreenDC)
+    'フォントのハンドルを取得
+    Dim hFont As LongPtr
+    hFont = CreateFont(longargFont_Height, 0, 0, 0, FW_NORMAL, _
+    0, 0, 0, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, _
+    CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, _
+    DEFAULT_PITCH Or FF_SCRIPT, strargFONT_NAME)
+    '仮想描画領域にフォントを設定
+    Call SelectObject(hvirtualDC, hFont)
+    '描画領域の周囲を取得
+    Dim DrawAreaRectangle As RECT
+    '設定したフォントを適用し、テキスト書き出し
+    Call DrawText(hvirtualDC, strargTargetText, -1, DrawAreaRectangle, DT_CALCRECT)
+    '使用したオブジェクトを開放する
+    Call DeleteObject(hFont)
+    Call DeleteObject(hvirtualDC)
+    Call ReleaseDC(0&, hwholeScreenDC)
+    '結果を返す
+    MesureTextWidth = DrawAreaRectangle.Right - DrawAreaRectangle.Left
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "MesureTextWidth code : " & Err.Number & " Descriptoin: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    Exit Function
+End Function

@@ -1239,35 +1239,6 @@ Private Function RecreateLabelTempTable() As Boolean
     clsADOLabelTemp.SetDBPathandFilenameDefault
     clsADOLabelTemp.DBFileName = PublicConst.TEMP_DB_FILENAME
 '    'SavePoint導入により、テーブル削除は別プロシージャで判断する
-'    'ラベル一時テーブルの存在有無をチェック
-'    If clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
-'        'LabelTempテーブルが存在していたら
-'        'StartTimeの文字列により処理を分岐
-'        Dim longDeleteConfirm As Long
-'        If strStartTime = "" Then
-'            'StartTimeが空文字なのにテーブルが存在していた
-'            '前回リストに追加したのに印刷忘れたのかも？ダイアログ表示
-'            longDeleteConfirm = MsgBox("ラベル印刷前のデータが残っているようです。削除してもいいですか？", vbYesNo)
-'        End If
-'        Select Case True
-'        Case strStartTime = LABEL_TEMP_DELETE_FLAG
-'            'StartTimeにLabelTemp削除フラグが立っている場合か、削除確認でYesが選択された
-'            '既存のラベル一時テーブルを削除
-'            Dim isCollect As Boolean
-'            isCollect = clsADOLabelTemp.DropTable(INV_CONST.T_INV_LABEL_TEMP)
-'            If Not isCollect Then
-'                DebugMsgWithTime "RecreateLabelTempTable : fail delete already label tamp table"
-'                MsgBox "ラベル出力一時テーブルの作成に失敗しました"
-'                RecreateLabelTempTable = False
-'                GoTo CloseAndExit
-'                Exit Function
-'            End If
-'        Case longDeleteConfirm = vbNo
-'            '既存のテーブル削除NGだった
-'            'フォームスタート時間を設定し、処理を続行
-'            strStartTime = GetLocalTimeWithMilliSec
-'        End Select
-'    End If
     'テーブル存在チェックし、無かったら作成する
     If Not clsADOLabelTemp.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
         'ラベル一時テーブルが存在しなかった
@@ -1285,6 +1256,7 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 8, INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH
         dicReplaceLabelTemp.Add 9, INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
         dicReplaceLabelTemp.Add 10, INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
+        dicReplaceLabelTemp.Add 11, INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
@@ -1372,8 +1344,10 @@ Private Sub AddNewRStoLabelTemp()
                 clsADOfrmBIN.RS.Fields(dicObjNameToFieldName(varKeyobjDic)).Value
             End Select
         Next varKeyobjDic
-        '今回のフォームスタート時間をInputDateとして入力
-        rsLabelTemp.Fields(PublicConst.INPUT_DATE).Value = strStartTime
+        '今回のフォームスタート時間をFormStartTimeとして入力
+        rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME).Value = strStartTime
+        'InputDateは現在時刻
+        rsLabelTemp.Fields(PublicConst.INPUT_DATE).Value = GetLocalTimeWithMilliSec
         '手配コードの文字列数をセット
         rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_TEHAICODE_LENGTH).Value = Len(Trim(rsLabelTemp.Fields(clsEnumfrmBIN.INVMasterParts(F_Tehai_Code_IMPrt)).Value))
         'オーダーNoをセット、先頭からフィールドサイズ分まで
@@ -1382,6 +1356,8 @@ Private Sub AddNewRStoLabelTemp()
         rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT).Value = Mid(strSavePoint, 1, rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT).DefinedSize)
         'UpdateでローカルのRSを確定する
         rsLabelTemp.Update
+        'InputDateをずらすためSleep 1 (0.001)
+        Sleep 1
     Next longAddCount
     'rsLabelのFilterをPendingRecords、変更を未送信に設定し、UpdateBatchをかけ、DBに反映する
     rsLabelTemp.Filter = adFilterNone
@@ -1425,11 +1401,25 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
         MsgBox "差し込み印刷用のテンプレートファイルが見つかりませんでした"
         GoTo CloseAndExit
     End If
+    'PlaneDocが指定されている場合はそちらのファイルの存在確認も
+    If strargPlaneDocTemplete <> "" Then
+        If Not fsoMailMerge.FileExists(strargPlaneDocTemplete) Then
+            MsgBox "差し込み印刷用のイベント定義ファイルが見つかりませんでした。"
+            GoTo CloseAndExit
+        End If
+    End If
+    'T_LABEL_TEMPの存在確認
+    If Not clsADOMailMerge.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
+        DebugMsgWithTime "MailMergeDocCreate : T_LABEL_TEMP not exists"
+        MsgBox "印刷用のデータが登録されていませんでした"
+        GoTo CloseAndExit
+    End If
     'SavePointの確認、選択を行う
     Dim isCollect As Boolean
     isCollect = CheckandSelectSavePoint
     If Not isCollect Then
-        MsgBox "印刷リストの選択でエラーが発生しました"
+        DebugMsgWithTime "MailMergeDocCreate : select save point fail"
+'        MsgBox "印刷リストの選択でエラーが発生しました"
         GoTo CloseAndExit
     End If
     'SQLを設定
@@ -1560,22 +1550,27 @@ Private Function CheckandSelectSavePoint() As Boolean
     'DBファイル名のみ一時DBの物へ
     clsadoSavePoint.DBFileName = PublicConst.TEMP_DB_FILENAME
     'LabelTempテーブルの存在をチェックし、無ければ作成する
+    Dim isCollect As Boolean
     If Not clsadoSavePoint.IsTableExists(INV_CONST.T_INV_LABEL_TEMP) Then
         'LabelTempTableが存在しなかった
-        RecreateLabelTempTable
+        isCollect = RecreateLabelTempTable
+        If Not isCollect Then
+            DebugMsgWithTime "CheckandSelectSavePoint : Create LabelTempTable Fail"
+            MsgBox "印刷情報格納一時テーブルの作成に失敗しました"
+            GoTo CloseAndExit
+        End If
     End If
     'SQL設定、Group By SavePoint,InputDate Oeder by inputdate desc,SavePoint asc
     Dim dicReplace As Dictionary
     Set dicReplace = New Dictionary
     dicReplace.RemoveAll
     dicReplace.Add 0, INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
-    dicReplace.Add 1, PublicConst.INPUT_DATE
+    dicReplace.Add 1, INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
     dicReplace.Add 2, INV_CONST.T_INV_LABEL_TEMP
     dicReplace.Add 3, INV_CONST.F_INV_LABEL_TEMP_SAVE_FRENDLYNAME
-    dicReplace.Add 4, INV_CONST.F_INV_LABEL_TEMP_INPUT_FRENDLYNAME
+    dicReplace.Add 4, INV_CONST.F_INV_LABEL_TEMP_FRMSTART_FRENDLYNAME
     clsadoSavePoint.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_SELECT_SAVEPOINT, dicReplace)
     'SQL実行
-    Dim isCollect As Boolean
     isCollect = clsadoSavePoint.Do_SQL_with_NO_Transaction
     If Not isCollect Then
         'SQL実行失敗
@@ -1583,7 +1578,7 @@ Private Function CheckandSelectSavePoint() As Boolean
         CheckandSelectSavePoint = False
         GoTo CloseAndExit
     End If
-    '
+    'RecordCountにより処理を分岐
     Select Case clsadoSavePoint.RecordCount
     Case 0
         'レコード無しの場合
@@ -1596,7 +1591,7 @@ Private Function CheckandSelectSavePoint() As Boolean
         'rs.MoveFirstする
         clsadoSavePoint.RS.MoveFirst
         varstrarrSelectedSavepoint(0, 0) = CStr(clsadoSavePoint.RS.Fields(INV_CONST.F_INV_LABEL_TEMP_SAVE_FRENDLYNAME).Value)
-        varstrarrSelectedSavepoint(0, 1) = CStr(clsadoSavePoint.RS.Fields(INV_CONST.F_INV_LABEL_TEMP_INPUT_FRENDLYNAME).Value)
+        varstrarrSelectedSavepoint(0, 1) = CStr(clsadoSavePoint.RS.Fields(INV_CONST.F_INV_LABEL_TEMP_FRMSTART_FRENDLYNAME).Value)
         CheckandSelectSavePoint = True
         GoTo CloseAndExit
     Case Is >= 2
@@ -1608,7 +1603,7 @@ Private Function CheckandSelectSavePoint() As Boolean
         frmSelectSavePoint.Show vbModal
         If IsEmpty(varstrarrSelectedSavepoint) Then
             '結果VariantにEmptyがセットされていた、選択画面で何か失敗したっぽい
-            MsgBox "リスト識別名選択画面でエラーが発生しました"
+'            MsgBox "リスト識別名選択画面でエラーが発生しました"
             CheckandSelectSavePoint = False
             GoTo CloseAndExit
         End If
@@ -1633,14 +1628,15 @@ Private Sub SetSavePoint()
     Select Case True
     Case strSavePoint = ""
         'strSavePointが空文字だったということは今回初実行なので、識別名を入力してもらう
-        strSavePoint = InputBox(prompt:="印刷一時テーブルに保存する際の識別名を変更する場合は入力して下さい(23文字まで)" & vbCrLf & _
-        "特に設定しない場合はそのままOKを押して下さい", _
-        Default:=GetLocalTimeWithMilliSec)
-        If strSavePoint = "" Then
+        'frmSetSavePoint 表示、終わったら勝手に向こうでUnloadして処理が戻ってくるはず
+        frmSetSavePoint.Show vbModal
+        If FormCommon.strSavePointName = "" Then
             '空文字が返ってきた、キャンセルされたか空文字にされたかどっちか
             'GetLocalTimeで良いと思う
-            strSavePoint = GetLocalTimeWithMilliSec
+            FormCommon.strSavePointName = GetLocalTimeWithMilliSec
         End If
+        '結果をローカル変数に反映
+        strSavePoint = FormCommon.strSavePointName
         '23文字超えてたら切り下げる
         If Len(strSavePoint) > 23 Then
             strSavePoint = Mid(strSavePoint, 1, 23)

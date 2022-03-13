@@ -209,12 +209,12 @@ Private Sub btnSQLGo_Click()
             'タイトルなしを希望の場合はこちら
 '            varRetValue = dbSQLite3.RS_Array(boolPlusTytle:=False)
             varRetValue = dbTest.RS_Array
-            strWidths = GetColumnWidthString(varRetValue, 0)
+            strWidths = GetColumnWidthString(varRetValue, listBoxSQLResult.Font, 0)
         Else
             'デフォルトはタイトルあり
 '            varRetValue = dbSQLite3.RS_Array(boolPlusTytle:=True)
             varRetValue = dbTest.RS_Array
-            strWidths = GetColumnWidthString(varRetValue, 1)
+            strWidths = GetColumnWidthString(varRetValue, listBoxSQLResult.Font, 1)
         End If
     Else
         'エラーがあった場合の処理・・・なんだけど
@@ -222,11 +222,11 @@ Private Sub btnSQLGo_Click()
         If chkboxNoTitle.Value = True Then
             'タイトルなしを希望の場合はこちら
 '            varRetValue = dbSQLite3.RS_Array(boolPlusTytle:=False)
-            strWidths = GetColumnWidthString(varRetValue, 0)
+            strWidths = GetColumnWidthString(varRetValue, listBoxSQLResult.Font, 0)
         Else
             'デフォルトはタイトルあり
 '            varRetValue = dbSQLite3.RS_Array(boolPlusTytle:=True)
-            strWidths = GetColumnWidthString(varRetValue, 1)
+            strWidths = GetColumnWidthString(varRetValue, listBoxSQLResult.Font, 1)
         End If
     End If
     If VarType(varRetValue) = vbEmpty Then
@@ -236,7 +236,7 @@ Private Sub btnSQLGo_Click()
     End If
     If chkBoxMaxLength.Value = True Then
         '最大文字数検索をしたいそうで
-        strWidths = GetColumnWidthString(varRetValue, boolMaxLengthFind:=True)
+        strWidths = GetColumnWidthString(varRetValue, listBoxSQLResult.Font, boolMaxLengthFind:=True)
     End If
     With listBoxSQLResult
         .ColumnCount = UBound(varRetValue, 2) - LBound(varRetValue, 2) + 1

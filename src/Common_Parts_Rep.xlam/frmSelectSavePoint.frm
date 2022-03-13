@@ -18,12 +18,13 @@ Option Explicit
 Private StopEvents As Boolean
 Private Enum Enum_SortField
     SavePoint = 0
-    InputDate = 1
+    FormStartTime = 1
 End Enum
 'ListのInitializeは呼び出し元で行う
 '''キャンセルボタン
 Private Sub btnCancel_Click()
     '''frmBinLabelのvarstrarrSelectedSavePointにEmptyをセットして、自身をUnload
+    MsgBox "キャンセルされました"
     frmBinLabel.varstrarrSelectedSavepoint = Empty
     Unload Me
     Exit Sub
@@ -31,7 +32,7 @@ End Sub
 Private Sub btnCompSelect_Click()
     '選択されたそうで
     Dim strarrSelectedSavepoint() As String 'SavePoint格納用配列
-    Dim strarrInputDate() As String         'InputDate格納用配列
+    Dim strarrFormStartTime() As String     'FormStartTime格納用配列
     Dim longListRow As Long                 'Listのカレント行を格納
     Dim longSelectedRows As Long            '選択された項目の数を格納
     longSelectedRows = 0
@@ -47,12 +48,12 @@ Private Sub btnCompSelect_Click()
             longSelectedRows = longSelectedRows + 1
             '結果配列Redim Preserve
             ReDim Preserve strarrSelectedSavepoint(longSelectedRows - 1)
-            ReDim Preserve strarrInputDate(longSelectedRows - 1)
+            ReDim Preserve strarrFormStartTime(longSelectedRows - 1)
             'Listの項目をセット
             'SavePoint
             strarrSelectedSavepoint(longSelectedRows - 1) = CStr(lstBoxSavePoint.List(longListRow, 0))
-            'InputDate
-            strarrInputDate(longSelectedRows - 1) = CStr(lstBoxSavePoint.List(longListRow, 1))
+            'FormStartTime
+            strarrFormStartTime(longSelectedRows - 1) = CStr(lstBoxSavePoint.List(longListRow, 1))
         End Select
     Next longListRow
     If longSelectedRows < 1 Then
@@ -68,17 +69,17 @@ Private Sub btnCompSelect_Click()
     For longArrayRowCounter = LBound(strarrSelectedSavepoint) To UBound(strarrSelectedSavepoint)
         'SavePointセット
         arrstrResult(longArrayRowCounter, 0) = strarrSelectedSavepoint(longArrayRowCounter)
-        'InputDateセット
-        arrstrResult(longArrayRowCounter, 1) = strarrInputDate(longArrayRowCounter)
+        'FormStartTImeセット
+        arrstrResult(longArrayRowCounter, 1) = strarrFormStartTime(longArrayRowCounter)
     Next longArrayRowCounter
     'frmBinLabelに結果の配列をセット
     frmBinLabel.varstrarrSelectedSavepoint = arrstrResult
     Unload Me
     Exit Sub
 End Sub
-'InputDate順に並び替え
+'FormStartTime順に並び替え
 Private Sub btnOrderByInputDate_Click()
-    SortList Enum_SortField.InputDate
+    SortList Enum_SortField.FormStartTime
 End Sub
 'SavePoint順に並び替え
 Private Sub btnOrderBySavePoint_Click()
@@ -120,7 +121,7 @@ Private Sub SortList(argEnumField As Enum_SortField)
     'フィールド名定義は1行目の物をフィールド名、型はStringとする
     'SavePointフィールド追加
     rsSavePoint.Fields.Append Name:=CStr(lstBoxSavePoint.List(0, 0)), Type:=adWChar, DefinedSize:=23
-    'InptDateフィールド追加
+    'FormStartTimeフィールド追加
     rsSavePoint.Fields.Append Name:=CStr(lstBoxSavePoint.List(0, 1)), Type:=adWChar, DefinedSize:=23
     'rsをOpenする
     If rsSavePoint.State = ObjectStateEnum.adStateClosed Then
@@ -132,7 +133,7 @@ Private Sub SortList(argEnumField As Enum_SortField)
         rsSavePoint.AddNew
         'SavePoint
         rsSavePoint.Fields(CStr(lstBoxSavePoint.List(0, 0))).Value = lstBoxSavePoint.List(longListRowCount, 0)
-        'InputDate
+        'FormStartTime
         rsSavePoint.Fields(CStr(lstBoxSavePoint.List(0, 1))).Value = lstBoxSavePoint.List(longListRowCount, 1)
         'このループのRS確定
         rsSavePoint.Update
@@ -153,7 +154,7 @@ Private Sub SortList(argEnumField As Enum_SortField)
     Do
         'SavePoint
         varArr(longListRowCount, 0) = rsSavePoint.Fields(0).Value
-        'InputDate
+        'FormStartTime
         varArr(longListRowCount, 1) = rsSavePoint.Fields(1).Value
         'longListRowCountインクリメント
         longListRowCount = longListRowCount + 1

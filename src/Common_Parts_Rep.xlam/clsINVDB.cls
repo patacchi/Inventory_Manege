@@ -1320,7 +1320,7 @@ Public Function SetDBDatatoTanaCSV(strargSHCSVFullPath As String, strargEndDay A
     isCollect = SavesomefileToExelFile(strarrSetCSV(0, 0), strargSHCSVFullPath)
     If Not isCollect Then
         'ファイル変換中にエラー発生
-        DebugMsgWithTime "SetDBDatatoTanaCSV : error in exchanging"
+        DebugMsgWithTime "SetDBDatatoTanaCSV : Error in exchanging"
         SetDBDatatoTanaCSV = ""
         GoTo CloseAndExit
     End If

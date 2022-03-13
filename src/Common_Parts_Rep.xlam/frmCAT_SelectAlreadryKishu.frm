@@ -34,7 +34,7 @@ Private Sub UserForm_Initialize()
     Dim varArr As Variant
     varArr = dbCAT.RS_Array
     Dim strWidths As String
-    strWidths = GetColumnWidthString(varArr, boolMaxLengthFind:=False)
+    strWidths = GetColumnWidthString(varArr, listBox_CAT_Already.Font, boolMaxLengthFind:=False)
     With listBox_CAT_Already
 '        .ColumnCount = UBound(varArr, 2) - LBound(varArr, 2) + 1
         'ヘッダ列のみ表示させる（他を非表示にしたい）

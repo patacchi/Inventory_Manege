@@ -541,7 +541,7 @@ End Function
 '''テーブルプリフィックスなし、フィールド名順序固定等簡素化した内容になっている
 '''Return String    Where の条件、フィールド間は AND で結合し、 条件間はORで結合する
 '''args
-'''varargArray      元になる配列、1次元目はSavePoint、2次元目はInpuDate
+'''varargArray      元になる配列、1次元目はSavePoint、2次元目はFormStartTime
 Public Function ReturnMailMergeWhere(varargArray As Variant) As String
     If Not IsRedim(varargArray) Then
         '配列じゃないっぽいのが返ってきた
@@ -568,7 +568,7 @@ Public Function ReturnMailMergeWhere(varargArray As Variant) As String
         strarrPart(2) = "] = "
         strarrPart(3) = addQuote(varargArray(longArrayRowCounter, 0))
         strarrPart(4) = " AND ["
-        strarrPart(5) = PublicConst.INPUT_DATE
+        strarrPart(5) = INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
         strarrPart(6) = "] = "
         strarrPart(7) = addQuote(varargArray(longArrayRowCounter, 1))
         strarrPart(8) = ")"

@@ -6,7 +6,7 @@ Attribute VB_Name = "JsonConverter"
 ' JSON Converter for VBA
 '
 ' Errors:
-' 10001 - JSON parse error
+' 10001 - JSON parse Error
 '
 ' @class JsonConverter
 ' @author tim.hall.engr@gmail.com
@@ -125,7 +125,7 @@ Private Type json_Options
     ' See: http://support.microsoft.com/kb/269370
     '
     ' By default, VBA-JSON will use String for numbers longer than 15 characters that contain only digits
-    ' to override set `JsonConverter.JsonOptions.UseDoubleForLargeNumbers = True`
+    ' to ovErride set `JsonConverter.JsonOptions.UseDoubleForLargeNumbers = True`
     UseDoubleForLargeNumbers As Boolean
     ' The JSON standard requires object keys to be quoted (" or '), use this option to allow unquoted keys
     AllowUnquotedKeys As Boolean
@@ -142,7 +142,7 @@ Public JsonOptions As json_Options
 ' @method ParseJson
 ' @param {String} json_String
 ' @return {Object} (Dictionary or Collection)
-' @throws 10001 - JSON parse error
+' @throws 10001 - JSON parse Error
 ''
 Public Function ParseJson(ByVal JsonString As String) As Object
     Dim json_Index As Long
@@ -672,7 +672,7 @@ Private Function json_StringIsLargeNumber(JSON_string As Variant) As Boolean
     End If
 End Function
 Private Function json_ParseErrorMessage(JSON_string As String, ByRef json_Index As Long, ErrorMessage As String)
-    ' Provide detailed parse error message, including details of where and what occurred
+    ' Provide detailed parse Error message, including details of where and what occurred
     '
     ' Example:
     ' Error parsing JSON:
@@ -681,7 +681,7 @@ Private Function json_ParseErrorMessage(JSON_string As String, ByRef json_Index 
     ' Expecting 'STRING', 'NUMBER', null, true, false, '{', or '['
     Dim json_StartIndex As Long
     Dim json_StopIndex As Long
-    ' Include 10 characters before and after error (if possible)
+    ' Include 10 characters before and after Error (if possible)
     json_StartIndex = json_Index - 10
     json_StopIndex = json_Index + 10
     If json_StartIndex <= 0 Then
@@ -732,7 +732,7 @@ Private Sub json_BufferAppend(ByRef json_Buffer As String, _
         json_Buffer = json_Buffer & VBA.Space$(json_AddedLength)
         json_BufferLength = json_BufferLength + json_AddedLength
     End If
-    ' Note: Namespacing with VBA.Mid$ doesn't work properly here, throwing compile error:
+    ' Note: Namespacing with VBA.Mid$ doesn't work properly here, throwing compile Error:
     ' Function call on left-hand side of assignment must return Variant or Object
     Mid$(json_Buffer, json_BufferPosition + 1, json_AppendLength) = CStr(json_Append)
     json_BufferPosition = json_BufferPosition + json_AppendLength
@@ -749,10 +749,10 @@ End Function
 ' UTC/ISO 8601 Converter for VBA
 '
 ' Errors:
-' 10011 - UTC parsing error
-' 10012 - UTC conversion error
-' 10013 - ISO 8601 parsing error
-' 10014 - ISO 8601 conversion error
+' 10011 - UTC parsing Error
+' 10012 - UTC conversion Error
+' 10013 - ISO 8601 parsing Error
+' 10014 - ISO 8601 conversion Error
 '
 ' @module UtcConverter
 ' @author tim.hall.engr@gmail.com
@@ -768,7 +768,7 @@ End Function
 ' @method ParseUtc
 ' @param {Date} UtcDate
 ' @return {Date} Local date
-' @throws 10011 - UTC parsing error
+' @throws 10011 - UTC parsing Error
 ''
 Public Function ParseUtc(utc_UtcDate As Date) As Date
     On Error GoTo utc_ErrorHandling
@@ -783,7 +783,7 @@ Public Function ParseUtc(utc_UtcDate As Date) As Date
 #End If
     Exit Function
 utc_ErrorHandling:
-    Err.Raise 10011, "UtcConverter.ParseUtc", "UTC parsing error: " & Err.Number & " - " & Err.Description
+    Err.Raise 10011, "UtcConverter.ParseUtc", "UTC parsing Error: " & Err.Number & " - " & Err.Description
 End Function
 ''
 ' Convert local date to UTC date
@@ -791,7 +791,7 @@ End Function
 ' @method ConvertToUrc
 ' @param {Date} utc_LocalDate
 ' @return {Date} UTC date
-' @throws 10012 - UTC conversion error
+' @throws 10012 - UTC conversion Error
 ''
 Public Function ConvertToUtc(utc_LocalDate As Date) As Date
     On Error GoTo utc_ErrorHandling
@@ -806,7 +806,7 @@ Public Function ConvertToUtc(utc_LocalDate As Date) As Date
 #End If
     Exit Function
 utc_ErrorHandling:
-    Err.Raise 10012, "UtcConverter.ConvertToUtc", "UTC conversion error: " & Err.Number & " - " & Err.Description
+    Err.Raise 10012, "UtcConverter.ConvertToUtc", "UTC conversion Error: " & Err.Number & " - " & Err.Description
 End Function
 ''
 ' Parse ISO 8601 date string to local date
@@ -814,7 +814,7 @@ End Function
 ' @method ParseIso
 ' @param {Date} utc_IsoString
 ' @return {Date} Local date
-' @throws 10013 - ISO 8601 parsing error
+' @throws 10013 - ISO 8601 parsing Error
 ''
 Public Function ParseIso(utc_IsoString As String) As Date
     On Error GoTo utc_ErrorHandling
@@ -872,7 +872,7 @@ Public Function ParseIso(utc_IsoString As String) As Date
     End If
     Exit Function
 utc_ErrorHandling:
-    Err.Raise 10013, "UtcConverter.ParseIso", "ISO 8601 parsing error for " & utc_IsoString & ": " & Err.Number & " - " & Err.Description
+    Err.Raise 10013, "UtcConverter.ParseIso", "ISO 8601 parsing Error for " & utc_IsoString & ": " & Err.Number & " - " & Err.Description
 End Function
 ''
 ' Convert local date to ISO 8601 string
@@ -880,14 +880,14 @@ End Function
 ' @method ConvertToIso
 ' @param {Date} utc_LocalDate
 ' @return {Date} ISO 8601 string
-' @throws 10014 - ISO 8601 conversion error
+' @throws 10014 - ISO 8601 conversion Error
 ''
 Public Function ConvertToIso(utc_LocalDate As Date) As String
     On Error GoTo utc_ErrorHandling
     ConvertToIso = VBA.Format$(ConvertToUtc(utc_LocalDate), "yyyy-mm-ddTHH:mm:ss.000Z")
     Exit Function
 utc_ErrorHandling:
-    Err.Raise 10014, "UtcConverter.ConvertToIso", "ISO 8601 conversion error: " & Err.Number & " - " & Err.Description
+    Err.Raise 10014, "UtcConverter.ConvertToIso", "ISO 8601 conversion Error: " & Err.Number & " - " & Err.Description
 End Function
 ' ============================================= '
 ' Private Functions
