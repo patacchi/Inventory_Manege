@@ -132,6 +132,7 @@ Private Sub btnCreateLabelDoc_Click()
     'ラベル印刷時はプリンタの設定が必要(イベント駆動)なので、Planeファイルも指定必須
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_MAILMERGE), _
                     fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_PLANE)
+    GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "btnCreateLabelDoc_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
@@ -157,6 +158,7 @@ Private Sub btnCreateGenpinSmall_Click()
     clsADOMailMerge.SetDBPathandFilenameDefault
     'MailMerge実行
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_GENPIN_SMALL)
+    GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "btnCreateGenpinSmall_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
@@ -1521,6 +1523,10 @@ Private Sub MailMergeDocCreate(strargMailMergeTemplateFile As String, Optional s
     objWord.Visible = True
     'テーブル削除はプロシージャ分離する
     DeleteCompDataFromLabelTemp
+    '印刷終わったらSavePointo消去する
+    strSavePoint = ""
+    lbl_SavePointName.Caption = ""
+    FormCommon.strSavePointName = ""
     ForceForeground objWord.Windows(1).hwnd
     GoTo CloseAndExit
 ErrorCatch:
