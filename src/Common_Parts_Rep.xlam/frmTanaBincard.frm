@@ -4,7 +4,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmTanaBincard
    ClientHeight    =   9555.001
    ClientLeft      =   45
    ClientTop       =   390
-   ClientWidth     =   8160
+   ClientWidth     =   8115
    OleObjectBlob   =   "frmTanaBincard.frx":0000
    ShowModal       =   0   'False
    StartUpPosition =   1  'オーナー フォームの中央
@@ -49,7 +49,7 @@ End Enum
 '{0}    締切日
 '{1}    T_INV_CSV
 '{2}    (AfterINWord)
-Private Const CSV_SQL_ENDDAY_LIST As String = "SELECT DISTINCT {0} FROM {1} IN""""{2}"
+Private Const CSV_SQL_ENDDAY_LIST As String = "SELECT DISTINCT {0} FROM {1} IN""""{2} ORDER BY {0} ASC"
 '棚卸チェック用デフォルトデータ取得SQL
 '{0}    (selectField As 必須)
 '{1}    T_INV_CSV
@@ -522,6 +522,10 @@ Private Sub ConstRactor()
     setDicObjToField
     'clsIncrementalSerchコンストラクタ
     clsIncrementalfrmBIN.ConstRuctor Me, dicObjNameToFieldName, clsADOfrmBIN, clsEnumfrmBIN, clsSQLBc
+    If chkBox_SelectNewData.Value Then
+        '起動時最新データ選択フラグが立っていたらリストの一番下を選択する
+        lstBoxEndDay.ListIndex = lstBoxEndDay.ListCount - 1
+    End If
     Exit Sub
 End Sub
 'フォーム終了時に実行するプロシージャ
