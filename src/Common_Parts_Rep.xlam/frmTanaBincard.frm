@@ -26,6 +26,7 @@ Private clsIncrementalfrmBIN As clsIncrementalSerch
 'メンバ変数
 Private confrmBIN As ADODB.Connection
 Private StopEvents As Boolean
+Public strOriginEndDay As String                        '継承元となるEndDayを格納する変数
 '------------------------------------------------------------------------
 '定数定義
 'T_INV_CSVはここ位でしか扱わないので、Privateでも大丈夫
@@ -74,6 +75,26 @@ Private Const CSV_SQL_BIT_NOT_INCLUDE As String = "NOT (({0} MOD({1}*2)) >= {1})
 '{0}    TCSVTana.ロケーション
 '{1}    K 条件文字列、前方一致
 Private Const CSV_SQL_WHERE_LIKE As String = "{0} LIKE ""{1}%"""
+'------------------------------------------------------------------------------------------------
+'BINカード残数と現品残を継承するSQL
+'{0}    T_INV_CSV
+'{1}    T_Dst
+'{2}    ロケーション
+'{3}    棚卸締切日
+'{4}    (Origin EndDay)
+'{5}    T_Orig
+'{6}    手配コード
+'{7}    F_CSV_BIN_Amount
+'{8}    現品残
+'{9}    (Dst EndDay)
+Private Const CSV_SQL_INHERIT_AMOUNT As String = "UPDATE {0} AS {1} " & vbCrLf & _
+"    INNER JOIN (" & vbCrLf & _
+"        SELECT * FROM {0} " & vbCrLf & _
+"        WHERE {2} LIKE ""K%"" AND LEN({2}) >= 2 AND {3} = ""{4}""" & vbCrLf & _
+"        ) AS {5} " & vbCrLf & _
+"    ON {1}.{6} = {5}.{6} " & vbCrLf & _
+"SET {1}.{7} = {5}.{7},{1}.{8} = {5}.{8} " & vbCrLf & _
+"WHERE {1}.{3} = ""{9}"""
 '---------------------------------------------------------------------------------------------------------------------
 'イベントハンドラ
 'フォーム初期化動作
@@ -178,7 +199,10 @@ Private Sub btnRegistTanaCSVtoDB_Click()
 '#End If
     '登録処理が終わったら、もう一度初期設定をし、リストを再構成する
     ConstRactor
-    setEndDayList
+End Sub
+'''BINカード残数、現品残を前のデータから継承する
+Private Sub btnInheritAmount_Click()
+    InheritAmount
 End Sub
 Private Sub lstBoxEndDay_Click()
     '締切日リスト選択された
@@ -1141,10 +1165,10 @@ End Sub
 'RSにテキストボックスの数値を反映させた後に実行する(DB登録エラーのリスクを減らしたい)
 Private Sub ChekStatusAndSetFlag()
     On Error GoTo ErrorCatch
-    If clsADOfrmBIN.RS.EditMode = adEditNone Then
-        'RSに変更がないときは何もしない
-        GoTo CloseAndExit
-    End If
+'    If clsADOfrmBIN.RS.EditMode = adEditNone Then
+'        'RSに変更がないときは何もしない
+'        GoTo CloseAndExit
+'    End If
     'BinCard
     'Select Case の Caseはショートサーキットになることを利用
     Select Case True
@@ -1153,17 +1177,20 @@ Private Sub ChekStatusAndSetFlag()
         'Bin の Input と DataOKフラグをまとめて落とす
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput)
-    Case Not IsNumeric(txtBox_F_CSV_BIN_Amount.Text)
+    Case Not IsNumeric(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value)
         '数値として認識されない場合
-        '特に何もしない
+        'Bin の Input と DataOKフラグをまとめて落とす
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput)
     Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value) = _
         CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
         'RS上のBINカード残数とシート残数が一致した場合
         'BIN DataOKフラグとBin Inputフラグを両方立てる(入力してないとOKにならない前提)
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.BINDataOK Or Enum_frmBIN_Status.BINInput
-    Case txtBox_F_CSV_BIN_Amount.Text <> ""
-        '空白ではなかった場合
+    Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_BIN_Amount.Name)).Value) <> _
+        CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
+        'BIN残数とシステム残数が一致しなかった場合
         'Bin Inputフラグを立てて、BI OKフラグを落とす
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         (clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.BINInput) And Not Enum_frmBIN_Status.BINDataOK
@@ -1176,17 +1203,20 @@ Private Sub ChekStatusAndSetFlag()
         'Real の input と DataOK両方まとめて落とす
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput)
-    Case Not IsNumeric(txtBox_F_CSV_Real_Amount.Text)
+    Case Not IsNumeric(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value)
         '数値として認識されない場合
-        '特に何もしない
+        'Real の input と DataOK両方まとめて落とす
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
+        clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value And Not (Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput)
     Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value) = _
         CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
         'RS上のBINカード残数とシート残数が一致した場合
         'Real DataOKフラグとReal Inputフラグを両方立てる(入力してないとOKにならない前提)
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.RealDataOK Or Enum_frmBIN_Status.RealInput
-    Case txtBox_F_CSV_Real_Amount.Text <> ""
-        '空白ではなかった場合
+    Case CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_Real_Amount.Name)).Value) <> _
+        CDbl(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, txtBox_F_CSV_DB_Amount.Name)).Value)
+        '現品残とシステム上の残数が一致しなかった場合
         'Real Inputフラグを立てて、Real OKフラグを落とす
         clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value = _
         (clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value Or Enum_frmBIN_Status.RealInput) And Not RealDataOK
@@ -1357,5 +1387,166 @@ ErrorCatch:
     GoTo CloseAndExit
 CloseAndExit:
     Set dicReplaceAddWhere = Nothing
+    Exit Sub
+End Sub
+'''BINカード残数、現品残を継承元データから継承する
+Private Sub InheritAmount()
+    On Error GoTo ErrorCatch
+    If lstBoxEndDay.ListCount < 2 Then
+        '締切日データが2個未満だったら抜ける
+        MsgBox "棚卸締切日のデータが1種類以下です。継承元のデータと継承先のデータを登録してから実行してください"
+        GoTo CloseAndExit
+    End If
+    If lstBoxEndDay.ListIndex = -1 Then
+        'リスト選択されていなかったら抜ける
+        MsgBox "継承先(新しいデータ)を選択してから実行してください"
+        GoTo CloseAndExit
+    End If
+    '実行していいかどうか問い合わせ
+    Dim longMsgBoxReturn As Long
+    longMsgBoxReturn = MsgBox("実行すると対象の " & lstBoxEndDay.List(lstBoxEndDay.ListIndex) & " のデータは上書きされますが、よろしいですか？", vbYesNo)
+    If longMsgBoxReturn = vbNo Then
+        '問い合わせでNoと言われた
+        MsgBox "キャンセルしました"
+        GoTo CloseAndExit
+    End If
+    'OriginEndDayメンバ変数初期化
+    frmTanaBincard.strOriginEndDay = ""
+    'frmSelectOriginEndDay Load
+    Load frmSelectOriginEndDay
+    '継承先選択フォームの設定、表示
+    Dim longEndDayRowCount As Long
+    'lstBoxEndDayループ
+    For longEndDayRowCount = LBound(lstBoxEndDay.List) To UBound(lstBoxEndDay.List)
+        If Not longEndDayRowCount = lstBoxEndDay.ListIndex Then
+            '現在選択されている項目と違った場合にOriginEndDayのコンボボックスに追加する
+            frmSelectOriginEndDay.cmbBoxOriginEndDay.AddItem lstBoxEndDay.List(longEndDayRowCount)
+        End If
+    Next longEndDayRowCount
+    'SelectOriginEndDayフォームモーダル表示、結果確定したら勝手にUnloadして戻ってくるはず
+    frmSelectOriginEndDay.Show
+    If frmTanaBincard.strOriginEndDay = "" Then
+        'メンバ変数が空文字だったら抜ける
+        MsgBox "継承元締切日の選択に失敗しました"
+        GoTo CloseAndExit
+    End If
+    'SQLの組立に入る
+''{0}    T_INV_CSV
+''{1}    T_Dst
+''{2}    ロケーション
+''{3}    棚卸締切日
+''{4}    (Origin EndDay)
+''{5}    T_Orig
+''{6}    手配コード
+''{7}    F_CSV_BIN_Amount
+''{8}    現品残
+''{9}    (Dst EndDay)
+'Private Const CSV_SQL_INHERIT_AMOUNT As String = "UPDATE {0} AS {1} " & vbCrLf
+    Dim dicReplaceInherit As Dictionary
+    Set dicReplaceInherit = New Dictionary
+    dicReplaceInherit.RemoveAll
+    dicReplaceInherit.Add 0, INV_CONST.T_INV_CSV
+    dicReplaceInherit.Add 1, clsEnumfrmBIN.SQL_INV_Alias(DstTable_sia)
+    dicReplaceInherit.Add 2, clsEnumfrmBIN.CSVTanafield(F_Location_Text_ICS)
+    dicReplaceInherit.Add 3, clsEnumfrmBIN.CSVTanafield(F_EndDay_ICS)
+    dicReplaceInherit.Add 4, frmTanaBincard.strOriginEndDay
+    dicReplaceInherit.Add 5, clsEnumfrmBIN.SQL_INV_Alias(OriginTable_sia)
+    dicReplaceInherit.Add 6, clsEnumfrmBIN.CSVTanafield(F_Tehai_Code_ICS)
+    dicReplaceInherit.Add 7, clsEnumfrmBIN.CSVTanafield(F_Bin_Amount_ICS)
+    dicReplaceInherit.Add 8, clsEnumfrmBIN.CSVTanafield(F_Available_ICS)
+    dicReplaceInherit.Add 9, lstBoxEndDay.List(lstBoxEndDay.ListIndex)
+    'イベント停止する
+    StopEvents = True
+    'フォーム共有RSがOpenしてたらCloseする
+    If clsADOfrmBIN.RS.State And ObjectStateEnum.adStateOpen Then
+        clsADOfrmBIN.RS.Close
+    End If
+    'clsAdoを単独指定する
+    Dim clsAdoInherit As clsADOHandle
+    Set clsAdoInherit = CreateclsADOHandleInstance
+    'DBPath,DBFilenameをデフォルトへ
+    clsAdoInherit.SetDBPathandFilenameDefault
+    'Replace実行、SQL設定
+    clsAdoInherit.SQL = clsSQLBc.ReplaceParm(CSV_SQL_INHERIT_AMOUNT, dicReplaceInherit)
+    Dim isCollect As Boolean
+    'Writeフラグ上げる
+    clsAdoInherit.ConnectMode = clsAdoInherit.ConnectMode Or adModeWrite
+    'SQL実行
+    isCollect = clsAdoInherit.Do_SQL_with_NO_Transaction
+    'Witeフラグ下げる
+    clsAdoInherit.ConnectMode = clsAdoInherit.ConnectMode And Not adModeWrite
+    'clsADO切断
+    clsAdoInherit.CloseClassConnection
+    If Not isCollect Then
+        MsgBox "継承SQL実行する際にエラーが発生しました。"
+        GoTo CloseAndExit
+    End If
+    'ここまででDB更新は完了しているが、Statusは自動反映されないのでEndDayリストのClickイベント発生させた後StatusSetしてやる
+    '現在のlstboxEndDayのListIndexを退避
+    Dim longOldListIndex As Long
+    longOldListIndex = lstBoxEndDay.ListIndex
+    '一旦EndDayの選択を解除
+    lstBoxEndDay.ListIndex = -1
+    'イベント再開
+    StopEvents = False
+    'lstBoxEndDayのLisindexを復元(Clickイベント発生してデータ取りに行くはず)
+    lstBoxEndDay.ListIndex = longOldListIndex
+    '全レコードのStatus更新
+    SetRsAllStatus
+    MsgBox "継承動作終了しました"
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "InheritAmount code: " & Err.Number & " Descriptoin: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsAdoInherit Is Nothing Then
+        clsAdoInherit.CloseClassConnection
+        Set clsAdoInherit = Nothing
+    End If
+    Exit Sub
+End Sub
+'''DBのF_CSV_Statusを更新する
+Private Sub SetRsAllStatus()
+    On Error GoTo ErrorCatch
+    If clsADOfrmBIN.RS.State = ObjectStateEnum.adStateClosed Then
+        '接続が閉じていたら抜ける
+        DebugMsgWithTime "SetRsAllStatus : RS is closed"
+        GoTo CloseAndExit
+    End If
+    'イベント停止する
+    StopEvents = True
+    'RS全レコードループ
+    clsADOfrmBIN.RS.MoveFirst
+    Do
+        'ステータスセットプロシージャ
+        ChekStatusAndSetFlag
+        '今回のループのRSを確定
+        clsADOfrmBIN.RS.Update
+        '次のレコードへ
+        clsADOfrmBIN.RS.MoveNext
+    Loop While Not clsADOfrmBIN.RS.EOF
+    '全レコード処理が終わったらadFilterPendingRecordsでフィルタを掛けて結果があればUpdateBatchでDBに反映
+    clsADOfrmBIN.RS.Filter = adFilterPendingRecords
+    If clsADOfrmBIN.RS.RecordCount >= 1 Then
+        '変更があればUpdateBatch
+        clsADOfrmBIN.RS.UpdateBatch adAffectGroup
+        If Not clsADOfrmBIN.RS.Status And ADODB.RecordStatusEnum.adRecUnmodified Then
+            '変更なしフラグが立っていなかったらメッセージ出す
+            MsgBox "Statusの状態をDBに登録する際にエラーが発生しました"
+            GoTo CloseAndExit
+        End If
+    End If
+    clsADOfrmBIN.RS.Filter = adFilterNone
+    '最初のレコードに戻りStatusCheckで色等を反映させて終わり
+    clsADOfrmBIN.RS.MoveFirst
+    'イベント再開する
+    StopEvents = False
+    'StatusCheck
+    StatusCheck
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "SetRsAllStatus code : " & Err.Number & " Description : " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
     Exit Sub
 End Sub

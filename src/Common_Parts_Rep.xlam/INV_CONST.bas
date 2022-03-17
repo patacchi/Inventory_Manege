@@ -220,6 +220,8 @@ Public Const SQL_ALIAS_T_TEMP As String = "TTmp"                                
 Public Const SQL_ALIAS_T_SH_ZAIKO As String = "TSHZaiko"                                            '在庫情報シートテーブル名別名定義
 Public Const SQL_ALIAS_T_INV_CSV As String = "TCSVTana"                                             '棚卸CSVテーブルの別名定義
 Public Const SQL_ALIAS_SH_CSV As String = "SHCSV"                                                   '棚卸CSVファイルそのものの別名定義
+Public Const SQL_ALIAS_T_DST As String = "T_Dst"                                                    'サブクエリ等を使用する際、更新先等
+Public Const SQL_ALIAS_T_ORIG As String = "T_Orig"                                                  'サブクエリ等を使用する際のオリジナルテーブル
 'SQLAliasEnum
 Public Enum Enum_SQL_INV_Alias
     INVDB_Parts_Alias_sia = 1
@@ -228,6 +230,8 @@ Public Enum Enum_SQL_INV_Alias
     ZaikoSH_Alias_sia = 4
     TanaCSV_Alias_sia = 5
     SHCSV_Alias_sia = 6
+    DstTable_sia = 7
+    OriginTable_sia = 8
 End Enum
 Public Const SQL_AFTER_IN_ACCDB_0FullPath As String = "[MS ACCESS;DATABASE={0};]"                   'Select From の IN""句の後に来る文字列accdb
 Public Const SQL_AFTER_IN_XLSM_0FullPath As String = "[Excel 12.0 Macro;DATABASE={0};HDR=Yes;]"     'In xlsm,xlam

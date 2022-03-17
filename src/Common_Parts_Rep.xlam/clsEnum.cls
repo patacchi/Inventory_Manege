@@ -352,6 +352,8 @@ End If
 '    ZaikoSH_Alias_sia = 4
 '    TanaCSV_Alias_sia = 5
 '    SHCSV_Alias_sia = 6
+'    DstTable = 7
+'    OriginTable = 8
 'End Enum
     If dicSQLINVAlias Is Nothing Then
         Set dicSQLINVAlias = New Dictionary
@@ -362,6 +364,8 @@ End If
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.ZaikoSH_Alias_sia, SQL_ALIAS_T_SH_ZAIKO
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.TanaCSV_Alias_sia, SQL_ALIAS_T_INV_CSV
     dicSQLINVAlias.Add Enum_SQL_INV_Alias.SHCSV_Alias_sia, INV_CONST.SQL_ALIAS_SH_CSV
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.DstTable_sia, INV_CONST.SQL_ALIAS_T_DST
+    dicSQLINVAlias.Add Enum_SQL_INV_Alias.OriginTable_sia, INV_CONST.SQL_ALIAS_T_ORIG
 ''在庫情報シートでUpdate掛ける際にTrim必要なフィールド名を定義
 ''_ntrm need trim
 'Public Enum Enum_SH_Zaiko_Need_Trim
