@@ -217,6 +217,8 @@ Private Sub lstBoxEndDay_Click()
     StopEvents = True
     'RSより取得するデータ全クリア
     ClearAllContents
+    'データ総数をラベルにセット
+    lbl_TotalAmount.Caption = CStr(clsADOfrmBIN.GetRecordCountFromRS(clsADOfrmBIN.RS))
     'RSから値取得、表示
     getValueFromRS
     'イベントを再開
@@ -423,6 +425,10 @@ Private Sub txtBox_Filter_F_CSV_Tehai_Code_Change()
 End Sub
 'KeyDownイベント
 Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     Select Case KeyCode
     Case vbKeyLeft, vbKeyRight
         '左右矢印キー
@@ -435,6 +441,10 @@ Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteg
     End Select
 End Sub
 Private Sub txtBox_F_CSV_Real_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     Select Case KeyCode
     Case vbKeyLeft, vbKeyRight
         '左右矢印キー
@@ -447,6 +457,10 @@ Private Sub txtBox_F_CSV_Real_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInte
     End Select
 End Sub
 Private Sub btnMoveNextData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     Select Case KeyCode
     Case vbKeyLeft, vbKeyRight
         '左右矢印キー
@@ -459,6 +473,10 @@ Private Sub btnMoveNextData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVa
     End Select
 End Sub
 Private Sub btnMovePreviosData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     Select Case KeyCode
     Case vbKeyLeft, vbKeyRight
         '左右矢印キー
@@ -472,6 +490,10 @@ Private Sub btnMovePreviosData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, B
 End Sub
 'KeyUpイベント
 Private Sub lstBox_IncrementalSerch_KeyUp(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     'イベント停止
     StopEvents = True
     'インクリメンタルリストのキーイベント
@@ -487,6 +509,10 @@ Private Sub lstBox_IncrementalSerch_KeyUp(ByVal KeyCode As MSForms.ReturnInteger
 End Sub
 'MouseUpイベント
 Private Sub lstBox_IncrementalSerch_MouseUp(ByVal Button As Integer, ByVal Shift As Integer, ByVal X As Single, ByVal Y As Single)
+    If StopEvents Then
+        'イベント停止フラグ立ってたら抜ける
+        Exit Sub
+    End If
     'イベント停止
     StopEvents = True
     'インクリメンタルリストマウスアップイベント
@@ -703,6 +729,12 @@ Private Sub getValueFromRS(Optional NotMoveFocus As Boolean = False)
     Else
         longStatusValue = CLng(clsADOfrmBIN.RS.Fields(clsSQLBc.RepDotField(dicObjNameToFieldName, clsEnumfrmBIN.CSVTanafield(F_Status_ICS))).Value)
     End If
+    'イベント停止
+    StopEvents = True
+    '現在のレコード数をCurrentRecordラベルに設定
+    lbl_CurrentAmount.Caption = CStr(clsADOfrmBIN.GetRecordCountFromRS(clsADOfrmBIN.RS))
+    'パーセントラベル更新
+    lbl_PerCent.Caption = Format(CSng(lbl_CurrentAmount.Caption) / CSng(lbl_TotalAmount.Caption), "0%")
     If Not NotMoveFocus Then
         'フォーカス移動禁止フラグが立っていなかったら
         'BINカード残数がデータチェックOKではなかったらフォーカスをBINカード残数へ、OKなら現品残へフォーカス移動
@@ -1023,6 +1055,11 @@ Private Sub MoveRecord(argKeyCode As Integer)
         GoTo CloseAndExit
         Exit Sub
     End If
+    Do While clsADOfrmBIN.RS.State And (ObjectStateEnum.adStateConnecting Or ObjectStateEnum.adStateExecuting Or ObjectStateEnum.adStateFetching)
+        'RSで作業中は待機する
+        DebugMsgWithTime "MoveRecord : RS Busy.wait 300 millisec"
+        Sleep 300
+    Loop
     Select Case argKeyCode
     Case vbKeyRight
         '右の場合、次へ

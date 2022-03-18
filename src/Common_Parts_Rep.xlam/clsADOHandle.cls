@@ -1393,4 +1393,87 @@ Public Function DropTable(strargTableName As String, Optional strargDBFileName A
     End If
 CloseAndExit:
     Exit Function
+End Function
+'''RSを引数としてRecordCountを返す、元のRSがサーバーサイドでも可能
+'''Return long      RecordCount、エラーがあったら-1を返す
+'''args
+'''argRS            対象となるRS
+Public Function GetRecordCountFromRS(ByRef argRS As ADODB.Recordset) As Long
+    On Error GoTo ErrorCatch
+    If argRS Is Nothing Then
+        GetRecordCountFromRS = -1
+        GoTo CloseAndExit
+    End If
+    Dim rsLocal As ADODB.Recordset
+    Set rsLocal = New ADODB.Recordset
+    'Connection オブジェクトとして引数のRSのActiveConnectionを指定
+    Dim conLocal As ADODB.Connection
+    Set conLocal = New ADODB.Connection
+'    Set conLocal = argRS.ActiveConnection
+    'argRSのActiveConnectionのConnectionStringを取得
+    conLocal.ConnectionString = argRS.ActiveConnection.ConnectionString
+    Dim longoldConMode As Long
+    '現在のConnectionModeを退避
+    longoldConMode = conLocal.Mode
+    '現在のConnectionのStateを退避
+    Dim longOldState As Long
+    longOldState = conLocal.State
+    If conLocal.State And ObjectStateEnum.adStateOpen Then
+        '元のConnectionが接続されていたら一旦切断する
+        conLocal.Close
+    End If
+    'ConnectModeを ReadOnlyとDenayNoneにセット
+    conLocal.Mode = adModeRead Or adModeShareDenyNone
+    'Connection Open
+    conLocal.Open
+    'RSのプロパティ設定に入る
+    rsLocal.CursorLocation = adUseClient
+    rsLocal.CursorType = adOpenStatic
+    rsLocal.LockType = adLockReadOnly
+    rsLocal.Source = argRS.Source
+    rsLocal.Filter = argRS.Filter
+    Set rsLocal.ActiveConnection = conLocal
+    'RS Open
+    rsLocal.Open , , , , ADODB.CommandTypeEnum.adCmdText
+    '結果を取得
+    GetRecordCountFromRS = rsLocal.RecordCount
+    'RS Close
+    rsLocal.Close
+    Set rsLocal = Nothing
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "GetRecordCountFromRS code: " & Err.Number & " Description: " & Err.Description
+    'エラー値として-1を返す
+    GetRecordCountFromRS = -1
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not rsLocal Is Nothing Then
+        If rsLocal.State And ObjectStateEnum.adStateOpen Then
+            '接続されていたら閉じる
+            rsLocal.Close
+        End If
+        Set rsLocal = Nothing
+    End If
+    If Not conLocal Is Nothing Then
+        If conLocal.State And ObjectStateEnum.adStateOpen Then
+            '接続されていたら一旦切断する
+            conLocal.Close
+        End If
+        'ConnectModeを退避していたものに戻す
+        conLocal.Mode = longoldConMode
+        '元のConnectionがOpenフラグ立っていたら接続してやる
+        If longOldState And ObjectStateEnum.adStateOpen Then
+            'Openフラグ立っていた場合
+            conLocal.Open
+            'argRSのConnectionにconLocalを設定してやる(CloseするとActiveConnetionがNothingになるため)
+            Set argRS.ActiveConnection = conLocal
+            'argRSをOpenする
+            argRS.Open , , , , ADODB.CommandTypeEnum.adCmdText
+            Set conLocal = Nothing
+        Else
+            'Openフラグ立っていなかった場合
+            Set conLocal = Nothing
+        End If
+    End If
+    Exit Function
 End Function
