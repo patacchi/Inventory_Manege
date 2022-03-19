@@ -426,7 +426,8 @@ End Sub
 'KeyDownイベント
 Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If StopEvents Then
-        'イベント停止フラグ立ってたら抜ける
+        'イベント停止フラグ立っている間はキー入力無効にする
+        KeyCode = 0
         Exit Sub
     End If
     Select Case KeyCode
@@ -442,7 +443,8 @@ Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteg
 End Sub
 Private Sub txtBox_F_CSV_Real_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If StopEvents Then
-        'イベント停止フラグ立ってたら抜ける
+        'イベント停止フラグ立っている間はキー入力を無効にする
+        KeyCode = 0
         Exit Sub
     End If
     Select Case KeyCode
@@ -1107,6 +1109,8 @@ Private Sub CheckDataAndUpdateDB(ByRef argTxtBox As MSForms.TextBox)
         DebugMsgWithTime "CheckDataAndUpdateDB : Control name is empty"
         GoTo CloseAndExit
     End If
+    'イベント停止する
+    StopEvents = True
     Select Case argTxtBox.Text
     Case ""
         '空白だった場合
@@ -1163,6 +1167,8 @@ ErrorCatch:
     DebugMsgWithTime "CheckDataAndUpdateDB code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
+    'イベント再開する
+    StopEvents = False
     Exit Sub
 End Sub
 '''指定されたコントロール名に対応するRSにデータを登録する
@@ -1289,6 +1295,18 @@ Private Function UpdateDBfromRS() As Boolean
     End If
     'Update実行する
     clsADOfrmBIN.RS.Update
+    If chkBoxUpdateASAP.Value Then
+        '即時更新モードの時は、更新完了するまで待機する
+        Do Until clsADOfrmBIN.RS.EditMode = adEditNone
+            DebugMsgWithTime "UpdateDBfromRS : RS is busy.wait 100 millisec"
+            Sleep 100
+        Loop
+    End If
+    'コマンド実行完了まで待機する
+    Do While clsADOfrmBIN.RS.State And (ObjectStateEnum.adStateConnecting Or ObjectStateEnum.adStateExecuting Or ObjectStateEnum.adStateFetching)
+        DebugMsgWithTime "UpdateDBfromRS : RS is busy.wait 100 millisec"
+        Sleep 100
+    Loop
     UpdateDBfromRS = True
     GoTo CloseAndExit
 ErrorCatch:

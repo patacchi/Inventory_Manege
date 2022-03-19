@@ -1433,6 +1433,11 @@ Public Function GetRecordCountFromRS(ByRef argRS As ADODB.Recordset) As Long
     rsLocal.Source = argRS.Source
     rsLocal.Filter = argRS.Filter
     Set rsLocal.ActiveConnection = conLocal
+    'QÆŒ³‚ÌRS‚ªBusy‚¾‚Á‚½‚ç‘Ò‹@‚·‚é
+    Do While argRS.State And (ObjectStateEnum.adStateConnecting Or ObjectStateEnum.adStateExecuting Or ObjectStateEnum.adStateFetching)
+        DebugMsgWithTime "GetRecordCountFromRS : origin RS Busy. wait 300 millisec"
+        Sleep 300
+    Loop
     'RS Open
     rsLocal.Open , , , , ADODB.CommandTypeEnum.adCmdText
     'Œ‹‰Ê‚ğæ“¾

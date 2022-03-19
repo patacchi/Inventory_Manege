@@ -555,6 +555,8 @@ Private Sub ConstRuctor()
     For longRowCounter = 0 To 9
         longarrAddCount(longRowCounter) = longRowCounter + 1
     Next longRowCounter
+    'オーダーNoテキストボックスのMaxLength設定する目的でLabelTempテーブル作成プロシージャを走らせる
+    RecreateLabelTempTable
     cmbBox_AddLabelCount.List = longarrAddCount
     'イベント再開する
     StopEvents = False
@@ -1291,6 +1293,8 @@ Private Function RecreateLabelTempTable() As Boolean
     rsLabelTemp.LockType = adLockBatchOptimistic
     rsLabelTemp.Open , , , , adCmdText
     clsADOLabelTemp.CloseClassConnection
+    'オーダーNoテキストボックスのMaxlengthにRSのDefinedSizeをセットしてやる
+    txtBox_OrderNumber.MaxLength = rsLabelTemp.Fields(INV_CONST.F_INV_LABEL_TEMP_ORDERNUM).DefinedSize
     DebugMsgWithTime "RecreateLabelTempTable: Recreate Label Temp Table Success"
     RecreateLabelTempTable = True
     GoTo CloseAndExit
