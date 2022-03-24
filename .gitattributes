@@ -16,3 +16,4 @@ bin/Common_Parts_Rep.xlam merge=ours
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.docm filter=lfs diff=lfs merge=lfs -text
 *.docx filter=lfs diff=lfs merge=lfs -text
+*.LBL filter=lfs diff=lfs merge=lfs -text
