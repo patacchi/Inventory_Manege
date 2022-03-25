@@ -32,3 +32,6 @@ src/*/*.frx
 !src/INV_SpecSheet_Small_Template_Local.docm/
 TempDB/
 #/x64/
+#CSTxtShow関係
+#Git管理するのはソースのみ、中間生成物、成果物は管理しない
+cs/Bin/
