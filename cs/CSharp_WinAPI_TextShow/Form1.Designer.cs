@@ -31,6 +31,8 @@
             this.btn_ShowTextWindow = new System.Windows.Forms.Button();
             this.cmbBox_FontNameList = new System.Windows.Forms.ComboBox();
             this.CmbBox_Size = new System.Windows.Forms.ComboBox();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // btn_ShowTextWindow
@@ -65,17 +67,28 @@
             this.CmbBox_Size.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.CmbBox_Size_DrawItem);
             this.CmbBox_Size.MeasureItem += new System.Windows.Forms.MeasureItemEventHandler(this.CmbBox_Size_MeasureItem);
             // 
+            // dataGridView1
+            // 
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Location = new System.Drawing.Point(2, 126);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.RowTemplate.Height = 21;
+            this.dataGridView1.Size = new System.Drawing.Size(774, 215);
+            this.dataGridView1.TabIndex = 3;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(489, 101);
+            this.ClientSize = new System.Drawing.Size(817, 400);
+            this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.CmbBox_Size);
             this.Controls.Add(this.cmbBox_FontNameList);
             this.Controls.Add(this.btn_ShowTextWindow);
             this.Name = "Form1";
             this.Text = "Form1";
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -85,6 +98,7 @@
         private System.Windows.Forms.Button btn_ShowTextWindow;
         private System.Windows.Forms.ComboBox cmbBox_FontNameList;
         private System.Windows.Forms.ComboBox CmbBox_Size;
+        private System.Windows.Forms.DataGridView dataGridView1;
     }
 }
 

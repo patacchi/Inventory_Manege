@@ -20,6 +20,7 @@ namespace CSharp_WinAPI_TextShow
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // TODO: このコード行はデータを 'iNV_ManegeDataSet.T_INV_M_Parts' テーブルに読み込みます。必要に応じて移動、または削除をしてください。
             foreach (FontFamily item in new InstalledFontCollection().Families) 
             {
                 if (item.IsStyleAvailable(FontStyle.Regular))

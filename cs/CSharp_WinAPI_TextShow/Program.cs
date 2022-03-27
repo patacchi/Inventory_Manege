@@ -16,6 +16,7 @@ namespace CSharp_WinAPI_TextShow
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+            MessageBox.Show(Properties.Settings.Default.INV_ManegeConnectionString);
             if (args.Length <= 0)
             {
                 //引数が無かったら終了する
@@ -35,6 +36,7 @@ namespace CSharp_WinAPI_TextShow
                 {
                     case ".txt":
                         //txtファイルだったら
+                        //当面txtファイルはフォーム作成のテストパターンとする
                         //メモ帳のプロセス情報を取得、引数はファイルパス
                         //System.Diagnostics.ProcessStartInfo psiNotepad = new System.Diagnostics.ProcessStartInfo(@"notepad.exe", " \"" + args[0] + "\"");
                         System.Diagnostics.ProcessStartInfo psiNotepad = new System.Diagnostics.ProcessStartInfo(@"notepad.exe", " \"" + System.IO.Path.GetFullPath(args[0]) + "\"");
@@ -63,7 +65,9 @@ namespace CSharp_WinAPI_TextShow
                         System.Diagnostics.Process.Start(psiLbl);
                         //ここから独自の処理を実装していく
                         //MessageBox.Show(System.IO.Path.GetFullPath(args[0]));
-                        break;
+                        //フォームの準備ができるまではここで終了する
+                        //break;
+                        return;
                     default:
                         //想定外のファイルだった場合は
                         MessageBox.Show("想定外のファイルが引数に渡されました");
@@ -73,7 +77,7 @@ namespace CSharp_WinAPI_TextShow
                 {
                 }
             }
-            //Application.Run(new Form1());
+            Application.Run(new Form1());
         }
     }
 }

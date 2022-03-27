@@ -1,11 +1,11 @@
-ï»¿@echo off
-rem ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ã¨åŒã˜ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ã“ã®ãƒãƒƒãƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’é…ç½®ã—ã¦ãã ã•ã„ã€‚
-rem ãƒãƒƒãƒãƒ•ã‚¡ã‚¤ãƒ«ã‚’å®Ÿè¡Œã™ã‚‹ã¨åŒã˜ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã«ã‚ã‚‹ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«ãŒã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã•ã‚Œã¾ã™ã€‚
-rem ãƒãƒ¼ã‚¸ãƒ§ãƒ³éƒ¨åˆ†ã¯å„ç’°å¢ƒã«ç½®ãæ›ãˆã¦ä¸‹ã•ã„ã€‚
+@echo off
+rem ƒ\[ƒXƒtƒ@ƒCƒ‹‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚É‚±‚Ìƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ğ”z’u‚µ‚Ä‚­‚¾‚³‚¢B
+rem ƒoƒbƒ`ƒtƒ@ƒCƒ‹‚ğÀs‚·‚é‚Æ“¯‚¶ƒfƒBƒŒƒNƒgƒŠ‚É‚ ‚éƒ\[ƒXƒtƒ@ƒCƒ‹‚ªƒRƒ“ƒpƒCƒ‹‚³‚ê‚Ü‚·B
+rem ƒo[ƒWƒ‡ƒ“•”•ª‚ÍŠeŠÂ‹«‚É’u‚«Š·‚¦‚Ä‰º‚³‚¢B
 cd /d C:\Windows\Microsoft.NET\Framework\v4.0.30319
 
 rem set srcPath=%~dp0*.cs %~dp0*.resx %~dp0Properties\*.cs %~dp0Properties\*.resx
-set srcPath=%~dp0*.cs %~dp0Properties\*.cs
+set srcPath=%~dp0CSharp_WinAPI_TextShow\*.cs %~dp0CSharp_WinAPI_TextShow\Properties\*.cs
 set exePath=%~dp0Bin\Debug\%~n0.exe
 
 set dllPaths=system.dll,system.drawing.dll,system.windows.forms.dll
