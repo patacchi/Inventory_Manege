@@ -36,6 +36,8 @@ TempDB/
 #Git管理するのはソースのみ、中間生成物、成果物は管理しない
 #BinディレクトリはIgnoreする
 cs/Bin/
+#新規追加Ignore
+*.sqlite3
 #以下は dotnet new gitigonoreで作成した内容
 #!cs/*/*.cs
 ## Ignore Visual Studio temporary files, build results, and
