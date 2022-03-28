@@ -3,7 +3,6 @@
 *.frm diff=sjis
 #*.frx diff=sjis
 /.gitignore merge=ours
-bin/IE_Comunicate_Module_Rep.xlsm merge=ours
 bin/IE_Comunicate_Module_rep.xlsm merge=ours
 bin/Common_Parts_Rep.xlam merge=ours
 *.xlsm filter=lfs diff=lfs merge=lfs -text
@@ -17,3 +16,4 @@ bin/Common_Parts_Rep.xlam merge=ours
 *.docm filter=lfs diff=lfs merge=lfs -text
 *.docx filter=lfs diff=lfs merge=lfs -text
 *.LBL filter=lfs diff=lfs merge=lfs -text
+*.frx filter=lfs diff=lfs merge=lfs -text
