@@ -41,6 +41,12 @@ Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
+'''binLabelにおいて、4701のデータのみに限定するSQL、他で既に使用している手配コードがあるため
+Private Const SQL_BIN_LABEL_DEFAULT_DATA_ONLY_4701 As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+"FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
+"    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
+"    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
+"    WHERE F_INV_Tana_System_Text LIKE ""BL%"" OR F_INV_Tana_System_Text LIKE ""K%"""
 '新規追加時のSQL、ポイントはT_INV_N_TANAをRightJoinし、未登録の棚番もRSに含める点
 '棚番リストはFilterでM_PartsでTana_IDがNullの物を抽出する
 Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBPrt.F_INV_Tana_ID AS TDBPrts_F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
@@ -446,6 +452,24 @@ Private Sub txtBox_F_INV_Label_Remark_2_Change()
     'イベント再開する
     StopEvents = False
 End Sub
+'''4701限定チェックボックス
+Private Sub chkBox_Only4701_Change()
+    If StopEvents Or UpdateMode Or AddnewMode Then
+        'イベント停止、UpdateMode、AddnewModeいずれかのフラグが立っていたら処理を中断
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    '全項目消去
+    ClearAllContents
+    'デフォルトデータ取得プロシージャ
+    SetDefaultValuetoRS
+    'イベント再開
+    StopEvents = False
+    '棚番ボックスにフォーカス(インクリメンタル初期化されるはず)
+    txtBox_F_INV_Tana_Local_Text.SetFocus
+    Exit Sub
+End Sub
 'Enter
 '棚番テキストボックスEnter
 Private Sub txtBox_F_INV_Tana_Local_Text_Enter()
@@ -620,7 +644,14 @@ Private Sub SetDefaultValuetoRS()
         clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_ADDNEW_TEHAI_CODE
     Case False
         '通常動作
-        clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+        '4701限定フラグの有無でSQLを分ける
+        If chkBox_Only4701.Value Then
+            '4701限定フラグが立っていた場合
+            clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA_ONLY_4701
+        Else
+            '全てのデータを対象にする場合
+            clsADOfrmBIN.RS.Source = SQL_BIN_LABEL_DEFAULT_DATA
+        End If
     End Select
     'rsのActiveConnectionにConnectionオブジェクト指定
     Set clsADOfrmBIN.RS.ActiveConnection = confrmBIN
@@ -771,6 +802,7 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         UpdateMode = True
         btnDoUpdate.Enabled = True
         btnCancelUpdate.Enabled = True
+        chkBox_Only4701.Enabled = False
         '手配コードテキストボックスはLockedにする
         txtBox_F_INV_Tehai_Code.Locked = True
         'LockedをFalseにして、BackColoreを薄緑にする
@@ -789,6 +821,7 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
     Case False
         '編集不可にするとき
         UpdateMode = False
+        chkBox_Only4701.Enabled = True
         'UpdateBatckボタンをFalseに
         btnDoUpdate.Enabled = False
         btnCancelUpdate.Enabled = False
@@ -836,6 +869,8 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
         btnAddNewTehaiCode.Enabled = False
         '未使用棚番チェックボックスEnabled True
         chkBoxShowUnUseLocationOnly.Enabled = True
+        '4701限定チェックボックスEnable
+        chkBox_Only4701.Enabled = False
         '全項目消去
         ClearAllContents
         'DBよりデータ再取得
@@ -851,6 +886,8 @@ Private Sub SwitchAddNewMode(IsAddNewMode As Boolean)
         btnAddNewTehaiCode.Enabled = True
         '未使用棚番チェックボックスEnabled False
         chkBoxShowUnUseLocationOnly.Enabled = False
+        '4701限定チェックボックスEnable
+        chkBox_Only4701.Enabled = True
         '手配コードボックスを編集不可に戻す
         'インクリメンタルで使用するのでLockedはそのまま
         '色だけ戻す
