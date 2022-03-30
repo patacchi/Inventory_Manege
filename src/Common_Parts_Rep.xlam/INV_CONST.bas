@@ -10,6 +10,7 @@ Public Const INV_DOC_LABEL_MAILMERGE As String = "INV_Label_Mailmerge_Local.docm
 Public Const INV_DOC_LABEL_PLANE As String = "INV_Label_MailmergePlain_Local.docm"          'ラベル差し込みの出力用空白Document名
 Public Const INV_DOC_LABEL_GENPIN_SMALL As String = "INV_Genpin_Small_Local.docx"           '現品票(小)の差し込み印刷テンプレート
 Public Const INV_DOC_LABEL_SPECSHEET_Small As String = "INV_SpecSheet_Small_Local.docx"     'フル記載(ラベルと同じ+オーダーNo) 小 テンプレート
+Public Const INV_DOC_LABEL_TANA_NO_ARROW As String = "INV_Tana_NO_Arrow_Local.docx"         '棚表示、矢印無しのテンプレート
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
@@ -414,8 +415,9 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{9}    INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
 '{10}   INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
 '{11}   INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
+'{12}   F_INV_Store_Code
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{8} LONG," & vbCrLf & _
+"    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{12} CHAR(10),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
 ")"
 '------------------------------------------------------------------------------------------------

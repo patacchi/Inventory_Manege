@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmBinLabel 
    Caption         =   "BINカードラベル印刷項目編集画面"
-   ClientHeight    =   7500
+   ClientHeight    =   9105.001
    ClientLeft      =   45
    ClientTop       =   390
    ClientWidth     =   8610.001
@@ -37,25 +37,29 @@ Private Const LABEL_TEMP_DELETE_FLAG As String = "LabelTempDelete"  'LabenTempテ
 '------------------------------------------------------------------------------------------------------
 'SQL
 'binLabelの基礎データ取得SQL
-Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+Private Const SQL_BIN_LABEL_DEFAULT_DATA As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text," & vbCrLf & _
+"TDBPrt.F_INV_Store_Code as F_INV_Store_Code " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID"
 '''binLabelにおいて、4701のデータのみに限定するSQL、他で既に使用している手配コードがあるため
-Private Const SQL_BIN_LABEL_DEFAULT_DATA_ONLY_4701 As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+Private Const SQL_BIN_LABEL_DEFAULT_DATA_ONLY_4701 As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text," & vbCrLf & _
+"TDBPrt.F_INV_Store_Code as F_INV_Store_Code " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
 "    WHERE F_INV_Tana_System_Text LIKE ""BL%"" OR F_INV_Tana_System_Text LIKE ""K%"""
 '新規追加時のSQL、ポイントはT_INV_N_TANAをRightJoinし、未登録の棚番もRSに含める点
 '棚番リストはFilterでM_PartsでTana_IDがNullの物を抽出する
-Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBPrt.F_INV_Tana_ID AS TDBPrts_F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text" & vbCrLf & _
+Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBPrt.F_INV_Tana_ID AS TDBPrts_F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text," & vbCrLf & _
+"TDBPrt.F_INV_Store_Code as F_INV_Store_Code " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    RIGHT JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
 "    WHERE TDBPrt.F_INV_Tana_ID IS NULL"
 'AddNewでうまくいかなかったので、M_Parts単独のSelect文
-Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,InputDate" & vbCrLf & _
+Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,InputDate," & vbCrLf & _
+"TDBPrt.F_INV_Store_Code as F_INV_Store_Code " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt "
 '印刷完了(SavePoint 選択済み)のデータを削除する
 '{0}    INV_CONST.T_INV_LABEL_TEMP
@@ -178,7 +182,7 @@ CloseAndExit:
     End If
     Exit Sub
 End Sub
-'詳細現品票(小)作成、表示
+'スペックシート_詳細現品票(小)作成、表示
 Private Sub btnCreateSpecSheetSmall_Click()
     On Error GoTo ErrorCatch
     'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
@@ -193,6 +197,32 @@ Private Sub btnCreateSpecSheetSmall_Click()
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
+'''棚表示_矢印無し
+Private Sub btnCreateTanaNoArrow_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_TANA_NO_ARROW)
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateTanaNoArrow_Click code: " & Err.Number & " Description: " & Err.Description
     GoTo CloseAndExit
 CloseAndExit:
     If Not clsADOMailMerge Is Nothing Then
@@ -452,6 +482,21 @@ Private Sub txtBox_F_INV_Label_Remark_2_Change()
     'イベント再開する
     StopEvents = False
 End Sub
+'''貯蔵記号
+Private Sub txtBox_F_INV_Store_Code_Change()
+    If StopEvents Then
+        'イベント停止フラグが立ってたら中止
+        Exit Sub
+    End If
+    'イベント停止する
+    StopEvents = True
+    'Ucase掛ける
+    txtBox_F_INV_Store_Code.Text = UCase(txtBox_F_INV_Store_Code.Text)
+    'RSのUpdateメソッドへ
+    UpdateRSFromContrl ActiveControl
+    'イベント再開する
+    StopEvents = False
+End Sub
 '''4701限定チェックボックス
 Private Sub chkBox_Only4701_Change()
     If StopEvents Or UpdateMode Or AddnewMode Then
@@ -681,6 +726,7 @@ Private Sub setObjToFieldNameDic()
     dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_1.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_1_IMPrt)
     dicObjNameToFieldName.Add txtBox_F_INV_Label_Remark_2.Name, clsEnumfrmBIN.INVMasterParts(F_Label_Remark_2_IMPrt)
     dicObjNameToFieldName.Add lbl_F_INV_Tana_System_Text.Name, clsEnumfrmBIN.INVMasterTana(F_INV_Tana_System_Text_IMT)
+    dicObjNameToFieldName.Add txtBox_F_INV_Store_Code.Name, clsEnumfrmBIN.INVMasterParts(F_Store_Code_IMPrt)
 End Sub
 'cidObjToFieldにあるコントロールの値をすべて消去する
 Private Sub ClearAllContents()
@@ -816,6 +862,8 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         txtBox_F_INV_Label_Remark_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         txtBox_F_INV_Label_Remark_2.Locked = False
         txtBox_F_INV_Label_Remark_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
+        txtBox_F_INV_Store_Code.Locked = False
+        txtBox_F_INV_Store_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_EDITABLE
         '編集可能設定ボタンを無効に
         btnEnableEdit.Enabled = False
     Case False
@@ -839,6 +887,8 @@ Private Sub SwitchtBoxEditmode(Editable As Boolean)
         txtBox_F_INV_Label_Remark_1.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         txtBox_F_INV_Label_Remark_2.Locked = True
         txtBox_F_INV_Label_Remark_2.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
+        txtBox_F_INV_Store_Code.Locked = True
+        txtBox_F_INV_Store_Code.BackColor = FormCommon.TXTBOX_BACKCOLORE_NORMAL
         '編集可能設定ボタンを有効に
         btnEnableEdit.Enabled = True
     End Select
@@ -1298,6 +1348,7 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 9, INV_CONST.F_INV_LABEL_TEMP_ORDERNUM
         dicReplaceLabelTemp.Add 10, INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
         dicReplaceLabelTemp.Add 11, INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
+        dicReplaceLabelTemp.Add 12, clsEnumfrmBIN.INVMasterParts(F_Store_Code_IMPrt)
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
