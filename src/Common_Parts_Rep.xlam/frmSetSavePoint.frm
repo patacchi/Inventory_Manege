@@ -19,6 +19,7 @@ Private Const SAVEPOINT_NAME_1 As String = "BINカードラベル出力用"
 Private Const SAVEPOINT_NAME_2 As String = "入庫用"
 Private Const SAVEPOINT_NAME_3 As String = "出庫用"
 Private Const SAVEPOINT_NAME_4 As String = "現品票出力用"
+Private Const SAVEPOINT_NAME_5 As String = "スペック表 小 (詳細現品票)"
 Private Sub UserForm_Initialize()
     ConstRuctor
 End Sub
@@ -38,6 +39,7 @@ Private Sub ConstRuctor()
     cmbBox_SavePointName.AddItem SAVEPOINT_NAME_2
     cmbBox_SavePointName.AddItem SAVEPOINT_NAME_3
     cmbBox_SavePointName.AddItem SAVEPOINT_NAME_4
+    cmbBox_SavePointName.AddItem SAVEPOINT_NAME_5
     'コンボボックス初期値は空文字
     cmbBox_SavePointName.Text = ""
 End Sub
