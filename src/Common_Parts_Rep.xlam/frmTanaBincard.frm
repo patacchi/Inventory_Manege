@@ -1472,7 +1472,8 @@ Private Sub InheritAmount()
     '継承先選択フォームの設定、表示
     Dim longEndDayRowCount As Long
     'lstBoxEndDayループ
-    For longEndDayRowCount = LBound(lstBoxEndDay.List) To UBound(lstBoxEndDay.List)
+    'EndDayリストボックスは一番下に最新のものがあるので、UboudからデクリメンタルでForループ回す
+    For longEndDayRowCount = UBound(lstBoxEndDay.List) To LBound(lstBoxEndDay.List) Step -1
         If Not longEndDayRowCount = lstBoxEndDay.ListIndex Then
             '現在選択されている項目と違った場合にOriginEndDayのコンボボックスに追加する
             frmSelectOriginEndDay.cmbBoxOriginEndDay.AddItem lstBoxEndDay.List(longEndDayRowCount)
