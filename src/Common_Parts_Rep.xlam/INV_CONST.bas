@@ -6,11 +6,12 @@ Public Const INV_DB_FILENAME As String = "INV_Manege.accdb"                     
 Public Const T_INV_TEMP As String = "T_INV_Temp"                                'INVDBの一時テーブル名
 Public Const T_INV_SELECT_TEMP As String = "T_INV_Select_Temp"                  'Selectした結果を格納するテーブル名、一旦テーブルに格納しないと
                                                                                 '更新可能なクエリが・・・とか言われるため
-Public Const INV_DOC_LABEL_MAILMERGE As String = "INV_Label_Mailmerge_Local.docm"           'ラベル差し込み印刷のフィールド設定済みWordDocument名
-Public Const INV_DOC_LABEL_PLANE As String = "INV_Label_MailmergePlain_Local.docm"          'ラベル差し込みの出力用空白Document名
-Public Const INV_DOC_LABEL_GENPIN_SMALL As String = "INV_Genpin_Small_Local.docx"           '現品票(小)の差し込み印刷テンプレート
-Public Const INV_DOC_LABEL_SPECSHEET_Small As String = "INV_SpecSheet_Small_Local.docx"     'フル記載(ラベルと同じ+オーダーNo) 小 テンプレート
-Public Const INV_DOC_LABEL_TANA_NO_ARROW As String = "INV_Tana_NO_Arrow_Local.docx"         '棚表示、矢印無しのテンプレート
+Public Const INV_DOC_LABEL_MAILMERGE As String = "INV_Label_Mailmerge_Local.docm"               'ラベル差し込み印刷のフィールド設定済みWordDocument名
+Public Const INV_DOC_LABEL_PLANE As String = "INV_Label_MailmergePlain_Local.docm"              'ラベル差し込みの出力用空白Document名
+Public Const INV_DOC_LABEL_GENPIN_SMALL As String = "INV_Genpin_Small_Local.docx"               '現品票(小)の差し込み印刷テンプレート
+Public Const INV_DOC_LABEL_SPECSHEET_Small As String = "INV_SpecSheet_Small_Local.docx"         'フル記載(ラベルと同じ+オーダーNo) 小 テンプレート
+Public Const INV_DOC_LABEL_SPECSHEET_A4Full As String = "INV_SpecSheet_A4Full_Template.docx"    'スペックシートA4フルサイズのテンプレート
+Public Const INV_DOC_LABEL_TANA_NO_ARROW As String = "INV_Tana_NO_Arrow_Local.docx"             '棚表示、矢印無しのテンプレート
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する

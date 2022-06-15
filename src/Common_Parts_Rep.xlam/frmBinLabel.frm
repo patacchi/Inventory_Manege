@@ -48,7 +48,7 @@ Private Const SQL_BIN_LABEL_DEFAULT_DATA_ONLY_4701 As String = "SELECT TDBPrt.F_
 "FROM T_INV_M_Parts AS TDBPrt " & vbCrLf & _
 "    INNER JOIN T_INV_M_Tana as TDBTana " & vbCrLf & _
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
-"    WHERE F_INV_Tana_System_Text LIKE ""BL%"" OR F_INV_Tana_System_Text LIKE ""K%"""
+"    WHERE F_INV_Tana_System_Text LIKE ""BL%"" OR F_INV_Tana_System_Text LIKE ""JBK%"" OR F_INV_Tana_System_Text LIKE ""K%"""
 '新規追加時のSQL、ポイントはT_INV_N_TANAをRightJoinし、未登録の棚番もRSに含める点
 '棚番リストはFilterでM_PartsでTana_IDがNullの物を抽出する
 Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBTana.F_INV_Tana_ID,TDBPrt.F_INV_Tana_ID AS TDBPrts_F_INV_Tana_ID,TDBTana.F_INV_Tana_Local_Text as F_INV_Tana_Local_Text,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,TDBTana.F_INV_Tana_System_Text as F_INV_Tana_System_Text," & vbCrLf & _
@@ -194,6 +194,32 @@ Private Sub btnCreateSpecSheetSmall_Click()
     clsADOMailMerge.SetDBPathandFilenameDefault
     'MailMerge実行
     MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_SPECSHEET_Small)
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
+'スペックシート_A4フル作成、表示
+Private Sub btnCreateSpecSheetA4Full_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_SPECSHEET_A4Full)
     GoTo CloseAndExit
 ErrorCatch:
     DebugMsgWithTime "btnCreateSpecSheetSmall_Click code: " & Err.Number & " Description: " & Err.Description
