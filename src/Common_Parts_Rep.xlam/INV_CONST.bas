@@ -12,6 +12,8 @@ Public Const INV_DOC_LABEL_GENPIN_SMALL As String = "INV_Genpin_Small_Local.docx
 Public Const INV_DOC_LABEL_SPECSHEET_Small As String = "INV_SpecSheet_Small_Local.docx"         'フル記載(ラベルと同じ+オーダーNo) 小 テンプレート
 Public Const INV_DOC_LABEL_SPECSHEET_A4Full As String = "INV_SpecSheet_A4Full_Template.docx"    'スペックシートA4フルサイズのテンプレート
 Public Const INV_DOC_LABEL_TANA_NO_ARROW As String = "INV_Tana_NO_Arrow_Local.docx"             '棚表示、矢印無しのテンプレート
+Public Const INV_DOC_LABEL_TANA_UP_ARROW As String = "INV_Tana_UP_Arrow_Local.docx"             '棚表示、↑付のテンプレート
+Public Const INV_DOC_LABEl_TANA_DOWN_ARROW As String = "INV_Tana_Down_Arrow_Local.docx"         '棚表示、↓付のテンプレート
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する

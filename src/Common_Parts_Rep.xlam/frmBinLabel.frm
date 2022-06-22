@@ -260,6 +260,58 @@ CloseAndExit:
     End If
     Exit Sub
 End Sub
+'''棚表示_↓下矢印付
+Private Sub btnCreateTanaArrowDown_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEl_TANA_DOWN_ARROW)
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateTanaNoArrow_Click code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
+'''棚表示_↑上矢印付
+Private Sub btnCreateTanaArrowUP_Click()
+    On Error GoTo ErrorCatch
+    'clsadoを定義するが、DBPathを取得する位にしか使わないので、共有変数とは別に定義する
+    Dim clsADOMailMerge As clsADOHandle
+    Set clsADOMailMerge = CreateclsADOHandleInstance
+    Dim fsoMailMerge  As FileSystemObject
+    Set fsoMailMerge = New FileSystemObject
+    'clsADOを明示的にデフォルトへ
+    clsADOMailMerge.SetDBPathandFilenameDefault
+    'MailMerge実行
+    MailMergeDocCreate fsoMailMerge.BuildPath(clsADOMailMerge.DBPath, INV_CONST.INV_DOC_LABEL_TANA_UP_ARROW)
+    GoTo CloseAndExit
+ErrorCatch:
+    DebugMsgWithTime "btnCreateTanaNoArrow_Click code: " & Err.Number & " Description: " & Err.Description
+    GoTo CloseAndExit
+CloseAndExit:
+    If Not clsADOMailMerge Is Nothing Then
+        clsADOMailMerge.CloseClassConnection
+        Set clsADOMailMerge = Nothing
+    End If
+    If Not fsoMailMerge Is Nothing Then
+        Set fsoMailMerge = Nothing
+    End If
+    Exit Sub
+End Sub
 '手配コードをセットしたパーツマスター画面を表示する
 Private Sub btnShowPMList_Click()
     If txtBox_F_INV_Tehai_Code.Text = "" Then
