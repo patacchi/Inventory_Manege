@@ -261,6 +261,16 @@ Private Sub btnMovePreviosData_Click()
     '前へ
     MoveRecord vbKeyLeft
 End Sub
+'先頭に移動するボタン
+Private Sub btnMoveFirst_Click()
+    '先頭へ
+    MoveRecord vbKeyHome
+End Sub
+'最後に移動するボタン
+Private Sub btnMoveLast_Click()
+    'ラストへ
+    MoveRecord vbKeyEnd
+End Sub
 'No Real
 Private Sub chkBoxShowNOReal_Click()
     If StopEvents Then
@@ -431,7 +441,7 @@ Private Sub txtBox_F_CSV_BIN_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInteg
         Exit Sub
     End If
     Select Case KeyCode
-    Case vbKeyLeft, vbKeyRight
+    Case vbKeyLeft, vbKeyRight, vbKeyEnd, vbKeyHome
         '左右矢印キー
         If chkBoxInputContiue.Value Then
             '連続入力モードだったら
@@ -448,7 +458,7 @@ Private Sub txtBox_F_CSV_Real_Amount_KeyDown(ByVal KeyCode As MSForms.ReturnInte
         Exit Sub
     End If
     Select Case KeyCode
-    Case vbKeyLeft, vbKeyRight
+    Case vbKeyLeft, vbKeyRight, vbKeyEnd, vbKeyHome
         '左右矢印キー
         If chkBoxInputContiue.Value Then
             '連続入力モードだったら
@@ -464,7 +474,7 @@ Private Sub btnMoveNextData_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVa
         Exit Sub
     End If
     Select Case KeyCode
-    Case vbKeyLeft, vbKeyRight
+    Case vbKeyLeft, vbKeyRight, vbKeyEnd, vbKeyHome
         '左右矢印キー
         If chkBoxInputContiue.Value Then
             '連続入力モードだったら
@@ -1048,7 +1058,7 @@ CloseAndExit:
 End Function
 '''レコード移動
 '''args
-'''argKeyCode   KeyCode →なら次へ、←なら前へ
+'''argKeyCode   KeyCode →なら次へ、←なら前へ、Homeなら先頭へ、Endなら最後へ
 Private Sub MoveRecord(argKeyCode As Integer)
     On Error GoTo ErrorCatch
     If clsADOfrmBIN.RS.State = ObjectStateEnum.adStateClosed Then
@@ -1057,6 +1067,15 @@ Private Sub MoveRecord(argKeyCode As Integer)
         GoTo CloseAndExit
         Exit Sub
     End If
+'    連続入力モードの時はRecordCountが使えないので下記はNG
+'    'RSにデータが無い場合は中断する
+'    If clsADOfrmBIN.RS.RecordCount < 1 Then
+'        Reordcountが1未満
+'        MsgBox "現在の条件でのレコード数が0件だったため、処理を中断します"
+'        DebugMsgWithTime "MoveRecord: Record not found"
+'        GoTo CloseAndExit
+'        Exit Sub
+'    End If
     Do While clsADOfrmBIN.RS.State And (ObjectStateEnum.adStateConnecting Or ObjectStateEnum.adStateExecuting Or ObjectStateEnum.adStateFetching)
         'RSで作業中は待機する
         DebugMsgWithTime "MoveRecord : RS Busy.wait 300 millisec"
@@ -1085,6 +1104,16 @@ Private Sub MoveRecord(argKeyCode As Integer)
             clsADOfrmBIN.RS.MoveNext
             GoTo CloseAndExit
         End If
+    Case vbKeyEnd
+        'Endキーの場合
+        'MoveLast
+        clsADOfrmBIN.RS.MoveLast
+        MsgBox "現在の条件での最終レコードに移動しました"
+    Case vbKeyHome
+        'Homeキーの場合
+        'MoveFirst
+        clsADOfrmBIN.RS.MoveFirst
+        MsgBox "現在の条件での先頭レコードに移動しました"
     End Select
     'レコード移動したので、RSから値を取得する
     'イベント停止
