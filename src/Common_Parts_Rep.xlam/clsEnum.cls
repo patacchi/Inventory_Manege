@@ -734,13 +734,17 @@ End Function
 '''JOIN の ON の後の文字列として使える
 '''Return   String()    (Partsフィールド名,Zaiko_SHフィールド名)
 Public Function GetKeyCommonFieldPatsAndZaikoSH() As String()
-    '共通フィールドは複数あるが、JOINのKeyとしては手配コードのみを使うので、配列は静的指定
-    Dim arrstrCommonZaikoSH(0, 1) As String
-    '共通フィールドは手配コード
+    '共通フィールドは複数あるが、JOINのKeyとしては手配コードとシステム棚番を使うので、配列は静的指定    2022_09_12 Daisuke oota
+    '手配コードが共通で、システム棚番が違う物が出てきたので、ON条件は複合条件とする     2022_09_12 Daisuke oota
+    '追加の条件は F_INV_Kishu フィールドとする
+    Dim arrstrCommonZaikoSH(1, 1) As String
+    '共通フィールドは手配コードと機種
     'Partsテーブル
     arrstrCommonZaikoSH(0, 0) = Me.INVMasterParts(F_Tehai_Code_IMPrt)
+    arrstrCommonZaikoSH(1, 0) = Me.INVMasterParts(F_Kishu_IMPrt)
     'Zaiko_SHテーブル
     arrstrCommonZaikoSH(0, 1) = Me.shZaikoField(F_Tehai_Code_ShZ)
+    arrstrCommonZaikoSH(1, 1) = Me.shZaikoField(F_kishu_ShZ)
     '結果を返す
     GetKeyCommonFieldPatsAndZaikoSH = arrstrCommonZaikoSH
     Exit Function

@@ -237,6 +237,7 @@ Public Sub SetHTMLDocbyURL(Optional strargUrl As String)
         DebugMsgWithTime "URL不一致、リダイレクトされた可能性があります"
         '強制的にVisibleをTrueにする
         ieObject.Visible = True
+        Call MoveWindow(ieObject.hwnd, 100, 100, 800, 600, 1)
         'ログイン処理完了したら元のページに戻るはずなので、ieobjectのLocationURLが指定されたものになるまで待機
         'サイトによっては無限ループの可能性有り・・・
         Do Until ieObject.LocationURL = strargUrl And ieObject.Busy = False And ieObject.readyState = READYSTATE_COMPLETE

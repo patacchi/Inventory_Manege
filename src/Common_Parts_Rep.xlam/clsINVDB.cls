@@ -520,6 +520,7 @@ CloseAndExit:
 End Function
 '''Author Daisuke Oota 2022_01_20
 '''在庫情報シートのフルパスを引数として、INVパーツマスターDBに登録するプロシージャ
+'''現状、新規登録は出来ない(Updateのみ)となっている 2022_09_12 Daisuke oota
 '''棚卸CSVファイルをT_INV_CSVにする機能も一緒にした、拡張子で処理を分岐する
 '''戻り値 long      変更があったレコード数を返す。0以下だと何かしらがあった？
 '''args
@@ -612,6 +613,7 @@ Optional NotDeleteSHFile As Boolean = False) As Long
         GoTo CloseAndExit
         Exit Function
     End If
+    'CSVでロケーションがNull又は空白の場合は仮の文字を入れる処理をしないと新規に来た物の登録がうまくいかないかも?
     '棚番マスターに登録する際に、SELECT DISTINCT ロケーション しないと重複してる時にそのまま登録してしまう、が
     'DISTINCT等の集計を行ったデータを元にすると、更新可能なクエリであることが・・・と出てしまうので
     'DISTINCTの結果を一旦テーブルに吐き出さないとダメらしい・・・なんてこと
@@ -628,9 +630,81 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     'DBPathを初期値に戻す
     clsADORef.SetDBPathandFilenameDefault
     'SQL作成
-    '置換用dic
+    '置換用dic宣言
     Dim dicReplaceParam As Dictionary
     Set dicReplaceParam = New Dictionary
+    '既存更新処理追加           2022_09_16 Daisuke oota
+    'まずは最初に既存の物でReplace(Local," ","")とSystem Locationが違う物を更新する
+    '事前組立が必要な物についてはここで組み立てる
+    Dim strINWord As String
+    strINWord = clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumRef)
+    'dicReplace初期化
+    If dicReplaceParam Is Nothing Then
+        'もしこの段階でdicReplaceがNothingだったら新しいインスタンスを設定してやる
+        Set dicReplaceParam = New Dictionary
+    End If
+    'dicReplace全消去
+    dicReplaceParam.RemoveAll
+''T_INV_M_Tana           {0}
+''TDBTana                {1}
+''T_INV_M_Parts          {2}
+''TDBPrts                {3}
+''T_INV_Temp             {4}
+''(After IN word)        {5}
+''TTmp                   {6}
+''F_INV_Tehai_Code       {7}
+''手配コード             {8}
+''F_INV_Kishu            {9}
+''手配機種               {10}
+''F_INV_Tana_ID          {11}
+''F_INV_TANA_SYSTEM_TEXT {12}
+''ロケーション           {13}
+''F_INV_TANA_LOCAL_TEXT  {14}
+''
+'Public Const SQL_INV_M_TANA_UPDATE_FROM_ZAIKO_Sheet As String = "UPDATE {0} as {1} " & vbCrLf &
+    dicReplaceParam.Add 0, INV_CONST.T_INV_M_Tana
+    dicReplaceParam.Add 1, clsEnumRef.SQL_INV_Alias(INVDB_Tana_Alias_sia)
+    dicReplaceParam.Add 2, INV_CONST.T_INV_M_Parts
+    dicReplaceParam.Add 3, clsEnumRef.SQL_INV_Alias(INVDB_Parts_Alias_sia)
+    dicReplaceParam.Add 4, INV_CONST.T_INV_TEMP
+    dicReplaceParam.Add 5, strINWord
+    dicReplaceParam.Add 6, clsEnumRef.SQL_INV_Alias(INVDB_Tmp_Alias_sia)
+    dicReplaceParam.Add 7, clsEnumRef.INVMasterParts(F_Tehai_Code_IMPrt)
+    dicReplaceParam.Add 8, clsEnumRef.shZaikoField(F_Tehai_Code_ShZ)
+    dicReplaceParam.Add 9, clsEnumRef.INVMasterParts(F_Kishu_IMPrt)
+    dicReplaceParam.Add 10, clsEnumRef.shZaikoField(F_kishu_ShZ)
+    dicReplaceParam.Add 11, clsEnumRef.INVMasterTana(F_INV_TANA_ID_IMT)
+    dicReplaceParam.Add 12, clsEnumRef.INVMasterTana(F_INV_Tana_System_Text_IMT)
+    dicReplaceParam.Add 13, clsEnumRef.shZaikoField(F_Tana_Text_ShZ)
+    dicReplaceParam.Add 14, clsEnumRef.INVMasterTana(F_INV_Tana_Local_Text_IMT)
+    'Replace実行
+    clsADORef.SQL = clsSQLBcRef.ReplaceParm(SQL_INV_M_TANA_UPDATE_FROM_ZAIKO_Sheet, dicReplaceParam)
+    'SQL実行前にConnectModeでWriteフラグが立っているか確認する
+    If Not clsADORef.ConnectMode And adModeWrite Then
+        'Writeフラグが立っていなかったので、立てる
+        clsADORef.ConnectMode = clsADORef.ConnectMode Or adModeWrite
+    End If
+    'SQL実行
+    isCollect = clsADORef.Do_SQL_with_NO_Transaction
+    If Not isCollect Then
+        DebugMsgWithTime "UpsertINVPartsMasterFromZaikoSH: SQL Execute fail"
+        MsgBox "UpsertINVPartsMasterfromZaikoSHでT_M_Parts更新時にSQL実行エラーが発生しました"
+        UpsertINVPartsMasterfromZaikoSH = 0
+        GoTo CloseAndExit
+        Exit Function
+    End If
+    'Upsert成功
+    '処理件数を返して終了
+    DebugMsgWithTime "T_M_Tana already update Affected: " & clsADORef.Affected & " OriginFile: " & strargZaikoSHFullPath
+    '--------------------------------------------------
+    '新規の物を棚番マスターに追加する
+    'dicReplace初期化
+    If dicReplaceParam Is Nothing Then
+        'もしこの段階でdicReplaceがNothingだったら新しいインスタンスを設定してやる
+        Set dicReplaceParam = New Dictionary
+    End If
+    'dicReplace全消去
+    dicReplaceParam.RemoveAll
     dicReplaceParam.Add 0, fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME)
     dicReplaceParam.Add 1, clsSQLBcRef.addQuote(GetLocalTimeWithMilliSec)
     clsADORef.SQL = clsSQLBcRef.ReplaceParm(INV_CONST.SQL_INV_TEMP_TO_M_TANA_0INVDBFullPath_1LocalTimeMillisec, dicReplaceParam)
@@ -656,14 +730,14 @@ Optional NotDeleteSHFile As Boolean = False) As Long
     '次にPartsMasterを更新する
     '各種結合、抽出条件文字列作成IN句も作るの・・？
     'IN DB_Temp
-    Dim strINWord As String
-    strINWord = clsSQLBcRef.CreateAfterIN_WordFromSHFullPath(fsoUpsertPartsMaster.BuildPath(clsADORef.DBPath, PublicConst.TEMP_DB_FILENAME), clsEnumRef)
     'ON Tana and TTmp
     Dim strON_TanaAndTTemp
     strON_TanaAndTTemp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldTanaAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Tana_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     'ON Parts and TTmp
+'    Dim strON_PartsAndTTmp
+'    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
     Dim strON_PartsAndTTmp
-    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)
+    strON_PartsAndTTmp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetKeyCommonFieldPatsAndZaikoSH, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_AND_sfc, clsEnumRef)
     'Set Condition
     Dim strSETExp As String
     strSETExp = clsSQLBcRef.ReturnCommonFieldCondition(clsEnumRef.GetUpdateCommonFieldZaikSHandMParts, clsEnumRef.Dic_ReverseSHZaiko, clsEnumRef.Dic_NeedTrim_ZaikoSH, INVDB_Parts_Alias_sia, INVDB_Tmp_Alias_sia, Equal_sfc, Connect_Comma_sfc, clsEnumRef)

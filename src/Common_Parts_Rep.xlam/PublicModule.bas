@@ -77,10 +77,17 @@ End Function
 '''ファイル名で使用できる形式でミリ秒まで含めて文字列で返す
 '''戻り値 string
 '''parm Optional strargDelimiter 区切り文字を変更したい場合は指定する、指定なしの場合は"_"
-Public Function GetTimeForFileNameWithMilliSec(Optional strargDelimiter = "_") As String
+Public Function GetTimeForFileNameWithMilliSec(Optional strargDelimiter As Variant) As String
     '_yyyy_mm_dd_HH_MM_SS_FFF
     Dim arrstrDateWithMillisecFileName(7) As String
     Dim timeLocalTime As SYSTEMTIME
+    Dim strDelimiter
+    If IsMissing(strargDelimiter) Then
+        'デリミタオプション引数に指定されなかった場合は(IsMissing)標準の"_"を設定してやる
+        '省略可能な引数が省略されたときは、Variantは「参照不可」という状態になる
+        strargDelimiter = "_"
+    End If
+    strDelimiter = strargDelimiter
     Call GetLocalTime(timeLocalTime)
     arrstrDateWithMillisecFileName(0) = ""
     arrstrDateWithMillisecFileName(1) = Format(timeLocalTime.wYear, "0000")

@@ -13,7 +13,8 @@ Public Const INV_DOC_LABEL_SPECSHEET_Small As String = "INV_SpecSheet_Small_Loca
 Public Const INV_DOC_LABEL_SPECSHEET_A4Full As String = "INV_SpecSheet_A4Full_Template.docx"    'スペックシートA4フルサイズのテンプレート
 Public Const INV_DOC_LABEL_TANA_NO_ARROW As String = "INV_Tana_NO_Arrow_Local.docx"             '棚表示、矢印無しのテンプレート
 Public Const INV_DOC_LABEL_TANA_UP_ARROW As String = "INV_Tana_UP_Arrow_Local.docx"             '棚表示、↑付のテンプレート
-Public Const INV_DOC_LABEl_TANA_DOWN_ARROW As String = "INV_Tana_Down_Arrow_Local.docx"         '棚表示、↓付のテンプレート
+Public Const INV_DOC_LABEL_TANA_DOWN_ARROW As String = "INV_Tana_Down_Arrow_Local.docx"         '棚表示、↓付のテンプレート
+Public Const INV_DOC_LABEL_LABEL_A4MULTI As String = "INV_Label_Mailmerge_A4Multi_Local.docm"   'ラベルサイズをA4用紙に出力するテンプレート
 '部品（手配コード）マスターテーブルの定数
 Public Const T_INV_M_Parts As String = "T_INV_M_Parts"                          '手配コードマスターのテーブル名
 Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        '手配コードのID、各テーブルにはこの値を設定する
@@ -267,6 +268,50 @@ Public Const SQL_INV_SELECT_DISTINCT_TO_TEMPTABLE_0FieldName As String = "SELECT
     "WHERE IIF(ISNULL(TRIM({0})),""NULL_DATA"",TRIM({0})) <> ""NULL_DATA"" AND IIF(ISNULL(TRIM({0})),""NULL_DATA"",TRIM({0})) <>  """"" & vbCrLf & _
 ")"
 ''------------------------------------------------------------------------------------------
+'''T_INV_M_Tanaで T_INV_M_Partsで使用中の棚番のみを抽出し
+'''既存更新
+'''x Replaceで空白を除去した Tana_Local_Textと、Tana_System_Textが違う物に対して
+'''o TTmp.ロケーション と Tana_System_Textが違う物に対して              2022_09_27 Daisuke Oota
+'''Tana_System_TextにTempに読み込んだ(元データは在庫検索のデータ)「ロケーション」の値をセットする
+'''UPDATE T_INV_M_Tana as TDBTana
+'''INNER JOIN (
+'''    T_INV_M_Parts As TDBPrts
+'''        INNER JOIN (
+'''            SELECT * FROM  T_INV_Temp
+'''            IN ""[MS ACCESS;DATABASE=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\bin\Inventory_DB\DB_Temp_Local.accdb;] ) AS TTmp
+'''        ON TDBprts.F_INV_Tehai_Code = TTmp.手配コード AND TDBPrts.F_INV_Kishu = TTmp.手配機種)
+'''ON TDBTana.F_INV_Tana_ID = TDBPrts.F_INV_Tana_ID
+'''Set TDBTana.F_INV_TANA_SYSTEM_TEXT = TTmp.ロケーション
+'''WHERE REPLACE(TDBTana.F_INV_TANA_LOCAL_TEXT, " ", "") <> TDBTana.F_INV_TANA_SYSTEM_TEXT
+'''WHERE TTmp.ロケーション <> TDBTana.F_INV_TANA_SYSTEM_TEXT
+'T_INV_M_Tana           {0}
+'TDBTana                {1}
+'T_INV_M_Parts          {2}
+'TDBPrts                {3}
+'T_INV_Temp             {4}
+'(After IN word)        {5}
+'TTmp                   {6}
+'F_INV_Tehai_Code       {7}
+'手配コード             {8}
+'F_INV_Kishu            {9}
+'手配機種               {10}
+'F_INV_Tana_ID          {11}
+'F_INV_TANA_SYSTEM_TEXT {12}
+'ロケーション           {13}
+'F_INV_TANA_LOCAL_TEXT  {14}
+'
+Public Const SQL_INV_M_TANA_UPDATE_FROM_ZAIKO_Sheet As String = "UPDATE {0} as {1} " & vbCrLf & _
+"INNER JOIN ( " & vbCrLf & _
+"   {2} As {3} " & vbCrLf & _
+"   INNER JOIN ( " & vbCrLf & _
+"       SELECT * FROM  {4} " & vbCrLf & _
+"       IN """" {5} ) AS {6} " & vbCrLf & _
+"   ON {3}.{7} = {6}.{8} AND {3}.{9} = {6}.{10}) " & vbCrLf & _
+"ON {1}.{11} = {3}.{11} " & vbCrLf & _
+"SET {1}.{12} = {6}.{13} " & vbCrLf & _
+"WHERE {6}.{13} <> {1}.{12};"
+'"WHERE REPLACE({1}.{14}, "" "", """") <> {1}.{12};"
+''------------------------------------------------------------------------------------------
 '一時テーブルのZaikoSHをINV_M_Tanaに入れる
 ''一時テーブルを作成した上でのUpdateは成功
 '外部DBを入力元に使う場合は、IN句はFROMの後でなければ動かないようなので、サブクエリで(SELECE * FROM Tname IN・・・) as TAlias としてやらないとダメ
@@ -281,6 +326,8 @@ SQL_ALIAS_T_INVDB_Tana & "." & PublicConst.INPUT_DATE & " = {1} " & vbCrLf & _
 ''------------------------------------------------------------------------------------------
 'T_INV_M_PartsをUpsertするSQL 入力元は T_INV_Tana と T_INV_Tmp
 '3個のテーブルでJoinしてSelect,動くやつ
+'同じ手配コードで違うシステムロケーションを持つものが発生したので JOIN 条件を変更(手配コードと手配機種の組合せでユニークとなるようにする)
+'上記変更は、プレースホルダーに入れるパラメータ側で対処する
 'SELECT TDBTana.*,TTmp.*,TDBTana.*
 'FROM T_INV_M_Parts AS TDBPrts
 'RIGHT JOIN (
@@ -322,10 +369,12 @@ Public Const SQL_INV_UPSERT_PARSTABL_FROM_TTMP_AND_TANA As String = "UPDATE  {0}
 "   RIGHT JOIN ( " & vbCrLf & _
 "       SELECT * FROM  {4} " & vbCrLf & _
 "       IN """"{6} ) AS {5}" & vbCrLf & _
-"   ON {7} ) " & vbCrLf & _
-"ON {8} " & vbCrLf & _
+"   ON {7}) " & vbCrLf & _
+"ON ({8}) " & vbCrLf & _
 "SET {1}.{9} = IIF(ISNULL({3}.{9}),-1,{3}.{9}),{1}.{13} = ""{14}"",{10} " & vbCrLf & _
-"WHERE ISNULL({1}.{12}) OR {11} ;"
+"WHERE (({1}.{9} = {3}.{9}) OR ISNULL({1}.{12})) AND (ISNULL({1}.{9}) OR {11}) ;"
+'"ON ({8} AND {1}.{9} = {3}.{9}) " & vbCrLf & _
+'"WHERE ISNULL({1}.{12}) OR {11} ;"
 'T_INV_M_TanaとT_INV_M_Parts結合した汎用SELECT SQL、外部DBファイル参照は無いものとする
 '{0}    (SELECT Field)
 '{1}    T_INV_M_Parts
@@ -419,8 +468,9 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{10}   INV_CONST.F_INV_LABEL_TEMP_SAVEPOINT
 '{11}   INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
 '{12}   F_INV_Store_Code
+'{13}   F_INV_Kishu
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
-"    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{12} CHAR(10),{8} LONG," & vbCrLf & _
+"    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{12} CHAR(10),{13} CHAR(10),{8} LONG," & vbCrLf & _
 "    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
 ")"
 '------------------------------------------------------------------------------------------------
@@ -439,4 +489,22 @@ Public Const SQL_SELECT_SAVEPOINT As String = "SELECT {0} AS {3},{1} AS {4}  FRO
 '{1}    (MailMerge Where)
 '{2}    INV_CONST.T_INV_SELECT_TEMP
 Public Const SQL_LABEL_MAILMERGE_DEFAULT As String = "SELECT * INTO {2} FROM [{0}] " & vbCrLf & _
-"WHERE {1}"
+"WHERE {1}"
+'--------------------------------------------------------------------------------------------------
+''棚マスターと関連付けされていないリストを抽出するSQL
+Public Const SQL_SELECT_INV_Parts_NOT_IN_Tana As String = "SELECT * FROM {2} as {3}" & vbCrLf & _
+"LEFT JOIN {0} as {1}" & vbCrLf & _
+"ON {3}.{4} = {1}.{4} " & vbCrLf & _
+"WHERE {3}.{4} = -1.;"
+'--------------------------------------------------------------------------------------------------
+''棚マスターに新規レコード追加するSQL
+''T_INV_M_Tana                  {0}
+''F_INV_TANA_Local_Text         {1}
+''F_INV_Tana_System_Text        {2}
+''InputDate                     {3}
+''(strUniqueLetter)             {4}
+''(getlocaltimeWithMillisec)    {5}
+Public Const SQL_INSERT_NEW_TANA_TO_Tana_Master As String = "INSERT INTO {0} " & vbCrLf & _
+"({1},{2},{3}) " & vbCrLf & _
+ "VALUES({4},{4},{5});"
+'--------------------------------------------------------------------------------------------------
