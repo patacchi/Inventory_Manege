@@ -207,11 +207,37 @@ Public Enum Enum_INV_CSV_Need_Trim
     F_Location_Text_ctrm = Enum_CSV_Tana_Field.F_Location_Text_ICS
     F_Store_Code_ctrm = Enum_CSV_Tana_Field.F_Store_Code_ICS
 End Enum
+'''受入れ管理テーブルの定義
+Public Const T_INV_RECEIVE As String = "T_INV_Receive"                                              '受入れ管理テーブルのテーブル名
+Public Const F_INV_RECEIVE_STATUS As String = "F_INV_Receive_Status"                                '受入れ状況のフラグを立てたLong値
+Public Const F_INV_RECEIVE_ORDERNUMBER As String = "F_INV_OrderNumber"                              'オーダーナンバー これと要求日限で複合キーとする
+Public Const F_INV_RECEIVE_KISHU As String = F_INV_KISHU                                            '機種 JLとかJ7とか
+Public Const F_INV_RECEIVE_SEIBAN As String = "F_INV_Seiban"                                        '製番
+Public Const F_INV_RECEIVE_TEHAI_ID As String = F_INV_TEHAI_ID                                      '手配コードテーブルのID
+Public Const F_INV_RECEIVE_MAKER_ID As String = "F_INV_Maker_ID"                                    '取引先テーブルのID
+Public Const F_INV_RECEIVE_REQUEST_DATE As String = "F_INV_Request_Date"                            '要求日限 これとオーダーNoで複合キーとする
+Public Const F_INV_RECEIVE_CONTRACT_DATE As String = "F_INV_Contract_Date"                          '契約納期(Null Able)
+Public Const F_INV_RECEIVE_REQUEST_AMOUNT As String = "F_INV_Request_Amount"                        '手配数
+Public Enum Enum_INV_Receive
+    'INV Sheet Receive
+    'このテーブル独自のフィールド
+    F_Status_ISR = 101
+    F_OrderNumber_ISR = 102
+    F_Seiban_ISR = 103
+    F_Maker_ID_ISR = 104
+    F_Request_Date_ISR = 105
+    F_Contract_Date_ISR = 106
+    F_Request_Amount_ISR = 107
+    '共通フィールド
+    F_kishu_ISR = Enum_INV_M_Parts.F_Kishu_IMPrt
+    F_Tehai_ID_ISR = Enum_INV_M_Parts.F_Tehai_ID_IMPrt
+End Enum
 'ラベル出力用一時テーブル名
 Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                                        'ラベル出力用の差し込み印刷用テーブルの名前
 'ラベル出力用一時テーブル専用フィールド定義
 Public Const F_INV_LABEL_TEMP_TEHAICODE_LENGTH As String = "F_INV_Tehaicode_Length"                 'ラベル出力のみに使用する計算列、手配コードの文字列数を格納
-Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "F_INV_OrderNumber"                              'ラベル出力のみに使用するオーダーNo列
+'Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "F_INV_OrderNumber"                              'ラベル出力のみに使用するオーダーNo列
+Public Const F_INV_LABEL_TEMP_ORDERNUM As String = F_INV_RECEIVE_ORDERNUMBER                        'ラベル出力に使用するオーダーNo
 Public Const F_INV_LABEL_TEMP_SAVEPOINT As String = "F_INV_Label_Savepoint"                         'ラベル出力のみに使用するSavepoint、出力リストの判別に使用する
 Public Const F_INV_LABEL_TEMP_SAVE_FRENDLYNAME As String = "識別名"                                 'SavePoint出力時の Savepointフレンドリーネーム
 Public Const F_INV_LABEL_TEMP_INPUT_FRENDLYNAME As String = "入力日時"                              'SavePoint出力時、InputDateフレンドリーネーム

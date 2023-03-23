@@ -32,6 +32,7 @@ Private dicSHZaikoNeedTrim As Dictionary
 Private dic_ReverseCSVTana As Dictionary                         '棚卸CSVでkeyとValueが反転したDictonary
 Private dicCommonTanaCSV As Dictionary                          '棚卸CSVでDBと共通のフィールドのEnumを格納したDictionary
 Private dicCSVTanaNeedTrim As Dictionary                        '棚卸CSVでTrimが必要なフィールドのEnumを格納したDictionary
+Private dicSHReceive As Dictionary                              '受入れ情報シートのフィールドEnum定義を格納したDictionary
 'コンストラクタ
 Private Sub Class_Initialize()
     Call Initial_Valueset
