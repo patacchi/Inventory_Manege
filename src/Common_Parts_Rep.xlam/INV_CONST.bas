@@ -21,8 +21,8 @@ Public Const F_INV_TEHAI_ID As String = "F_INV_Tehai_ID"                        
 Public Const F_INV_TEHAI_TEXT As String = "F_INV_Tehai_Code"                    '手配コード
 Public Const F_INV_MANEGE_SECTON As String = "F_INV_Manege_Section"             '管理課
 Public Const F_INV_SYSTEM_LOCATION_NO As String = "F_INV_System_Location_No"    'システム側の棚番号
-Public Const F_INV_KISHU As String = "F_INV_Kishu"                              '機種名
-Public Const F_INV_STORE_CODE As String = "F_INV_Store_Code"                    '貯蔵記号
+Public Const F_INV_Kishu As String = "F_INV_Kishu"                              '機種名
+Public Const F_INV_Store_Code As String = "F_INV_Store_Code"                    '貯蔵記号
 Public Const F_INV_DELIVER_LOT As String = "F_INV_Deliver_Lot"                  '払い出しロット
 Public Const F_INV_FILL_LOT As String = "F_INV_Fill_Lot"                        '補充ロット
 Public Const F_INV_LEAD_TIME As String = "F_INV_Lead_Time"                      'リードタイム
@@ -36,10 +36,10 @@ Public Const F_INV_STORE_UNIT As String = "F_INV_Sotre_Unit"                    
 Public Const F_INV_SYSTEM_DESCRIPTION As String = "F_INV_System_Description"    'システム側の自由記述欄
 Public Const F_INV_LOCAL_DESCRIPTION As String = "F_INV_Local_Description"      '4701独自の詳細を記述したい場合に使用する
 Public Const F_INV_MANEGE_SECTION_SUB As String = "F_INV_Manege_Section_Sub"    'システム側の管理課サブ
-Public Const F_INV_LABEL_NAME_1 As String = "F_INV_Label_Name_1"                'BINカードラベルの品名1行目 CASE
-Public Const F_INV_LABEL_NAME_2 As String = "F_INV_Label_Name_2"                'BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア
-Public Const F_INV_LABEL_REMARK_1 As String = "F_INV_Label_Remark_1"            'BINカードラベルの備考1行目 錆びやすいので注意
-Public Const F_INV_LABEL_REMARK_2 As String = "F_INV_Label_Remark_2"            'BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事
+Public Const F_INV_Label_Name_1 As String = "F_INV_Label_Name_1"                'BINカードラベルの品名1行目 CASE
+Public Const F_INV_Label_Name_2 As String = "F_INV_Label_Name_2"                'BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア
+Public Const F_INV_Label_Remark_1 As String = "F_INV_Label_Remark_1"            'BINカードラベルの備考1行目 錆びやすいので注意
+Public Const F_INV_Label_Remark_2 As String = "F_INV_Label_Remark_2"            'BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事
 '手配コードマスターのEnum定義
 Public Enum Enum_INV_M_Parts
     Table_Name_IMPrt = 1
@@ -115,7 +115,7 @@ End Enum
 '棚番マスター
 Public Const T_INV_M_Tana As String = "T_INV_M_Tana"                            '棚番マスターのテーブル名
 'フィールド名定数
-Public Const F_INV_TANA_LOCAL_TEXT As String = "F_INV_Tana_Local_Text"              '表示用などローカルで使用する棚番名 K05G B01
+Public Const F_INV_Tana_Local_Text As String = "F_INV_Tana_Local_Text"              '表示用などローカルで使用する棚番名 K05G B01
 Public Const F_INV_TANA_SYSTEM_TEXT As String = "F_INV_Tana_System_Text"            'システム側の棚番
 Public Const F_INV_TANA_TIET_DELIVARY As String = "F_INV_TIET_Delivery"                  'TIET出庫の棚かどうか
 'T_M_Tanaフィールド定義Enum
@@ -211,7 +211,7 @@ End Enum
 Public Const T_INV_RECEIVE As String = "T_INV_Receive"                                              '受入れ管理テーブルのテーブル名
 Public Const F_INV_RECEIVE_STATUS As String = "F_INV_Receive_Status"                                '受入れ状況のフラグを立てたLong値
 Public Const F_INV_RECEIVE_ORDERNUMBER As String = "F_INV_OrderNumber"                              'オーダーナンバー これと要求日限で複合キーとする
-Public Const F_INV_RECEIVE_KISHU As String = F_INV_KISHU                                            '機種 JLとかJ7とか
+Public Const F_INV_RECEIVE_KISHU As String = F_INV_Kishu                                            '機種 JLとかJ7とか
 Public Const F_INV_RECEIVE_SEIBAN As String = "F_INV_Seiban"                                        '製番
 Public Const F_INV_RECEIVE_TEHAI_ID As String = F_INV_TEHAI_ID                                      '手配コードテーブルのID
 Public Const F_INV_RECEIVE_MAKER_ID As String = "F_INV_Maker_ID"                                    '取引先テーブルのID
@@ -533,4 +533,28 @@ Public Const SQL_SELECT_INV_Parts_NOT_IN_Tana As String = "SELECT * FROM {2} as 
 Public Const SQL_INSERT_NEW_TANA_TO_Tana_Master As String = "INSERT INTO {0} " & vbCrLf & _
 "({1},{2},{3}) " & vbCrLf & _
  "VALUES({4},{4},{5});"
-'--------------------------------------------------------------------------------------------------
+'--------------------------------------------------------------------------------------------------
+'T_INV_M_Partsテーブルの構造体定義(フィールド名)
+Public Type typPartsMaster
+    PartsMasterTableName As String
+End Type
+''' 印刷出力に関する定数の構造体定義
+Public Type typLabelSetting
+    LabelTempTableName As String
+    F_SavePoint As String
+    F_FormStartTime As String
+    F_INV_Tana_Local_Text As String
+    F_INV_Tehai_Code As String
+    F_INV_Store_Code As String
+    F_INV_Kishu As String
+    F_Tehaicode_Length As String
+    F_INV_Label_Name_1 As String
+    F_INV_Label_Name_2 As String
+    F_INV_Label_Remark_1 As String
+    F_INV_Label_Remark_2 As String
+    F_OrderNumber As String
+    F_InputDate As String
+    F_SavePoint_FriendryName As String
+    F_InputDate_FriendryName As String
+    F_FormStartTime_FriendryName As String
+End Type

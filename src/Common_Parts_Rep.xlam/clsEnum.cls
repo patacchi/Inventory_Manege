@@ -265,8 +265,8 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Tehai_Code_IMPrt, INV_CONST.F_INV_TEHAI_TEXT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_IMPrt, INV_CONST.F_INV_MANEGE_SECTON
     dicINVMasterParts.Add Enum_INV_M_Parts.F_System_TanaNo_IMPrt, INV_CONST.F_INV_SYSTEM_LOCATION_NO
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Kishu_IMPrt, INV_CONST.F_INV_KISHU
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Store_Code_IMPrt, INV_CONST.F_INV_STORE_CODE
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Kishu_IMPrt, INV_CONST.F_INV_Kishu
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Store_Code_IMPrt, INV_CONST.F_INV_Store_Code
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Deliver_Lot_IMPrt, INV_CONST.F_INV_DELIVER_LOT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Fill_Lot_IMPrt, INV_CONST.F_INV_FILL_LOT
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Lead_Time_IMPrt, INV_CONST.F_INV_LEAD_TIME
@@ -280,10 +280,10 @@ Private Sub INV_Enum_Initialize()
     dicINVMasterParts.Add Enum_INV_M_Parts.F_System_Description_IMPrt, INV_CONST.F_INV_SYSTEM_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Local_Description_IMPrt, INV_CONST.F_INV_LOCAL_DESCRIPTION
     dicINVMasterParts.Add Enum_INV_M_Parts.F_Manege_Section_Sub_IMPrt, INV_CONST.F_INV_MANEGE_SECTION_SUB
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_1_IMPrt, INV_CONST.F_INV_LABEL_NAME_1
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_2_IMPrt, INV_CONST.F_INV_LABEL_NAME_2
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_1_IMPrt, INV_CONST.F_INV_LABEL_REMARK_1
-    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_2_IMPrt, INV_CONST.F_INV_LABEL_REMARK_2
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_1_IMPrt, INV_CONST.F_INV_Label_Name_1
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Name_2_IMPrt, INV_CONST.F_INV_Label_Name_2
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_1_IMPrt, INV_CONST.F_INV_Label_Remark_1
+    dicINVMasterParts.Add Enum_INV_M_Parts.F_Label_Remark_2_IMPrt, INV_CONST.F_INV_Label_Remark_2
 '    dicINVMasterParts.Add Enum_INV_M_Parts.F_InputDate_IMPrt, PublicConst.INPUT_DATE
 ''在庫情報シートのフィールド名（漢字）
 ''大部分をINV_Master_PartsのEnumと共有する
@@ -342,7 +342,7 @@ If dicINVMasterTana Is Nothing Then
 End If
 'dicINVMasterTana.Add Enum_INV_M_Tana.F_InputDate_IMT, PublicConst.INPUT_DATE
     dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TANA_ID_IMT, INV_CONST.F_INV_TANA_ID
-    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_Local_Text_IMT, INV_CONST.F_INV_TANA_LOCAL_TEXT
+    dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_Local_Text_IMT, INV_CONST.F_INV_Tana_Local_Text
     dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_Tana_System_Text_IMT, INV_CONST.F_INV_TANA_SYSTEM_TEXT
     dicINVMasterTana.Add Enum_INV_M_Tana.F_INV_TIET_Delivary_IMT, INV_CONST.F_INV_TANA_TIET_DELIVARY
 ''SQLAliasEnum

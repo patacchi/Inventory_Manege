@@ -64,6 +64,11 @@ Private Sub btnSingleTest_Click()
 #If DebugDB Then
     MsgBox "DebugDB = 1"
 #End If
+Dim constLabel As typLabelSetting
+Dim JsonIO As clsJsonIO
+Set JsonIO = New clsJsonIO
+constLabel = JsonIO.LabelSetting
+MsgBox constLabel.LabelTempTableName
 '    'オートフィルタ設定・確認
 '    Dim InvDBTest As clsINVDB
 '    Set InvDBTest = CreateclsINVDB
