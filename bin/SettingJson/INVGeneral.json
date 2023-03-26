@@ -1,0 +1,48 @@
+{
+  "_comments": "INV_在庫管理関係の定数を定義する",
+  "INV_CONST": {
+    "_comments1": "印刷出力に関する定数定義",
+    "typLabelSetting": {
+      "_comments0":"Key には 構造体のメンバー名を、Value にはJSONファイル内の constValue のキー名を入れる。基本的には key と Value は同じ",
+      "_comments1": "ラベル出力用の一時テーブルの名前",
+      "LabelTempTableName": "T_INV_LABEL_TEMP",
+      "_comments2": "ラベル出力のみに使用する計算列、手配コードの文字列数を格納",
+      "F_Tehaicode_Length": "F_INV_Tehaicode_Length",
+      "_comments3": "ラベル出力に使用するオーダーNo",
+      "F_OrderNumber": "F_INV_OrderNumber",
+      "_comments4": "ラベル出力のみに使用するSavepoint、出力リストの判別に使用する",
+      "F_SavePoint": "F_INV_Label_Savepoint",
+      "_comments5": "SavePoint出力時の Savepointフレンドリーネーム",
+      "F_SavePoint_FriendryName": "識別名",
+      "_comments6": "SavePoint開始時刻、InputDateフレンドリーネーム",
+      "F_InputDate_FriendryName": "入力日時",
+      "_comments7": "FormStartTimeを記録",
+      "F_FormStartTime": "F_INV_Label_FormStartTime",
+      "_comments8": "FormStartTimeフレンドリーネーム",
+      "F_FormStartTime_FriendryName": "フォーム開始時間",
+      "_comments9": "機種 J7 とか JL とか",
+      "F_INV_Kishu": "F_INV_Kishu",
+      "_comments10": "表示用などローカルで使用する棚番名 K05G B01",
+      "F_INV_Tana_Local_Text": "F_INV_Tana_Local_Text",
+      "_comments11": "手配コード",
+      "F_INV_Tehai_Code": "F_INV_Tehai_Code",
+      "_comments12": "貯蔵記号 FA,BS,BL",
+      "F_INV_Store_Code": "F_INV_Store_Code",
+      "_comments13": "BINカードラベルの品名1行目 CASE",
+      "F_INV_Label_Name_1": "F_INV_Label_Name_1",
+      "_comments14": "BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア",
+      "F_INV_Label_Name_2": "F_INV_Label_Name_2",
+      "_comments15": "BINカードラベルの備考1行目 錆びやすいので注意",
+      "F_INV_Label_Remark_1": "F_INV_Label_Remark_1",
+      "_comments16": "BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事",
+      "F_INV_Label_Remark_2": "F_INV_Label_Remark_2",
+      "_comments17": "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁",
+      "F_InputDate": "F_InputDate"
+    },
+    "_comments2":"テーブル共通フィールドの定義",
+    "typTableCommon": {
+      "_comments1": "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁",
+      "F_InputDate": "F_InputDate"
+    }
+  }
+}
