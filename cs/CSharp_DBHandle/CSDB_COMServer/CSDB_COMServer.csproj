@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+        COM servers must define a framework to use in situations where a CLR instance is not already present in the process.
+        Note that since the COM server may be activated in a process where the CLR must be activated, both the projects
+        *.runtimeconfig.json and *.deps.json files must be bundled with the server itself.
+
+        In the following example, the following files are needed to deploy the COM server:
+            COMServer.comhost.dll
+            COMServer.dll
+            COMServer.deps.json
+            COMServer.runtimeconfig.json
+
+        In a RegFree COM scenario, the following file must also be deployed:
+            COMServer.X.manifest
+    -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <!-- Indicate the assembly is providing a COM server -->
+    <EnableComHosting>True</EnableComHosting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Used in lieu of a Primary Interop Assembly (PIA) -->
+    <Compile Include="../CSDB_COMContract/*.cs" />
+    <RuntimeHostConfigurationOption Condition="'$(DefaultALC)' == 'True'" Include="System.Runtime.InteropServices.COM.LoadComponentInDefaultContext" Value="true" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.123" />
+  </ItemGroup>
+    <Target Name="ServerUsage" Condition="'$(RegFree)' != 'True'" AfterTargets="Build">
+    <Message Importance="High" Text="%0a************************************%0a*** $(MSBuildProjectName) usage instructions ***%0a************************************" />
+    <Message Importance="High" Text="The server must be COM registered in order to activate.%0aThe following commands must be executed from an elevated command prompt." />
+    <Message Importance="High" Text="Register:%0a    regsvr32.exe &quot;$(ProjectDir)$(OutputPath)$(ComHostFileName)&quot;" />
+    <Message Importance="High" Text="Unregister:%0a    regsvr32.exe /u &quot;$(ProjectDir)$(OutputPath)$(ComHostFileName)&quot;" />
+    <ItemGroup>
+      <ServerOutput Include="$(OutputPath)*.dll" />
+      <ServerOutput Include="$(OutputPath)*.runtimeconfig.json" />
+      <ServerOutput Include="$(OutputPath)*.deps.json" />
+      <!-- <ServerOutput Include="$(OutputPath)*.manifest" /> -->
+    </ItemGroup>
+    <!-- Deploy all required server outputs -->
+    <Copy SourceFiles="@(ServerOutput)" DestinationFolder="../CSDB_COMClient/$(OutputPath)" />
+  </Target>
+  <Target Name="Clean_RegFree" AfterTargets="Clean">
+    <ItemGroup>
+      <ServerOutputToDelete Include="../CSDB_COMClient/$(OutputPath)COMServer.*" />
+    </ItemGroup>
+
+    <!-- Cleanup deployed server outputs -->
+    <Delete Files="@(ServerOutputToDelete)" />
+  </Target>
+</Project>

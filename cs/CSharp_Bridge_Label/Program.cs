@@ -1,7 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
-#undef DEBUG
+﻿#define DEBUG
+// See   https://aka.ms/new-console-template for more information
 using System.Collections.Generic;
 using System.IO;
+using System;
+using CSharp_DBHandle.CSDB_COMServer;
+using CSharp_DBHandle.CSDB_COMServer.Entity;
 namespace CSharp_Bridge_Label
 {
     static class LabelFileRead
@@ -80,6 +83,7 @@ namespace CSharp_Bridge_Label
                 #endif
                 //読み取った結果を格納する rLabelレコードのList
                 var listRecords = new List<rLabel>();
+                List<T_INV_Label_Temp> listTLabel = new List<T_INV_Label_Temp>();
                 //指定されたファイルをテキストファイルとして1行ずつ読み込む
                 //lines にはstring型の IEnumerable
                 IEnumerable<string> strlines = File.ReadLines(args[0]);
@@ -96,29 +100,66 @@ namespace CSharp_Bridge_Label
                     Console.WriteLine(longRowCounter + " 行目の結果 " + oneline);
                     //結果を,をデリミタとして配列に格納
                     var varSpritText = oneline.Split(",");
-                    //配列の結果をrLabelに入れていく
+                    //x 配列の結果をrLabelに入れていく
+                    
                     listRecords.Add (new rLabel(
                         Convert.ToInt64(varSpritText[0]),
+                        //製番
                         varSpritText[1],
+                        //器具記号
                         varSpritText[2],
+                        //SBL項番
                         varSpritText[3],
+                        //MLNo
                         varSpritText[4],
+                        //オーダーNo
                         varSpritText[5],
+                        //ML情報コード
                         varSpritText[6],
+                        //手配コード
                         varSpritText[7],
+                        //品名記号
                         varSpritText[8],
+                        //棚番1
                         varSpritText[9],
+                        //棚番2
                         varSpritText[10],
+                        //棚番3
                         varSpritText[11],
+                        //払出/支給先コード
                         varSpritText[12],
+                        //手配数量
                         Convert.ToInt64(varSpritText[13]),
+                        //数量
                         Convert.ToInt64(varSpritText[14]),
+                        //処理日
                         varSpritText[15],
+                        //払出/支給先名称
                         varSpritText[16],
+                        //手配機種コード
                         varSpritText[17],
+                        //欠品フラグ
                         Convert.ToInt64(varSpritText[18]),
+                        //客先製番
                         varSpritText[19]));
+                        //
+                        //Dapper の Entity ラベルクラスのインスタンスを作成し、値をセットしていく
+                        T_INV_Label_Temp currentRecord = new T_INV_Label_Temp();
+                        currentRecord.F_INV_Label_Type_Code = (T_INV_Label_Temp.enumLabelType)Convert.ToInt64(varSpritText[0]);
+                        currentRecord.F_INV_Seiban = varSpritText[1];
+                        currentRecord.F_INV_SBL = varSpritText[3];
+                        currentRecord.F_INV_ML_No = varSpritText[4];
+                        currentRecord.F_INV_Tana_Local_Text = varSpritText[9];
+                        currentRecord.F_INV_Tana_Local_Text = varSpritText[7];
+                        currentRecord.F_INV_OrderNumber = varSpritText[5];
+                        currentRecord.F_INV_Current_Amount = Convert.ToInt64(varSpritText[14]);
+                        currentRecord.F_INV_Requre_Amount = Convert.ToInt64(varSpritText[13]);
+                        string strDate = varSpritText[15].Substring(0,3) + "-" + varSpritText[15].Substring(4,2) + "-" + varSpritText[15].Substring(6,2);
+                        currentRecord.F_InputDate = strDate;
+                        //リストに追加する
+                        listTLabel.Add(currentRecord);
                 }
+                
                 foreach (rLabel rElements in listRecords)
                 {
                     //リストをループし、処理をする

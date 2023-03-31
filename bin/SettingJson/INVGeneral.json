@@ -1,11 +1,185 @@
 {
-  "_comments": "INV_在庫管理関係の定数を定義する",
+  "DBDefaultPath":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB\\INV_Manege.accdb",
+  "DebugDBPath":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB\\INV_Manege_Local.accdb",
+  "_comments1": "全テーブル共通で、構造体メンバー名(重複不可)と実際のフィールド名を定義する",
+  "CONST_DBFIELD": {
+    "_comments0": "keyは構造体メンバー名 valueは[DBフィールド名,コメント]の配列",
+    "F_InputDate":[
+      "F_InputDate",
+      "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁"
+    ],
+    "F_InputDate_FriendryName":[
+      "入力日時",
+      "F_InputDateのフレンドリーネーム"
+    ],
+    "T_INV_M_Parts":[
+      "T_INV_M_Parts",
+      "手配コードマスターのテーブル名"
+    ],
+    "F_INV_Tehai_ID":[
+      "F_INV_Tehai_ID",
+      "手配コードのID、各テーブルにはこの値を設定する"
+    ],
+    "F_INV_Tehai_Code":[
+      "F_INV_Tehai_Code",
+      "手配コード"
+    ],
+    "F_INV_Manege_Section":[
+      "F_INV_Manege_Section",
+      "管理課"
+    ],
+    "F_INV_System_Location_No":[
+      "F_INV_System_Location_No",
+      "システム側の棚番号"
+    ],
+    "F_INV_Kishu":[
+      "F_INV_Kishu",
+      "機種 J7 とか JL とか"
+    ],
+    "F_INV_Store_Code":[
+      "F_INV_Store_Code",
+      "貯蔵記号 FA,BS,BL"
+    ],
+    "F_INV_Deliver_Lot":[
+      "F_INV_Deliver_Lot",
+      "払い出しロット"
+    ],
+    "F_INV_Fill_Lot":[
+      "F_INV_Fill_Lot",
+      "補充ロット"
+    ],
+    "F_INV_Lead_Time":[
+      "F_INV_Lead_Time",
+      "リードタイム"
+    ],
+    "F_INV_Order_Amount":[
+      "F_INV_Order_Amount",
+      "発注数"
+    ],
+    "F_INV_Order_Remain":[
+      "F_INV_Order_Remain",
+      "発注残数"
+    ],
+    "F_INV_Stock_Amount":[
+      "F_INV_Stock_Amount",
+      "在庫数"
+    ],
+    "F_INV_Tana_ID":[
+      "F_INV_Tana_ID",
+      "棚番マスターのID、実際の内容は棚マスターテーブルで定義する"
+    ],
+    "F_INV_System_Name":[
+      "F_INV_System_Name",
+      "システム側の品名、CASEとか"
+    ],
+    "F_INV_System_Spec":[
+      "F_INV_System_Spec",
+      "システム側の型格、IMONOとか"
+    ],
+    "F_INV_Sotre_Unit":[
+      "F_INV_Sotre_Unit",
+      "貯蔵単位 PとかSETとかの"
+    ],
+    "F_INV_System_Description":[
+      "F_INV_System_Description",
+      "システム側の自由記述欄"
+    ],
+    "F_INV_Local_Description":[
+      "F_INV_Local_Description",
+      "4701独自の詳細を記述したい場合に使用する"
+    ],
+    "F_INV_Manege_Section_Sub":[
+      "F_INV_Manege_Section_Sub",
+      "システム側の管理課サブ"
+    ],
+    "F_INV_Label_Name_1":[
+      "F_INV_Label_Name_1",
+      "BINカードラベルの品名1行目 CASE"
+    ],
+    "F_INV_Label_Name_2":[
+      "F_INV_Label_Name_2",
+      "BINカードラベルの品名2行目、行数の少ないものの品名はこのフィールドの値を使う LF470コア"
+    ],
+    "F_INV_Label_Remark_1":[
+      "F_INV_Label_Remark_1",
+      "BINカードラベルの備考1行目 錆びやすいので注意"
+    ],
+    "F_INV_Label_Remark_2":[
+      "F_INV_Label_Remark_2",
+      "BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入れる"
+    ],
+    "T_INV_M_Tana":[
+      "T_INV_M_Tana",
+      "棚番マスターのテーブル名"
+    ],
+    "F_INV_Tana_Local_Text":[
+      "F_INV_Tana_Local_Text",
+      "表示用などローカルで使用する棚番名 K05G B01"
+    ],
+    "F_INV_Tana_System_Text":[
+      "F_INV_Tana_System_Text",
+      "システム側の棚番"
+    ],
+    "LabelTempTableName":[
+      "LabelTempTableName",
+      "ラベル一時テーブル テーブル名"
+    ],
+    "F_FormStartTime":[
+      "F_FormStartTime",
+      "フォームスタートタイム"
+    ],
+    "F_FormStartTime_FriendryName":[
+      "フォーム開始時間",
+      "フォームスタート時間 フレンドリーネーム"
+    ],
+    "F_OrderNumber":[
+      "F_OrderNumber",
+      "オーダーNo"
+    ],
+    "F_SavePoint":[
+      "F_SavePoint",
+      "SavePoint"
+    ],
+    "F_SavePoint_FriendryName":[
+      "識別名",
+      "avePointフレンドリーネーム"
+    ],
+    "F_Tehaicode_Length":[
+      "F_Tehaicode_Length",
+      "手配コード文字列長"
+    ],
+    "F_INV_Seiban":[
+      "F_INV_Seiban",
+      "製番"
+    ],
+    "F_INV_SBL":[
+      "F_INV_SBL",
+      "SBL 項番"
+    ],
+    "F_INV_ML_No":[
+      "F_INV_ML_No",
+      "ML No"
+    ],
+    "F_INV_Label_Type_Code":[
+      "F_INV_Label_Type_Code",
+      "ラベル種別のID 別途種別マスターが必要"
+    ],
+    "F_INV_Current_Amount":[
+      "F_INV_Current_Amount",
+      "払出 数量(値操作出来る方)"
+    ],
+    "F_INV_Requre_Amount":[
+      "F_INV_Requre_Amount",
+      "要求数量、システムで設定された初期数量"
+    ]
+  },
+  "_comments2": "INV_在庫管理関係の定数を定義する",
   "INV_CONST": {
     "_comments1": "印刷出力に関する定数定義",
     "typLabelSetting": {
-      "_comments0":"Key には 構造体のメンバー名を、Value にはJSONファイル内の constValue のキー名を入れる。基本的には key と Value は同じ",
+      "_comments0": "Key には 構造体のメンバー名を、Value にはJSONファイル内の constValue のキー名を入れる。基本的には key と Value は同じ",
       "_comments1": "ラベル出力用の一時テーブルの名前",
-      "LabelTempTableName": "T_INV_LABEL_TEMP",
+      "LabelTempTableName": "T_INV_Label_Temp",
       "_comments2": "ラベル出力のみに使用する計算列、手配コードの文字列数を格納",
       "F_Tehaicode_Length": "F_INV_Tehaicode_Length",
       "_comments3": "ラベル出力に使用するオーダーNo",
@@ -36,13 +210,18 @@
       "F_INV_Label_Remark_1": "F_INV_Label_Remark_1",
       "_comments16": "BINカードラベルの備考2行目 保管の際乾燥剤をパウチ付き袋に入る事",
       "F_INV_Label_Remark_2": "F_INV_Label_Remark_2",
-      "_comments17": "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁",
-      "F_InputDate": "F_InputDate"
+      "F_InputDate": [
+        "F_InputDate",
+        "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁"
+      ]
     },
-    "_comments2":"テーブル共通フィールドの定義",
+    "_comments2": "テーブル共通フィールドの定義",
     "typTableCommon": {
-      "_comments1": "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁",
-      "F_InputDate": "F_InputDate"
+      "_comments0": "Key には 構造体のメンバー名を、Value にはJSONファイル内の constValue のキー名を入れる。基本的には key と Value は同じ",
+      "F_InputDate":[
+        "F_InputDate",
+        "入力日時 yyyy/mm/ddTHH:MM:SS.SSS の共通23桁"
+      ]
     }
   }
 }

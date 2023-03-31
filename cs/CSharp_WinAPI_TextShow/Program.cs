@@ -64,7 +64,7 @@ namespace CSharp_WinAPI_TextShow
                         System.Diagnostics.ProcessStartInfo psiLbl = new System.Diagnostics.ProcessStartInfo(@"C:\Program Files\用品管理ラベル出力\label002.exe", args[0]);
                         System.Diagnostics.Process.Start(psiLbl);
                         //ここから独自の処理を実装していく
-                        //MessageBox.Show(System.IO.Path.GetFullPath(args[0]));
+                        MessageBox.Show(System.IO.Path.GetFullPath(args[0]));
                         //フォームの準備ができるまではここで終了する
                         //break;
                         return;
