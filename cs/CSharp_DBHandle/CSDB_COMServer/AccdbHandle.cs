@@ -11,11 +11,15 @@ namespace CSharp_DBHandle.CSDB_COMServer
     public class AccdbHandle : IAccdbServer
     {
         public string DBPath { get 
-        {
-            return "工事中";
-             throw new NotImplementedException();
-        } 
-         set => throw new NotImplementedException(); }
+            {
+                return "工事中";
+                throw new NotImplementedException();
+            } 
+         set
+            {
+                throw new NotImplementedException();
+            } 
+        }
         public string SQL { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public string ConnectionString { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 

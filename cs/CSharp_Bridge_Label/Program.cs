@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
+using System.Text.Json.Nodes;
 using CSharp_DBHandle.CSDB_COMServer;
 using CSharp_DBHandle.CSDB_COMServer.Entity;
 namespace CSharp_Bridge_Label
@@ -191,7 +192,19 @@ namespace CSharp_Bridge_Label
                         //リストに追加する
                         listTLabel.Add(currentRecord);
                 }
-                
+                #if (DEBUG)
+                {
+                    //共通設定Jsonファイルの読み込みテスト
+                    JSON_Parser jsonPars = new JSON_Parser();
+                    JsonNode? resultJson = jsonPars.resultJsonNode;
+                    if (resultJson is null)
+                    {
+                        System.Windows.Forms.MessageBox.Show("結果がNullでした。キー名が違っている可能性があります");
+                    }
+                    else
+                    Console.WriteLine(resultJson["DBDefaultPath"]);
+                }
+                #endif
                 foreach (rLabel rElements in listRecords)
                 {
                     //リストをループし、処理をする
