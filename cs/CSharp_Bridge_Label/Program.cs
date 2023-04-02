@@ -1,14 +1,18 @@
 ﻿#define DEBUG
+#define SampleDB
+#define SampleLBLFile
 // See   https://aka.ms/new-console-template for more information
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
+using System.Windows.Forms;
 using CSharp_DBHandle.CSDB_COMServer;
 using CSharp_DBHandle.CSDB_COMServer.Entity;
 namespace CSharp_Bridge_Label
 {
     static class LabelFileRead
     {
+        private  const string PREFIX_SAVEPOINT_LABEL = "_SysLabel";
         /// <summary>
         /// ラベルファイルのフィールド構成を記録したRecord
         /// </summary>
@@ -60,16 +64,31 @@ namespace CSharp_Bridge_Label
         /// <param name="args">引数で指定された(ファイル)が配列で格納される</param>
         static void Main(string[] args)
         {
-            //引数が空なら抜ける
-            if (args.Length <= 0)
+            #if (SampleLBLFile)
             {
-                Console.WriteLine("引数が空でした。実行時には引数にlblファイルを指定して下さい");
-                return;
+                //サンプルファイル仕様フラグが立っていた場合、引数変更
+                System.Windows.Forms.MessageBox.Show("サンプルLBLファイルを指定します。 ./SampleFiles/Sample1.LBL");
+                args = new string[1];
+                args[0] = ".\\SampleFiles\\Sample1.LBL";
             }
+            #else
+            {
+                //通常の処理はこっち
+                //引数が空なら抜ける
+                if (args.Length <= 0)
+                {
+                    Console.WriteLine("引数が空でした。実行時には引数にlblファイルを指定して下さい");
+                    System.Windows.Forms.MessageBox.Show("引数が空でした。実行時には引数にLBLファイルを指定して下さい。");
+                    return;
+                }
+            }
+            #endif
             //第一引数に指定されたファイルが存在しない場合は抜ける
             if (!System.IO.File.Exists(args[0]))
             {
                 Console.WriteLine("File not found " + args[0]);
+                System.Windows.Forms.MessageBox.Show("指定されたファイル " + 
+                args[0] + " が見つかりませんでした。");
                 return;
             }
             //拡張子を得る(lowercase)
@@ -150,12 +169,25 @@ namespace CSharp_Bridge_Label
                         currentRecord.F_INV_SBL = varSpritText[3];
                         currentRecord.F_INV_ML_No = varSpritText[4];
                         currentRecord.F_INV_Tana_Local_Text = varSpritText[9];
-                        currentRecord.F_INV_Tana_Local_Text = varSpritText[7];
+                        currentRecord.F_INV_Tehai_Code = varSpritText[7];
                         currentRecord.F_INV_OrderNumber = varSpritText[5];
                         currentRecord.F_INV_Current_Amount = Convert.ToInt64(varSpritText[14]);
                         currentRecord.F_INV_Requre_Amount = Convert.ToInt64(varSpritText[13]);
-                        string strDate = varSpritText[15].Substring(0,3) + "-" + varSpritText[15].Substring(4,2) + "-" + varSpritText[15].Substring(6,2);
+                        string strDate = varSpritText[15].Substring(0,4) + "-" + varSpritText[15].Substring(4,2) + "-" + varSpritText[15].Substring(6,2);
                         currentRecord.F_InputDate = strDate;
+                        currentRecord.F_INV_Tehaicode_Length = currentRecord.F_INV_Tehai_Code.Length;
+                        //以下は当面の間印刷には使用しないが、データとしては取れてるため追加
+                        currentRecord.F_INV_Kishu = varSpritText[17];
+                        //FormStartTimeはとりあえず現在時刻の秒まで表記
+                        currentRecord.F_INV_Label_FormStartTime = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss");
+                        //PartsMasterに記載の事項はまた後で
+                        currentRecord.F_INV_Label_Name_1 = "Name1";
+                        currentRecord.F_INV_Label_Name_2 = "Name2";
+                        currentRecord.F_INV_Label_Remark_1 = "Remark1";
+                        currentRecord.F_INV_Label_Remark_2 = "Remark2";
+                        currentRecord.F_INV_Store_Code = "StoreCode";
+                        //SavePointは固有のプレフィックス _Sys_Label を付与する
+                        currentRecord.F_INV_Label_Savepoint = PREFIX_SAVEPOINT_LABEL + DateTime.Now.ToString("yyyyMMddHHmmss");
                         //リストに追加する
                         listTLabel.Add(currentRecord);
                 }
@@ -164,9 +196,13 @@ namespace CSharp_Bridge_Label
                 {
                     //リストをループし、処理をする
                     //ここでDBに登録？なりを行う
-                    Console.WriteLine(nameof(rElements.strGrantCode)+ " の値は " + rElements.strGrantCode.ToString());
-                    Console.WriteLine(nameof(rElements.strMLCode) + " の値は " + rElements.strMLCode);
-                    Console.WriteLine(nameof(rElements.longRequireAmount) + " の値は " + rElements.longRequireAmount);
+                    #if (DEBUG)
+                    {
+                        Console.WriteLine(nameof(rElements.strGrantCode)+ " の値は " + rElements.strGrantCode.ToString());
+                        Console.WriteLine(nameof(rElements.strMLCode) + " の値は " + rElements.strMLCode);
+                        Console.WriteLine(nameof(rElements.longRequireAmount) + " の値は " + rElements.longRequireAmount);
+                    }
+                    #endif
                 }
                 return;
                 // break;

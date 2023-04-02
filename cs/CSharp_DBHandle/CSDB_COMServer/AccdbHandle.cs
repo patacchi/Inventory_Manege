@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Dapper;
+using System.Data.SQLite;
 
 namespace CSharp_DBHandle.CSDB_COMServer
 {
@@ -21,11 +22,6 @@ namespace CSharp_DBHandle.CSDB_COMServer
         public bool Conected => throw new NotImplementedException();
 
         public string strResultJSON => throw new NotImplementedException();
-
-        public string DoSQL_With_NO_Transaction(string strSQL = "", string strDBPath = "")
-        {
-            throw new NotImplementedException();
-        }
 /*         public List<CSDB_COMServer.Entity.T_INV_Label_Temp> labelTable_Data
         {
             get 
@@ -36,5 +32,10 @@ namespace CSharp_DBHandle.CSDB_COMServer
                 return labelresult;
             }
         } */
+
+        public string DoSQL_With_NO_Transaction(string strSQL = "", string strDBPath = "")
+        {
+            throw new NotImplementedException();
+        }
     }
 }
