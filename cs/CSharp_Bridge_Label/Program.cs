@@ -67,7 +67,7 @@ namespace CSharp_Bridge_Label
         {
             #if (SampleLBLFile)
             {
-                //サンプルファイル仕様フラグが立っていた場合、引数変更
+                //サンプルファイル使用フラグが立っていた場合、引数変更
                 System.Windows.Forms.MessageBox.Show("サンプルLBLファイルを指定します。 ./SampleFiles/Sample1.LBL");
                 args = new string[1];
                 args[0] = ".\\SampleFiles\\Sample1.LBL";
@@ -202,7 +202,7 @@ namespace CSharp_Bridge_Label
                         System.Windows.Forms.MessageBox.Show("結果がNullでした。キー名が違っている可能性があります");
                     }
                     else
-                    Console.WriteLine(resultJson["DBDefaultPath"]);
+                    Console.WriteLine("Json読み込みテスト" + resultJson["DBDefaultPath"]);
                 }
                 #endif
                 foreach (rLabel rElements in listRecords)
