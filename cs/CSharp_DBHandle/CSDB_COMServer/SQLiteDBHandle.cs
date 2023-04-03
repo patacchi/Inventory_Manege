@@ -3,6 +3,7 @@
 #define DEBUG
 using System;
 using System.Linq;
+using System.Data.OleDb;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
 using CSharp_DBHandle.CSDB_COMServer.Entity;
@@ -56,7 +57,8 @@ namespace CSDB_COMServer
             //Add Sqlite supoort to FluentMigrator
             .AddJet()
             //接続文字列作成
-            .WithGlobalConnectionString("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=test.accdb")
+            .WithGlobalConnectionString
+            (@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=Q:\MyDocuments\Git_Local_Reps\Rep\InventoryManege\cs\CSharp_DBHandle\CSDB_COMServer\test_Local.accdb")
             //マイグレーションに使用するアセンブリを指定する
             .ScanIn(typeof(T_INV_Label_Temp).Assembly).For.Migrations())
         // コンソールログ有効化

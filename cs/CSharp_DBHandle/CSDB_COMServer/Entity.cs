@@ -11,7 +11,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         public const string DEFAULT_SETTING_JSON_PATH = @"C:\Users\q3005sbe\AppData\Local\Rep\Inventorymanege\bin\SettingJson\INVGeneral.json";
     }
 
-    [Migration(20230403110000)]
+    [Migration(20230403110002)]
     public class CreateNewTanble : Migration
     {
         public override void Down()
@@ -25,7 +25,9 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         {
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
             {
-                Create.Table<T_INV_Label_Temp>();
+                // Create.Table<T_INV_Label_Temp>();
+                Create.Table(nameof(T_INV_Label_Temp));
+                Create.Columns<T_INV_Label_Temp>();
             }
 /*             else
             {
@@ -47,7 +49,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
             if (!Schema.Table("Log").Exists())
             {
                 Create.Table("Log")
-                    .WithColumn("ID").AsInt64().PrimaryKey().Identity()
+                    .WithColumn("ID").AsInt32().Identity()
                     .WithColumn("Text").AsString();
             }
         }
@@ -57,7 +59,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
     {
         public enum enumLabelType
         {
-            設定なし = -1,
+            設定なし = 0,
             直行 = 5,
             出庫 = 6,
             直行_後送 = 7
@@ -66,6 +68,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// オートインクリメント型のプライマリーキー
         /// </summary>
         /// <value></value>
+        [Pk]
         [AutoInc(int.MinValue,1)]
         public int F_Seq{get;set;}
         /// <summary>
@@ -73,13 +76,13 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// </summary>
         /// <value></value>
         [NotNull]
-        public UInt64 F_INV_Label_Status {get;set;} = 0;
+        public Int64 F_INV_Label_Status {get;set;} = 0;
         // public string LabelTempTableName { get; set; } = "";
         /// <summary>
         /// 手配コード文字列長
         /// </summary>
         /// <value></value>
-        public long F_INV_Tehaicode_Length { get; set; } = 0;
+        public Int32 F_INV_Tehaicode_Length { get; set; } = 0;
         /// <summary>
         /// オーダーNo
         /// </summary>
@@ -161,18 +164,18 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// ラベル種別のコード、別途マスターが必要→Enumで指定した
         /// </summary>
         /// <value></value>
-        [DbType(System.Data.DbType.Int64)]
-        public enumLabelType F_INV_Label_Type_Code { get; set; } = enumLabelType.設定なし;
+        [DbType(System.Data.DbType.Int32)]
+        public enumLabelType F_INV_Label_Type_Code { get; set; } = 0 ;
         /// <summary>
         /// 払出 数量(値操作出来る方)
         /// </summary>
         /// <value></value>
-        public long F_INV_Current_Amount {get;set;} = 0;
+        public Int32? F_INV_Current_Amount {get;set;} = 0;
         /// <summary>
         /// 要求数量、システムで設定された初期数量
         /// </summary>
         /// <value></value>
-        public long F_INV_Requre_Amount {get;set;} = 0;
+        public Int32 F_INV_Require_Amount {get;set;} = 0;
     }
 
 }

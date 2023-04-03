@@ -168,8 +168,8 @@
       "F_INV_Current_Amount",
       "払出 数量(値操作出来る方)"
     ],
-    "F_INV_Requre_Amount":[
-      "F_INV_Requre_Amount",
+    "F_INV_Require_Amount":[
+      "F_INV_Require_Amount",
       "要求数量、システムで設定された初期数量"
     ]
   },
