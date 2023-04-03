@@ -1,3 +1,5 @@
+using FluentMigrator;
+using EasyMigrator;
 namespace CSharp_DBHandle.CSDB_COMServer.Entity
 
 {
@@ -8,6 +10,49 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
     {
         public const string DEFAULT_SETTING_JSON_PATH = @"C:\Users\q3005sbe\AppData\Local\Rep\Inventorymanege\bin\SettingJson\INVGeneral.json";
     }
+
+    [Migration(20230403110000)]
+    public class CreateNewTanble : Migration
+    {
+        public override void Down()
+        {
+            Delete.Table<T_INV_Label_Temp>();
+            Delete.Table("Log");
+            // throw new NotImplementedException();
+        }
+
+        public override void Up()
+        {
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
+            {
+                Create.Table<T_INV_Label_Temp>();
+            }
+/*             else
+            {
+                Alter.Table(nameof(T_INV_Label_Temp))
+                    .AlterColumn(nameof(T_INV_Label_Temp.F_Seq))
+                        .AsInt32().Identity();
+                Alter.Table(nameof(T_INV_Label_Temp))
+                    .AlterColumn(nameof(T_INV_Label_Temp.F_INV_Label_Status))
+                        .AsString();
+                if (!Schema.Table(nameof(T_INV_Label_Temp)).Column("TestAddColumn").Exists())
+                {
+                    Alter.Table(nameof(T_INV_Label_Temp))
+                        .AddColumn("TestAddColumn")
+                        .AsInt32()
+                        .Nullable();
+                }
+            } */
+            //Logテーブルも作成してみる
+            if (!Schema.Table("Log").Exists())
+            {
+                Create.Table("Log")
+                    .WithColumn("ID").AsInt64().PrimaryKey().Identity()
+                    .WithColumn("Text").AsString();
+            }
+        }
+    }
+    [Name("T_INV_Label_Temp")]
     public class T_INV_Label_Temp
     {
         public enum enumLabelType
@@ -17,6 +62,18 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
             出庫 = 6,
             直行_後送 = 7
         }
+        /// <summary>
+        /// オートインクリメント型のプライマリーキー
+        /// </summary>
+        /// <value></value>
+        [AutoInc(int.MinValue,1)]
+        public int F_Seq{get;set;}
+        /// <summary>
+        /// ラベルの印刷状態などのフラグを立てたUInt64
+        /// </summary>
+        /// <value></value>
+        [NotNull]
+        public UInt64 F_INV_Label_Status {get;set;} = 0;
         // public string LabelTempTableName { get; set; } = "";
         /// <summary>
         /// 手配コード文字列長
@@ -52,6 +109,8 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// 手配コード Nullはだめ
         /// </summary>
         /// <value></value>
+        
+        [Length(30)]
         public string F_INV_Tehai_Code { get; set; } = "";
         /// <summary>
         /// 貯蔵記号 FA BS BL
@@ -102,6 +161,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// ラベル種別のコード、別途マスターが必要→Enumで指定した
         /// </summary>
         /// <value></value>
+        [DbType(System.Data.DbType.Int64)]
         public enumLabelType F_INV_Label_Type_Code { get; set; } = enumLabelType.設定なし;
         /// <summary>
         /// 払出 数量(値操作出来る方)
