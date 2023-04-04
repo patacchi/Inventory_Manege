@@ -1,6 +1,9 @@
 {
   "DBDefaultPath":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB\\INV_Manege.accdb",
   "DebugDBPath":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB\\INV_Manege_Local.accdb",
+  "TempDBPath":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB\\DB_Temp_Local.accdb",
+  "DBBaseDir":"C:\\Users\\q3005sbe\\AppData\\Local\\Rep\\Inventorymanege\\bin\\Inventory_DB",
+  "AccDBConString":"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0}",
   "_comments1": "全テーブル共通で、構造体メンバー名(重複不可)と実際のフィールド名を定義する",
   "CONST_DBFIELD": {
     "_comments0": "keyは構造体メンバー名 valueは[DBフィールド名,コメント]の配列",

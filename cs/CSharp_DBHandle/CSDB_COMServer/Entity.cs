@@ -3,16 +3,9 @@ using EasyMigrator;
 namespace CSharp_DBHandle.CSDB_COMServer.Entity
 
 {
-    /// <summary>
-    /// Entityで使う定数の定義
-    /// </summary>
-    static class Const_Entity
-    {
-        public const string DEFAULT_SETTING_JSON_PATH = @"C:\Users\q3005sbe\AppData\Local\Rep\Inventorymanege\bin\SettingJson\INVGeneral.json";
-    }
 
-    [Migration(20230403110002)]
-    public class CreateNewTanble : Migration
+    [Migration(20230403110003)]
+    public class CreateNewTable : Migration
     {
         public override void Down()
         {
@@ -25,10 +18,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         {
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
             {
-                // Create.Table<T_INV_Label_Temp>();
-                Create.Table(nameof(T_INV_Label_Temp))
-                .WithColumn(nameof(T_INV_Label_Temp.F_Seq)).AsInt32().PrimaryKey().Identity();
-                Create.Columns<T_INV_Label_Temp>();
+                Create.Table<T_INV_Label_Temp>();
             }
 /*             else
             {
@@ -77,13 +67,13 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// </summary>
         /// <value></value>
         [NotNull]
-        public Int64 F_INV_Label_Status {get;set;} = 0;
+        public Int64? F_INV_Label_Status {get;set;} = 0;
         // public string LabelTempTableName { get; set; } = "";
         /// <summary>
         /// 手配コード文字列長
         /// </summary>
         /// <value></value>
-        public Int32 F_INV_Tehaicode_Length { get; set; } = 0;
+        public Int32? F_INV_Tehaicode_Length { get; set; } = 0;
         /// <summary>
         /// オーダーNo
         /// </summary>
@@ -115,7 +105,9 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// <value></value>
         
         [Length(30)]
-        public string F_INV_Tehai_Code { get; set; } = "";
+        [NotNull]
+        // public string F_INV_Tehai_Code { get; set; } = " ";
+        public string? F_INV_Tehai_Code { get; set; }
         /// <summary>
         /// 貯蔵記号 FA BS BL
         /// </summary>
@@ -166,7 +158,8 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// </summary>
         /// <value></value>
         [DbType(System.Data.DbType.Int32)]
-        public enumLabelType F_INV_Label_Type_Code { get; set; } = 0 ;
+        // public enumLabelType? F_INV_Label_Type_Code { get; set; } = 0 ;
+        public int? F_INV_Label_Type_Code { get; set; } = 0 ;
         /// <summary>
         /// 払出 数量(値操作出来る方)
         /// </summary>
@@ -176,7 +169,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// 要求数量、システムで設定された初期数量
         /// </summary>
         /// <value></value>
-        public Int32 F_INV_Require_Amount {get;set;} = 0;
+        public Int32? F_INV_Require_Amount {get;set;} = 0;
     }
 
 }

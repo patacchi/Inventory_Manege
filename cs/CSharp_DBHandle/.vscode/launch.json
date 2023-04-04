@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/CSDB_COMServer/bin/Debug/net6.0/CSDB_COMServer.dll",
+            "program": "${workspaceFolder}/CSDB_COMServer/bin/Debug/net6.0-windows/CSDB_COMServer.dll",
             "args": [],
             "cwd": "${workspaceFolder}/CSDB_COMServer",
             "console": "internalConsole",

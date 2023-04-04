@@ -16,16 +16,36 @@ namespace CSDB_COMServer
     {
         static void Main(string[] args)
         {
+            CheckDB();
+        }
+        static void CheckDB()
+        {
             using (var serviceProvider = CreateServices())
             using (var scope = serviceProvider.CreateScope())
             {
                 Updatedatabase(scope.ServiceProvider);
             }
-            using (var serviceProviderAccdb = CreateServicesAccDB())
+            //accdb T_INV_Label_Temp
+            //接続文字列作成
+            JSON_Parser jsonGlobal = new JSON_Parser();
+            var jsonNodeGlobal = jsonGlobal.resultJsonNode;
+            if (jsonNodeGlobal is null)
+            {
+                return;
+            }
+            if (jsonNodeGlobal["TempDBPath"] is null)
+            {
+                return;
+            }
+            //GlobalJSONからaccdbの接続文字列のひな形を取得
+            System.Text.StringBuilder sbConString = new System.Text.StringBuilder();
+            object[] sbParm = {Convert.ToString(jsonNodeGlobal["TempDBPath"])!};
+            using (var serviceProviderAccdb = CreateServicesAccDB(sbConString.AppendFormat(Convert.ToString(jsonNodeGlobal["AccDBConString"])!, sbParm).ToString()))    
             using ( var scopeAccdb = serviceProviderAccdb.CreateScope())
             {
                 Updatedatabase(scopeAccdb.ServiceProvider);
             }
+            return;
         }
         /// <summary>
         /// Dependency Injection 初期設定
@@ -48,7 +68,7 @@ namespace CSDB_COMServer
         //Build service provider
         .BuildServiceProvider(false);
         }
-        private static ServiceProvider CreateServicesAccDB()
+        private static ServiceProvider CreateServicesAccDB(string strConnection)
         {
             return new ServiceCollection()
             //Add common FluentMigrator servives
@@ -57,8 +77,8 @@ namespace CSDB_COMServer
             //Add Sqlite supoort to FluentMigrator
             .AddJet()
             //接続文字列作成
-            .WithGlobalConnectionString
-            (@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\cs\CSharp_DBHandle\CSDB_COMServer\test_Local.accdb")
+            .WithGlobalConnectionString(strConnection)
+            // (@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\cs\CSharp_DBHandle\CSDB_COMServer\test_Local.accdb")
             //マイグレーションに使用するアセンブリを指定する
             .ScanIn(typeof(T_INV_Label_Temp).Assembly).For.Migrations())
         // コンソールログ有効化
