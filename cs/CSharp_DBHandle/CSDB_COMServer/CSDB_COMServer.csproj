@@ -14,12 +14,14 @@
             COMServer.X.manifest
     -->
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>Exe</OutputType>
     <!-- Indicate the assembly is providing a COM server -->
     <EnableComHosting>True</EnableComHosting>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <!-- Used in lieu of a Primary Interop Assembly (PIA) -->

@@ -58,7 +58,7 @@ namespace CSDB_COMServer
             .AddJet()
             //接続文字列作成
             .WithGlobalConnectionString
-            (@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=Q:\MyDocuments\Git_Local_Reps\Rep\InventoryManege\cs\CSharp_DBHandle\CSDB_COMServer\test_Local.accdb")
+            (@"Provider=Microsoft.ACE.OLEDB.12.0;Data Source=C:\Users\q3005sbe\AppData\Local\Rep\InventoryManege\cs\CSharp_DBHandle\CSDB_COMServer\test_Local.accdb")
             //マイグレーションに使用するアセンブリを指定する
             .ScanIn(typeof(T_INV_Label_Temp).Assembly).For.Migrations())
         // コンソールログ有効化
@@ -73,9 +73,27 @@ namespace CSDB_COMServer
             var runner = serviceProvider.GetRequiredService<IMigrationRunner>();
 
             //Execute the migrations
-            runner.MigrateUp();
+            try
+            {
+                runner.MigrateUp();
+            }
+            catch (OleDbException olex)
+            {
+                System.Text.StringBuilder sbError;
+                sbError = new System.Text.StringBuilder();
+                for (int iErrCount = 0 ; iErrCount < olex.Errors.Count;iErrCount++)
+                {
+                    sbError.AppendLine(olex.Errors[iErrCount].Message);
+                }
+                Console.WriteLine(sbError.ToString());
+            }
+            catch (System.Exception exceptione)
+            {
+                Console.WriteLine(exceptione.Message);
+            }
+            
         }
-                private static void UpdatedatabaseAccdb(IServiceProvider serviceProvider)
+        private static void UpdatedatabaseAccdb(IServiceProvider serviceProvider)
         {
             //Instantiate the runner
             var runner = serviceProvider.GetRequiredService<IMigrationRunner>();

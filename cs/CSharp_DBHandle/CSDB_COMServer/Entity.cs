@@ -26,7 +26,8 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
             {
                 // Create.Table<T_INV_Label_Temp>();
-                Create.Table(nameof(T_INV_Label_Temp));
+                Create.Table(nameof(T_INV_Label_Temp))
+                .WithColumn(nameof(T_INV_Label_Temp.F_Seq)).AsInt32().PrimaryKey().Identity();
                 Create.Columns<T_INV_Label_Temp>();
             }
 /*             else
