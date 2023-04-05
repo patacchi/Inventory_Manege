@@ -25,22 +25,9 @@ namespace CSDB_COMServer
             {
                 Updatedatabase(scope.ServiceProvider);
             }
-            //accdb T_INV_Label_Temp
-            //接続文字列作成
-            JSON_Parser jsonGlobal = new JSON_Parser();
-            var jsonNodeGlobal = jsonGlobal.resultJsonNode;
-            if (jsonNodeGlobal is null)
-            {
-                return;
-            }
-            if (jsonNodeGlobal["TempDBPath"] is null)
-            {
-                return;
-            }
-            //GlobalJSONからaccdbの接続文字列のひな形を取得
-            System.Text.StringBuilder sbConString = new System.Text.StringBuilder();
-            object[] sbParm = {Convert.ToString(jsonNodeGlobal["TempDBPath"])!};
-            using (var serviceProviderAccdb = CreateServicesAccDB(sbConString.AppendFormat(Convert.ToString(jsonNodeGlobal["AccDBConString"])!, sbParm).ToString()))    
+            //接続文字列取得
+            ConStringBuilder conBuilder = new ConStringBuilder();         
+            using (var serviceProviderAccdb = CreateServicesAccDB(conBuilder.GetACCDB_TempDBConString()))    
             using ( var scopeAccdb = serviceProviderAccdb.CreateScope())
             {
                 Updatedatabase(scopeAccdb.ServiceProvider);

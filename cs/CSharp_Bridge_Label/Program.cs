@@ -165,7 +165,7 @@ namespace CSharp_Bridge_Label
                         //
                         //Dapper の Entity ラベルクラスのインスタンスを作成し、値をセットしていく
                         T_INV_Label_Temp currentRecord = new T_INV_Label_Temp();
-                        currentRecord.F_INV_Label_Type_Code = (T_INV_Label_Temp.enumLabelType)Convert.ToInt64(varSpritText[0]);
+                        currentRecord.F_INV_Label_Type_Code = Convert.ToInt32(varSpritText[0]);
                         currentRecord.F_INV_Seiban = varSpritText[1];
                         currentRecord.F_INV_SBL = varSpritText[3];
                         currentRecord.F_INV_ML_No = varSpritText[4];
