@@ -172,8 +172,8 @@ namespace CSharp_Bridge_Label
                         currentRecord.F_INV_Tana_Local_Text = varSpritText[9];
                         currentRecord.F_INV_Tehai_Code = varSpritText[7];
                         currentRecord.F_INV_OrderNumber = varSpritText[5];
-                        currentRecord.F_INV_Current_Amount = Convert.ToInt64(varSpritText[14]);
-                        currentRecord.F_INV_Requre_Amount = Convert.ToInt64(varSpritText[13]);
+                        currentRecord.F_INV_Current_Amount = Convert.ToInt32(varSpritText[14]);
+                        currentRecord.F_INV_Require_Amount = Convert.ToInt32(varSpritText[13]);
                         string strDate = varSpritText[15].Substring(0,4) + "-" + varSpritText[15].Substring(4,2) + "-" + varSpritText[15].Substring(6,2);
                         currentRecord.F_InputDate = strDate;
                         currentRecord.F_INV_Tehaicode_Length = currentRecord.F_INV_Tehai_Code.Length;
@@ -193,6 +193,7 @@ namespace CSharp_Bridge_Label
                         listTLabel.Add(currentRecord);
                 }
                 #if (DEBUG)
+                
                 {
                     //共通設定Jsonファイルの読み込みテスト
                     JSON_Parser jsonPars = new JSON_Parser();

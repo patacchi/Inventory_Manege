@@ -74,7 +74,7 @@ namespace CSDB_COMServer
             //Add common FluentMigrator servives
             .AddFluentMigratorCore()
             .ConfigureRunner(rb => rb
-            //Add Sqlite supoort to FluentMigrator
+            //Add Jet supoort to FluentMigrator
             .AddJet()
             //接続文字列作成
             .WithGlobalConnectionString(strConnection)
