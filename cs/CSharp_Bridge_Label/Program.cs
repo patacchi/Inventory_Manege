@@ -193,7 +193,10 @@ namespace CSharp_Bridge_Label
                         listTLabel.Add(currentRecord);
                 }
                 #if (DEBUG)
-                
+                //得られたリストデータを元にDBにInsertする
+                var arrayResult =  listTLabel.ToArray();
+                CSDB_COMServer.DBUpdator dbUpTempLabel = new CSDB_COMServer.DBUpdator(arrayResult);
+                dbUpTempLabel.DBUp();
                 {
                     //共通設定Jsonファイルの読み込みテスト
                     JSON_Parser jsonPars = new JSON_Parser();
