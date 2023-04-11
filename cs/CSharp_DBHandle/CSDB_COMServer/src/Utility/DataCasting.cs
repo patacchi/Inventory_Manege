@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 
 namespace CSDB_COMServer.Utility
 {
@@ -36,6 +37,48 @@ namespace CSDB_COMServer.Utility
             object[,] objLocal = new object[arrayArg.Length-1,1];
             _arrObj2Dim = objLocal;
             return new object[0];
+        }
+
+        /// <summary>
+        /// List<Entityクラス>を受け取り、リフレクションを使用してカラム一覧と値一覧のリストを返す
+        /// </summary>
+        /// <param name="listColumuns"></param>
+        /// <param name="argClass"></param>
+        /// <typeparam name="TEntity">プロパティに値がセットされたEntityクラス</typeparam>
+        /// <returns>(List<string> cols,List<object> values)</returns>
+        public (List<string> listColumuns , List<object> listValues) getColsValuesFromEntity<TEntity>(List<TEntity> arglistClass)
+        where TEntity:class
+        {
+            if (arglistClass is null)
+            {
+                //引数がNullだったら例外を投げる
+                throw new ArgumentNullException(nameof(getColsValuesFromEntity));
+            }
+            //結果格納用の変数を定義
+            List<string> strlistColumns_ = new List<string>();
+            List<object> objlistValues_ = new List<object>();
+            //初回判定用の変数を定義
+            bool isFirst = true;
+            //ListをFoeachで回す
+            foreach (var elmClass in arglistClass)
+            {
+                //クラスのPropertyInfoを取得
+                PropertyInfo[] pinfos = elmClass.GetType().GetProperties();
+                //PropertyInfo[]をループ処理し、結果のListに値を設定していく
+                foreach (PropertyInfo prop in pinfos)
+                {
+                    if (isFirst)
+                    {
+                        //初回のみcolsにカラム名を追加する
+                        strlistColumns_.Add(prop.Name);
+                    }
+                    objlistValues_.Add(prop.GetValue(elmClass) ?? string.Empty);
+                }
+                //1回目のループ終了後初回フラグを落とす
+                isFirst = false;
+            }
+
+            return (strlistColumns_,objlistValues_);
         }
     }
 }
