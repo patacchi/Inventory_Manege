@@ -42,11 +42,11 @@ namespace CSDB_COMServer.Utility
         /// <summary>
         /// List<Entityクラス>を受け取り、リフレクションを使用してカラム一覧と値一覧のリストを返す
         /// </summary>
-        /// <param name="listColumuns"></param>
-        /// <param name="argClass"></param>
+        /// <param name="listColumuns">List<string> カラム名一覧</param>
+        /// <param name="argClass">List<object[]> 値一覧</param>
         /// <typeparam name="TEntity">プロパティに値がセットされたEntityクラス</typeparam>
-        /// <returns>(List<string> cols,List<object> values)</returns>
-        public (List<string> listColumuns , List<object> listValues) getColsValuesFromEntity<TEntity>(List<TEntity> arglistClass)
+        /// <returns>タプル (List<string> cols,List<object[]> values)</returns>
+        public (List<string> listColumuns , List<object[]> listValues) getColsValuesFromEntity<TEntity>(List<TEntity> arglistClass)
         where TEntity:class
         {
             if (arglistClass is null)
@@ -56,7 +56,7 @@ namespace CSDB_COMServer.Utility
             }
             //結果格納用の変数を定義
             List<string> strlistColumns_ = new List<string>();
-            List<object> objlistValues_ = new List<object>();
+            List<object[]> objarrlistValues_ = new List<object[]>();
             //初回判定用の変数を定義
             bool isFirst = true;
             //ListをFoeachで回す
@@ -65,20 +65,24 @@ namespace CSDB_COMServer.Utility
                 //クラスのPropertyInfoを取得
                 PropertyInfo[] pinfos = elmClass.GetType().GetProperties();
                 //PropertyInfo[]をループ処理し、結果のListに値を設定していく
-                foreach (PropertyInfo prop in pinfos)
+                //object[]を操作する関係上、forループの方が良い？(インデックス番号を扱いたい)
+                object[] objarrCurrent = new object[pinfos.Count()];
+                for (var varPropCounter = 0 ;varPropCounter < pinfos.Count();varPropCounter++)
                 {
                     if (isFirst)
                     {
-                        //初回のみcolsにカラム名を追加する
-                        strlistColumns_.Add(prop.Name);
+                        //最初のみcolsにカラム名を追加する
+                        strlistColumns_.Add(pinfos[varPropCounter].Name);
                     }
-                    objlistValues_.Add(prop.GetValue(elmClass) ?? string.Empty);
+                    //valsに値をセットしていく、stringがNullだった場合は String.Emptyをセットする
+                    objarrCurrent[varPropCounter] =  pinfos[varPropCounter].GetValue(elmClass) ?? string.Empty;
                 }
-                //1回目のループ終了後初回フラグを落とす
+                //ここで1回分のcolsがセットされているはずなので、Listに追加する
+                objarrlistValues_.Add(objarrCurrent);
+                //初回フラグを落とす
                 isFirst = false;
             }
-
-            return (strlistColumns_,objlistValues_);
+            return (strlistColumns_,objarrlistValues_);
         }
     }
 }
