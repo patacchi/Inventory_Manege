@@ -13,10 +13,17 @@ using SqlKata.Execution;
 namespace CSDB_COMServer
 {
 
-    public class DBUpdator
+    public class DBUpdator<TEntity>
+    where TEntity: class
     {
         
         private dynamic _arrResult{get;}
+
+        public DBUpdator(List<TEntity> listTEntiry)
+        {
+                        
+        }
+
         public DBUpdator(dynamic arrResult)
         {
             if (arrResult.Length == 0)

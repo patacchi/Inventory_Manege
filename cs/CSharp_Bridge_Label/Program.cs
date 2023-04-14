@@ -197,7 +197,7 @@ namespace CSharp_Bridge_Label
                 var arrayResult =  listTLabel.ToArray();
                 //ColsValsを取得してみる
                 CSDB_COMServer.Utility.DataCasting castData = new CSDB_COMServer.Utility.DataCasting();
-                var resultColsValues = castData.getColsValuesFromEntity(listTLabel);
+                // var resultColsValues = castData.getColsValuesFromEntity(listTLabel);
                 CSDB_COMServer.DBUpdator dbUpTempLabel = new CSDB_COMServer.DBUpdator(arrayResult);
                 dbUpTempLabel.DBUp();
                 {
