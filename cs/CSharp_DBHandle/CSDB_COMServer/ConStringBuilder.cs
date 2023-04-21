@@ -60,5 +60,21 @@ namespace CSDB_COMServer
             //ひな形のパラメータ置換して、結果として返す
             return sbAccdb.AppendFormat(Convert.ToString(jsonNodeGlobal["AccDBConString"])!,arrParm).ToString();
         }
+
+        public string GetSqlite_TempDBConString()
+        {
+            var jsonNodeGlobal = jsonGlobal.resultJsonNode;
+            //null チェック
+            if (jsonNodeGlobal is null)
+            {
+                return (string.Empty);
+            }
+            if ((jsonNodeGlobal["SqliteTempDBPath"] is null))
+            {
+                return (string.Empty);
+            }
+            
+            return new NotImplementedException().ToString();
+        }
     }
 }

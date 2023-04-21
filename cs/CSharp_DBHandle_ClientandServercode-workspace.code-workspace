@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "CSharp_DBHandle"
+		},
+		{
+			"path": "CSharp_Bridge_Label"
+		},
+		{
+			"path": "../bin/SettingJson"
+		}
+	],
+	"settings": {}
+}

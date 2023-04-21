@@ -198,7 +198,7 @@ namespace CSharp_Bridge_Label
                 //ColsValsを取得してみる
                 CSDB_COMServer.Utility.DataCasting castData = new CSDB_COMServer.Utility.DataCasting();
                 // var resultColsValues = castData.getColsValuesFromEntity(listTLabel);
-                CSDB_COMServer.DBUpdator dbUpTempLabel = new CSDB_COMServer.DBUpdator(arrayResult);
+                CSDB_COMServer.DBUpdator<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.DBUpdator<T_INV_Label_Temp>(listTLabel);
                 dbUpTempLabel.DBUp();
                 {
                     //共通設定Jsonファイルの読み込みテスト

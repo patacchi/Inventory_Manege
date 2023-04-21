@@ -16,7 +16,7 @@ namespace CSDB_COMServer.Utility
             return;
         }
 
-        /// <summary>
+/*         /// <summary>
         /// List<Entirty>から Object[] に変換するメソッド
         /// </summary>
         /// <param name="arrayArg"></param>
@@ -38,7 +38,7 @@ namespace CSDB_COMServer.Utility
             _arrObj2Dim = objLocal;
             return new object[0];
         }
-
+ */
         /// <summary>
         /// List<Entityクラス>を受け取り、リフレクションを使用してカラム一覧と値一覧のリストを返す
         /// </summary>
