@@ -17,18 +17,67 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
 
         public override void Up()
         {
+            bool isNewTable = false;
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
             {
+                //NewTableフラグを上げる
+                isNewTable = true;
                 // Create.Table<T_INV_Label_Temp>();
                 //テーブルが存在しなかった場合は、とりあえるキーになるF_Seqのみのテーブルを作成する
-                //その他のフィールドは、それぞれ存在の有無を確認しながら追加する
                 Create.Table(nameof(T_INV_Label_Temp))
                 .WithColumn(nameof(T_INV_Label_Temp.F_Seq)).AsInt32().NotNullable().PrimaryKey().Identity();
             }
+            //その他のフィールドは、それぞれ存在の有無を確認しながら追加する
+            //F_Seqについては、テーブル新規作成時にはまだフィールド存在していないので、新規テーブルフラグと合わせて判断する
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_Seq)).Exists() && !isNewTable)
+            {
+                //F_seqが無かった場合(外部でテーブル新規作成？)
+                //まずはフィールドを作成(オートインクリメント)
+                Create.Column(nameof(T_INV_Label_Temp.F_Seq)).OnTable(nameof(T_INV_Label_Temp))
+                .AsInt32().NotNullable().Identity();
+                Create.PrimaryKey().OnTable(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_Seq));
+            }
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_InputDate)).Exists())
             Create.Column(nameof(T_INV_Label_Temp.F_InputDate)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Tehai_Code)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Tehai_Code)).OnTable(nameof(T_INV_Label_Temp)).AsString(30);
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Tehaicode_Length)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Tehaicode_Length)).OnTable(nameof(T_INV_Label_Temp)).AsInt32();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Current_Amount)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Current_Amount)).OnTable(nameof(T_INV_Label_Temp)).AsInt32().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Kishu)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Kishu)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_FormStartTime)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_FormStartTime)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Name_1)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Name_1)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Name_2)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Name_2)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Remark_1)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Remark_1)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Remark_2)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Remark_2)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Savepoint)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Savepoint)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Status)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Status)).OnTable(nameof(T_INV_Label_Temp)).AsInt64().WithDefaultValue(0);
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Label_Type_Code)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Label_Type_Code)).OnTable(nameof(T_INV_Label_Temp)).AsInt32().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_ML_No)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_ML_No)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_OrderNumber)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_OrderNumber)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Require_Amount)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Require_Amount)).OnTable(nameof(T_INV_Label_Temp)).AsInt32().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_SBL)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_SBL)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Seiban)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Seiban)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Store_Code)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Store_Code)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Tana_Local_Text)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_INV_Tana_Local_Text)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
             
-
 /*             else
             {
                 Alter.Table(nameof(T_INV_Label_Temp))
@@ -76,7 +125,7 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// </summary>
         /// <value></value>
         [NotNull]
-        public Int64? F_INV_Label_Status {get;set;} = 0;
+        public Int64 F_INV_Label_Status {get;set;} = 0;
         // public string LabelTempTableName { get; set; } = "";
         /// <summary>
         /// 手配コード文字列長
@@ -112,11 +161,10 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         /// 手配コード Nullはだめ
         /// </summary>
         /// <value></value>
-        
         [Length(30)]
         [NotNull]
         // public string F_INV_Tehai_Code { get; set; } = " ";
-        public string? F_INV_Tehai_Code { get; set; }
+        public string F_INV_Tehai_Code { get; set; } = string.Empty;
         /// <summary>
         /// 貯蔵記号 FA BS BL
         /// </summary>
