@@ -16,9 +16,10 @@ namespace CSDB_COMServer
     {
         static void Main(string[] args)
         {
+            // var SQLiteH = new SQLiteDBHandle();
             CheckDB();
         }
-        static void CheckDB()
+        public static void CheckDB()
         {
             using (var serviceProvider = CreateServices())
             using (var scope = serviceProvider.CreateScope())

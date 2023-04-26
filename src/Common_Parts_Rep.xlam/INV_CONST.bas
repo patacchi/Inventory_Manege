@@ -233,7 +233,7 @@ Public Enum Enum_INV_Receive
     F_Tehai_ID_ISR = Enum_INV_M_Parts.F_Tehai_ID_IMPrt
 End Enum
 'ラベル出力用一時テーブル名
-Public Const T_INV_LABEL_TEMP As String = "T_INV_LABEL_TEMP"                                        'ラベル出力用の差し込み印刷用テーブルの名前
+Public Const T_INV_LABEL_TEMP As String = "T_INV_Label_Temp"                                        'ラベル出力用の差し込み印刷用テーブルの名前
 'ラベル出力用一時テーブル専用フィールド定義
 Public Const F_INV_LABEL_TEMP_TEHAICODE_LENGTH As String = "F_INV_Tehaicode_Length"                 'ラベル出力のみに使用する計算列、手配コードの文字列数を格納
 'Public Const F_INV_LABEL_TEMP_ORDERNUM As String = "F_INV_OrderNumber"                              'ラベル出力のみに使用するオーダーNo列
@@ -495,9 +495,16 @@ Public Const SQL_INV_DB_TO_CSV As String = "UPDATE {0} AS {1}" & vbCrLf & _
 '{11}   INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
 '{12}   F_INV_Store_Code
 '{13}   F_INV_Kishu
+'{14}   F_INV_Seiban
+'{15}   F_INV_SBL
+'{16}   F_INV_ML_No
+'{17}   F_INV_Label_Type_Code
+'{18}   F_INV_Current_Amount
+'{19}   F_INV_Requre_Amount
 Public Const SQL_INV_CREATE_LABEL_TEMP_TABLE As String = "CREATE TABLE {0} (" & vbCrLf & _
 "    {10} CHAR(23),{11} CHAR(23),{1} CHAR(15),{2} CHAR(50),{12} CHAR(10),{13} CHAR(10),{8} LONG," & vbCrLf & _
-"    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9),{7} CHAR(23)" & vbCrLf & _
+"    {3} CHAR(18),{4} CHAR(18),{5} CHAR(18),{6} CHAR(18),{9} CHAR(9), " & vbCrLf & _
+"{14} CHAR(30),{15} CHAR(10),{16} CHAR(10),{17} LONG,{18} LONG,{19} LONG,{7} CHAR(23)" & vbCrLf & _
 ")"
 '------------------------------------------------------------------------------------------------
 'Label_Temp SavePoint一覧出力SQL

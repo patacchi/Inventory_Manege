@@ -34,6 +34,8 @@ namespace CSDB_COMServer
             }
             //中身有りの場合は、クラス名がテーブル名になっているはずなのでメンバ変数テーブル名セット
             this.strTableName = typeof(TEntity).Name;
+            //ここでテーブル・フィールド存在チェック(無ければ作成)する？
+            SQLiteDBHandle.CheckDB();
             //(Cols,Vals)のListを取得する
             DataCasting _dataCast = new DataCasting();
             var colsVals = _dataCast.getColsValuesFromEntity(listTEntiry);
@@ -55,7 +57,13 @@ namespace CSDB_COMServer
             var Query_ = new Query(this.strTableName)
             .AsInsert(liststrColumns_,listarrobjValues_);
             SqlResult result = sqlCompiler.Compile(Query_);
-            Console.WriteLine(result.Sql);
+            /*
+            #if DEBUG
+            {
+                Console.WriteLine(result.Sql);
+            }
+            #endif
+            */
         }
     }
 }

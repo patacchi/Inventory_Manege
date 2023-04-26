@@ -1381,6 +1381,16 @@ Public Function DropTable(strargTableName As String, Optional strargDBFileName A
     If isCollect Then
         '成功したとき
         DebugMsgWithTime "Drop Table: " & strargTableName & " Success"
+        'Fluentmigrateのヴァージョン管理テーブルも削除してやる
+        If IsTableExists(PublicConst.T_FLUENT_VERSION, strargDBFileName, strargDBPath) Then
+            'ヴァージョン管理テーブルが存在した場合
+            'ヴァージョン管理テーブル消去実行
+            isCollect = Do_SQL_with_NO_Transaction("DROP TABLE " & PublicConst.T_FLUENT_VERSION, strargDBPath, strargDBFileName)
+            If isCollect Then
+                'ヴァージョン管理テーブル削除成功した場合
+                DebugMsgWithTime "Drop Tale: " & PublicConst.T_FLUENT_VERSION & " Success"
+             End If
+        End If
         DropTable = True
         GoTo CloseAndExit
         Exit Function

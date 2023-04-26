@@ -1,11 +1,12 @@
 using FluentMigrator;
 using EasyMigrator;
+using System.ComponentModel.DataAnnotations;
 namespace CSharp_DBHandle.CSDB_COMServer.Entity
 
 {
 
     [Migration(20230403110003)]
-    public class CreateNewTable : Migration
+    public class CreateNewTableOne : Migration
     {
         public override void Down()
         {
@@ -18,8 +19,16 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
         {
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Exists())
             {
-                Create.Table<T_INV_Label_Temp>();
+                // Create.Table<T_INV_Label_Temp>();
+                //テーブルが存在しなかった場合は、とりあえるキーになるF_Seqのみのテーブルを作成する
+                //その他のフィールドは、それぞれ存在の有無を確認しながら追加する
+                Create.Table(nameof(T_INV_Label_Temp))
+                .WithColumn(nameof(T_INV_Label_Temp.F_Seq)).AsInt32().NotNullable().PrimaryKey().Identity();
             }
+            if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_InputDate)).Exists())
+            Create.Column(nameof(T_INV_Label_Temp.F_InputDate)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
+            
+
 /*             else
             {
                 Alter.Table(nameof(T_INV_Label_Temp))

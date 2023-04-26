@@ -64,7 +64,7 @@ Private Const SQL_BIN_LABEL_ADDNEW_TEHAI_CODE As String = "SELECT TDBPrt.F_INV_T
 "    ON TDBPrt.F_INV_Tana_ID = TDBTana.F_INV_Tana_ID " & vbCrLf & _
 "    WHERE TDBPrt.F_INV_Tana_ID IS NULL"
 'AddNewでうまくいかなかったので、M_Parts単独のSelect文
-Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,InputDate," & vbCrLf & _
+Private Const SQL_BIN_LABEL_ONLY_PARTS As String = "SELECT TDBPrt.F_INV_Tehai_ID,TDBPrt.F_INV_Tana_ID,TDBPrt.F_INV_Tehai_Code as F_INV_Tehai_Code,TDBPrt.F_INV_Label_Name_1 as F_INV_Label_Name_1,TDBPrt.F_INV_Label_Name_2 as F_INV_Label_Name_2,TDBPrt.F_INV_Label_Remark_1 as F_INV_Label_Remark_1,TDBPrt.F_INV_Label_Remark_2 as F_INV_Label_Remark_2,F_InputDate," & vbCrLf & _
 "TDBPrt.F_INV_Store_Code as F_INV_Store_Code,TDBPrt.F_INV_Kishu as F_INV_Kishu " & vbCrLf & _
 "FROM T_INV_M_Parts AS TDBPrt "
 '印刷完了(SavePoint 選択済み)のデータを削除する
@@ -1483,6 +1483,25 @@ Private Function RecreateLabelTempTable() As Boolean
         dicReplaceLabelTemp.Add 11, INV_CONST.F_INV_LABEL_TEMP_FORMSTARTTIME
         dicReplaceLabelTemp.Add 12, clsEnumfrmBIN.INVMasterParts(F_Store_Code_IMPrt)
         dicReplaceLabelTemp.Add 13, clsEnumfrmBIN.INVMasterParts(F_Kishu_IMPrt)
+        'これ以降はVBAでの新規開発終了に付き、Enumに追加はなし、定数はJSONファイルから引っ張る
+        'JSONファイルのDicionaryを取得
+        Dim dicGenelal As Dictionary
+        Dim jsonGenelal As clsJsonIO
+        Set jsonGenelal = New clsJsonIO
+        Set dicGenelal = jsonGenelal.AllGeneralDic
+        'JSONファイルより取得
+        dicReplaceLabelTemp.Add 14, dicGenelal("CONST_DBFIELD")("F_INV_Seiban")(1)
+        dicReplaceLabelTemp.Add 15, dicGenelal("CONST_DBFIELD")("F_INV_SBL")(1)
+        dicReplaceLabelTemp.Add 16, dicGenelal("CONST_DBFIELD")("F_INV_ML_No")(1)
+        dicReplaceLabelTemp.Add 17, dicGenelal("CONST_DBFIELD")("F_INV_Label_Type_Code")(1)
+        dicReplaceLabelTemp.Add 18, dicGenelal("CONST_DBFIELD")("F_INV_Current_Amount")(1)
+        dicReplaceLabelTemp.Add 19, dicGenelal("CONST_DBFIELD")("F_INV_Require_Amount")(1)
+'{14}   F_INV_Seiban
+'{15}   F_INV_SBL
+'{16}   F_INV_ML_No
+'{17}   F_INV_Label_Type_Code
+'{18}   F_INV_Current_Amount
+'{19}   F_INV_Requre_Amount
         'Replace実行、SQL設定
         clsADOLabelTemp.SQL = clsSQLBc.ReplaceParm(INV_CONST.SQL_INV_CREATE_LABEL_TEMP_TABLE, dicReplaceLabelTemp)
         'Writeフラグ立てる
