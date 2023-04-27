@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CSharp_DBHandle.CSDB_COMServer.Entity;
+using CSharp_DBHandle.CSDB_COMServer.Entitys;
 
 namespace CSDB_COMServer
 {

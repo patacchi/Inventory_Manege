@@ -5,7 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Data.OleDb;
 using Dapper;
-using CSharp_DBHandle.CSDB_COMServer.Entity;
+using CSharp_DBHandle.CSDB_COMServer.Entitys;
 using CSDB_COMServer.Utility;
 using SqlKata;
 using SqlKata.Compilers;
@@ -13,7 +13,7 @@ using SqlKata.Execution;
 
 namespace CSDB_COMServer
 {
-    public class DBUpdator<TEntity>
+    public class DBUpdaptor<TEntity>
     where TEntity: class
     {
         private List<object[]> listarrobjValues_;
@@ -25,7 +25,7 @@ namespace CSDB_COMServer
         /// List<Entityクラス>を引数にとり、カラム名一覧と値のObject配列のListメンバ変数にセットする
         /// </summary>
         /// <param name="listTEntiry">エンティティクラスのList、エンティティクラスはクラス名がテーブル名になってくること</param>
-        public DBUpdator(List<TEntity> listTEntiry)
+        public DBUpdaptor(List<TEntity> listTEntiry)
         {
             if (listTEntiry is null || listTEntiry.Count() == 0)
             {

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Data.OleDb;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Initialization;
-using CSharp_DBHandle.CSDB_COMServer.Entity;
+using CSharp_DBHandle.CSDB_COMServer.Entitys;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CSDB_COMServer

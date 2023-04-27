@@ -8,7 +8,7 @@ using System.IO;
 using System.Windows.Forms;
 using System.Text.Json.Nodes;
 using CSharp_DBHandle.CSDB_COMServer;
-using CSharp_DBHandle.CSDB_COMServer.Entity;
+using CSharp_DBHandle.CSDB_COMServer.Entitys;
 namespace CSharp_Bridge_Label
 {
     static class LabelFileRead
@@ -99,7 +99,7 @@ namespace CSharp_Bridge_Label
                 case ".lbl" :
                 //lblファイルだった場合(当面この拡張子のみ相手にする)
                 #if DEBUG
-                Console.WriteLine("処理対象ファイル： " + args[0]);
+                    Console.WriteLine("処理対象ファイル： " + args[0]);
                 #endif
                 //読み取った結果を格納する rLabelレコードのList
                 var listRecords = new List<rLabel>();
@@ -117,7 +117,9 @@ namespace CSharp_Bridge_Label
                         //空行を読み取った場合は何もせずに次のループへ
                         continue;
                     }
-                    Console.WriteLine(longRowCounter + " 行目の結果 " + oneline);
+                    #if DEBUG
+                        Console.WriteLine(longRowCounter + " 行目の結果 " + oneline);
+                    #endif
                     //結果を,をデリミタとして配列に格納
                     var varSpritText = oneline.Split(",");
                     //x 配列の結果をrLabelに入れていく
@@ -192,15 +194,16 @@ namespace CSharp_Bridge_Label
                         //リストに追加する
                         listTLabel.Add(currentRecord);
                 }
-                #if (DEBUG)
-                //得られたリストデータを元にDBにInsertする
-                var arrayResult =  listTLabel.ToArray();
-                //ColsValsを取得してみる
-                CSDB_COMServer.Utility.DataCasting castData = new CSDB_COMServer.Utility.DataCasting();
-                // var resultColsValues = castData.getColsValuesFromEntity(listTLabel);
-                CSDB_COMServer.DBUpdator<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.DBUpdator<T_INV_Label_Temp>(listTLabel);
+                //
+                CSDB_COMServer.DBUpdaptor<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.DBUpdaptor<T_INV_Label_Temp>(listTLabel);
                 dbUpTempLabel.DBUp();
+                #if (DEBUG)
                 {
+                    //得られたリストデータを元にDBにInsertする
+                    var arrayResult =  listTLabel.ToArray();
+                    //ColsValsを取得してみる
+                    CSDB_COMServer.Utility.DataCasting castData = new CSDB_COMServer.Utility.DataCasting();
+                    // var resultColsValues = castData.getColsValuesFromEntity(listTLabel);
                     //共通設定Jsonファイルの読み込みテスト
                     JSON_Parser jsonPars = new JSON_Parser();
                     JsonNode? resultJson = jsonPars.resultJsonNode;
@@ -210,20 +213,17 @@ namespace CSharp_Bridge_Label
                     }
                     else
                     Console.WriteLine("Json読み込みテスト" + resultJson["DBDefaultPath"]);
-                }
-                #endif
-                foreach (rLabel rElements in listRecords)
-                {
-                    //リストをループし、処理をする
-                    //ここでDBに登録？なりを行う
-                    #if (DEBUG)
+                
+                    foreach (rLabel rElements in listRecords)
                     {
+                        //リストをループし、処理をする
+                        //ここでDBに登録？なりを行う
                         Console.WriteLine(nameof(rElements.strGrantCode)+ " の値は " + rElements.strGrantCode.ToString());
                         Console.WriteLine(nameof(rElements.strMLCode) + " の値は " + rElements.strMLCode);
                         Console.WriteLine(nameof(rElements.longRequireAmount) + " の値は " + rElements.longRequireAmount);
                     }
-                    #endif
                 }
+                #endif
                 return;
                 // break;
                 default :

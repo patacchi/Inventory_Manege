@@ -1,17 +1,24 @@
 using FluentMigrator;
 using EasyMigrator;
+using CSDB_COMServer.Utility;
 using System.ComponentModel.DataAnnotations;
-namespace CSharp_DBHandle.CSDB_COMServer.Entity
-
+namespace CSharp_DBHandle.CSDB_COMServer.Entitys
 {
 
-    [Migration(20230403110003)]
+    [EnforceMigrationNumber(01,2023,04,27,11,18,"Daisuke Oota")]
     public class CreateNewTableOne : Migration
     {
         public override void Down()
         {
-            Delete.Table<T_INV_Label_Temp>();
-            Delete.Table("Log");
+            // Delete.Table<T_INV_Label_Temp>();
+            if (Schema.Table(nameof(T_INV_Label_Temp)).Exists())
+            {
+                Delete.Table(nameof(T_INV_Label_Temp));
+            }
+            if (Schema.Table("Log").Exists())
+            {
+                Delete.Table("Log");
+            }
             // throw new NotImplementedException();
         }
 
@@ -77,23 +84,6 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entity
             Create.Column(nameof(T_INV_Label_Temp.F_INV_Store_Code)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
             if (!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_INV_Tana_Local_Text)).Exists())
             Create.Column(nameof(T_INV_Label_Temp.F_INV_Tana_Local_Text)).OnTable(nameof(T_INV_Label_Temp)).AsString().Nullable();
-            
-/*             else
-            {
-                Alter.Table(nameof(T_INV_Label_Temp))
-                    .AlterColumn(nameof(T_INV_Label_Temp.F_Seq))
-                        .AsInt32().Identity();
-                Alter.Table(nameof(T_INV_Label_Temp))
-                    .AlterColumn(nameof(T_INV_Label_Temp.F_INV_Label_Status))
-                        .AsString();
-                if (!Schema.Table(nameof(T_INV_Label_Temp)).Column("TestAddColumn").Exists())
-                {
-                    Alter.Table(nameof(T_INV_Label_Temp))
-                        .AddColumn("TestAddColumn")
-                        .AsInt32()
-                        .Nullable();
-                }
-            } */
             //Logテーブルも作成してみる
             if (!Schema.Table("Log").Exists())
             {
