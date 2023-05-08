@@ -2,7 +2,7 @@ using FluentMigrator;
 using EasyMigrator;
 using CSDB_COMServer.Utility;
 using System.ComponentModel.DataAnnotations;
-namespace CSharp_DBHandle.CSDB_COMServer.Entitys
+namespace CSDB_COMServer.Entitys
 {
 
     [EnforceMigrationNumber(01,2023,04,27,11,18,"Daisuke Oota")]
@@ -93,8 +93,9 @@ namespace CSharp_DBHandle.CSDB_COMServer.Entitys
             }
         }
     }
+    
     [Name("T_INV_Label_Temp")]
-    public class T_INV_Label_Temp
+    public partial class T_INV_Label_Temp
     {
         public enum enumLabelType
         {

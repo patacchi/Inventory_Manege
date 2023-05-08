@@ -5,7 +5,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Data.OleDb;
 using Dapper;
-using CSharp_DBHandle.CSDB_COMServer.Entitys;
+using CSDB_COMServer.Entitys;
 using CSDB_COMServer.Utility;
 using SqlKata;
 using SqlKata.Compilers;

@@ -1,4 +1,4 @@
-namespace CSharp_DBHandle.CSDB_COMServer.Entitys
+namespace CSDB_COMServer.Entitys
 
 {
     /// <summary>

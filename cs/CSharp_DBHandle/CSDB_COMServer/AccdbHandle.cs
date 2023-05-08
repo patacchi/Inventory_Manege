@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Dapper;
 using System.Data.SQLite;
 
-namespace CSharp_DBHandle.CSDB_COMServer
+namespace CSDB_COMServer
 {
     [ComVisible(true)]
     [Guid(ContractGuids.ACCDBServerClass)]

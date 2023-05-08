@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
 using System.Text.Json.Nodes;
-using CSharp_DBHandle.CSDB_COMServer;
-using CSharp_DBHandle.CSDB_COMServer.Entitys;
+using CSDB_COMServer;
+using CSDB_COMServer.Entitys;
 namespace CSharp_Bridge_Label
 {
     static class LabelFileRead

@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-namespace CSharp_DBHandle.CSDB_COMServer.Entitys
+namespace CSDB_COMServer.Entitys
 
 {
     public class JSON_Parser
