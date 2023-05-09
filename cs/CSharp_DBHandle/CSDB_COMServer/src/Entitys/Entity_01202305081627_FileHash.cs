@@ -12,20 +12,26 @@ namespace CSDB_COMServer.Entitys
     {
         public override void Down()
         {
-            throw new NotImplementedException();
+            if(Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_FileHash)).Exists())
+            {
+                Delete.Column(nameof(T_INV_Label_Temp.F_FileHash)).FromTable(nameof(T_INV_Label_Temp));
+            }
         }
 
         public override void Up()
         {
-            throw new NotImplementedException();
+            if(!Schema.Table(nameof(T_INV_Label_Temp)).Column(nameof(T_INV_Label_Temp.F_FileHash)).Exists())
+            {
+                Create.Column(nameof(T_INV_Label_Temp.F_FileHash)).OnTable(nameof(T_INV_Label_Temp)).AsString(64).Nullable();
+            }
         }
     }
     public partial class T_INV_Label_Temp
     {
         /// <summary>
-        /// 格納するファイルのハッシュ SHA512で求める
+        /// 格納するファイルのハッシュ
         /// </summary>
-        /// <value>16進表記の文字列とする</value>
+        /// <value>SHA512で求めて、16進表記の文字列とする</value>
         public string? F_FileHash {get;set;} = string.Empty;
     }
 }
