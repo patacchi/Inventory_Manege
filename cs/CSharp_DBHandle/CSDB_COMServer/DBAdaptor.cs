@@ -46,6 +46,7 @@ namespace CSDB_COMServer
         {
             ConStringBuilder conBuilder = new ConStringBuilder();
             string strConString =  conBuilder.GetACCDB_TempDBConString();
+            // strConString =  conBuilder.GetSqlite_TempDBConString();
             var conFatcoty = new SqlConnectionFactory(strConString,EnumDBType.ACCDB);
             var connection =await conFatcoty.CreateConnectionAsync();
             var sqlCompiler = new SqlKata.Compilers.SqlServerCompiler();

@@ -21,13 +21,14 @@ namespace CSDB_COMServer
         }
         public static void CheckDB()
         {
-            using (var serviceProvider = CreateServices())
+            ConStringBuilder conBuilder = new ConStringBuilder();         
+            using (var serviceProvider = CreateServices(conBuilder.GetSqlite_TempDBConString()))
             using (var scope = serviceProvider.CreateScope())
             {
                 Updatedatabase(scope.ServiceProvider);
             }
             //接続文字列取得
-            ConStringBuilder conBuilder = new ConStringBuilder();         
+            // ConStringBuilder conBuilder = new ConStringBuilder();         
             using (var serviceProviderAccdb = CreateServicesAccDB(conBuilder.GetACCDB_TempDBConString()))    
             using ( var scopeAccdb = serviceProviderAccdb.CreateScope())
             {
@@ -39,7 +40,7 @@ namespace CSDB_COMServer
         /// Dependency Injection 初期設定
         /// </summary>
         /// <returns></returns>
-        private static ServiceProvider CreateServices()
+        private static ServiceProvider CreateServices(string strConnection)
         {
             return new ServiceCollection()
             //Add common FluentMigrator servives
@@ -48,7 +49,8 @@ namespace CSDB_COMServer
             //Add Sqlite supoort to FluentMigrator
             .AddSQLite()
             //接続文字列作成
-            .WithGlobalConnectionString("Data source=test.sqlite3")
+            // .WithGlobalConnectionString("Data source=test.sqlite3")
+            .WithGlobalConnectionString(strConnection)
             //マイグレーションに使用するアセンブリを指定する
             .ScanIn(typeof(T_INV_Label_Temp).Assembly).For.Migrations())
         // コンソールログ有効化

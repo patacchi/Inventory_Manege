@@ -69,12 +69,17 @@ namespace CSDB_COMServer
             {
                 return (string.Empty);
             }
-            if ((jsonNodeGlobal["SqliteTempDBPath"] is null))
+            if ((jsonNodeGlobal["SqliteTempDBPath"] is null) || ((jsonNodeGlobal["SqliteConString"]) is null))
             {
                 return (string.Empty);
             }
-            
-            return new NotImplementedException().ToString();
+            //置換操作用の StringBuilderを用意する
+            System.Text.StringBuilder sbSqlite = new System.Text.StringBuilder();
+            //パラメータ置換用の配列を準備(Sqliteファイルパス)
+            object[] arrParm = {Convert.ToString(jsonNodeGlobal["SqliteTempDBPath"])!};
+            //ひな形のパラメータ置換を実行して、結果として返す
+            return sbSqlite.AppendFormat(Convert.ToString(jsonNodeGlobal["SqliteConString"])!,arrParm).ToString();
+            // return new NotImplementedException().ToString();
         }
     }
 }
