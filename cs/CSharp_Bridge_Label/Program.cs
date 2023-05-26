@@ -195,8 +195,8 @@ namespace CSharp_Bridge_Label
                         listTLabel.Add(currentRecord);
                 }
                 //
-                CSDB_COMServer.DBUpdaptor<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.DBUpdaptor<T_INV_Label_Temp>(listTLabel);
-                dbUpTempLabel.DBUp();
+                CSDB_COMServer.EntityUpdator<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.EntityUpdator<T_INV_Label_Temp>(listTLabel);
+                dbUpTempLabel.DBUp(CSDB_COMServer.EnumDBType.SQLite);
                 #if (DEBUG)
                 {
                     //得られたリストデータを元にDBにInsertする

@@ -13,7 +13,7 @@ using SqlKata.Execution;
 
 namespace CSDB_COMServer
 {
-    public class DBUpdaptor<TEntity>
+    public class EntityUpdator<TEntity>
     where TEntity: class
     {
         private List<object[]> listarrobjValues_;
@@ -25,7 +25,7 @@ namespace CSDB_COMServer
         /// List<Entityクラス>を引数にとり、カラム名一覧と値のObject配列のListメンバ変数にセットする
         /// </summary>
         /// <param name="listTEntiry">エンティティクラスのList、エンティティクラスはクラス名がテーブル名になってくること</param>
-        public DBUpdaptor(List<TEntity> listTEntiry)
+        public EntityUpdator(List<TEntity> listTEntiry)
         {
             if (listTEntiry is null || listTEntiry.Count() == 0)
             {
@@ -42,7 +42,7 @@ namespace CSDB_COMServer
             this.liststrColumns_ = colsVals.listColumuns;
             this.listarrobjValues_ = colsVals.listValues;
         }
-       public async void DBUp()
+       public async void DBUp(EnumDBType dbTypeEnum_)
         {
             ConStringBuilder conBuilder = new ConStringBuilder();
             string strConString =  conBuilder.GetACCDB_TempDBConString();
@@ -58,6 +58,7 @@ namespace CSDB_COMServer
             var Query_ = new Query(this.strTableName)
             .AsInsert(liststrColumns_,listarrobjValues_);
             SqlResult result = sqlCompiler.Compile(Query_);
+            
             /*
             #if DEBUG
             {

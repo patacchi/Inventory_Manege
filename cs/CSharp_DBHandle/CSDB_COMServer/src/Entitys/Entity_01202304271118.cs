@@ -95,7 +95,7 @@ namespace CSDB_COMServer.Entitys
     }
     
     [Name("T_INV_Label_Temp")]
-    public partial class T_INV_Label_Temp
+    public partial class T_INV_Label_Temp :IEquatable<T_INV_Label_Temp>
     {
         public enum enumLabelType
         {
@@ -104,6 +104,8 @@ namespace CSDB_COMServer.Entitys
             出庫 = 6,
             直行_後送 = 7
         }
+
+        #region ColumnField
         /// <summary>
         /// オートインクリメント型のプライマリーキー
         /// </summary>
@@ -218,6 +220,16 @@ namespace CSDB_COMServer.Entitys
         /// </summary>
         /// <value></value>
         public Int32? F_INV_Require_Amount {get;set;} = 0;
+        #endregion 
+
+        public bool Equals(T_INV_Label_Temp? other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+            
+        }
     }
 
 }
