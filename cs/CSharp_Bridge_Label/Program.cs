@@ -9,11 +9,13 @@ using System.Windows.Forms;
 using System.Text.Json.Nodes;
 using CSDB_COMServer;
 using CSDB_COMServer.Entitys;
+using CSDB_COMServer.Utility;
 namespace CSharp_Bridge_Label
 {
     static class LabelFileRead
     {
         private  const string PREFIX_SAVEPOINT_LABEL = "_SysLabel";
+        #region record_LabelFile
         /// <summary>
         /// ラベルファイルのフィールド構成を記録したRecord
         /// </summary>
@@ -58,7 +60,7 @@ namespace CSharp_Bridge_Label
             string strKishu,
             long longNoItemFlag,
             string strCustomerSeiban);
-
+        #endregion record_LabelFile
         /// <summary>
         /// メインプログラムです
         /// </summary>
@@ -88,7 +90,7 @@ namespace CSharp_Bridge_Label
             if (!System.IO.File.Exists(args[0]))
             {
                 Console.WriteLine("File not found " + args[0]);
-                System.Windows.Forms.MessageBox.Show("指定されたファイル " + 
+                MessageBox.Show("指定されたファイル " + 
                 args[0] + " が見つかりませんでした。");
                 return;
             }
@@ -101,6 +103,13 @@ namespace CSharp_Bridge_Label
                 #if DEBUG
                     Console.WriteLine("処理対象ファイル： " + args[0]);
                 #endif
+                //ファイルハッシュを求める
+                string strFileHash;
+                using (System.IO.FileStream fs = new System.IO.FileStream(args[0],FileMode.Open,FileAccess.Read,FileShare.Read))
+                {
+                    //filestreamよりハッシュを求める
+                    strFileHash = FileHashCalc.CreateSHA512String(fs);
+                }
                 //読み取った結果を格納する rLabelレコードのList
                 var listRecords = new List<rLabel>();
                 List<T_INV_Label_Temp> listTLabel = new List<T_INV_Label_Temp>();
@@ -191,6 +200,8 @@ namespace CSharp_Bridge_Label
                         currentRecord.F_INV_Store_Code = "StoreCode";
                         //SavePointは固有のプレフィックス _Sys_Label を付与する
                         currentRecord.F_INV_Label_Savepoint = PREFIX_SAVEPOINT_LABEL + DateTime.Now.ToString("yyyyMMddHHmmss");
+                        //FileHash
+                        currentRecord.F_FileHash = strFileHash;
                         //リストに追加する
                         listTLabel.Add(currentRecord);
                 }

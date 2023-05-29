@@ -228,8 +228,13 @@ namespace CSDB_COMServer.Entitys
             {
                 return false;
             }
-            
+            //引数を比較対象クラスでキャストする
+            T_INV_Label_Temp otherclass = (T_INV_Label_Temp)other;
+            //Entityクラス同士が同一である条件
+            //FileHash,
+            return (this.F_FileHash == otherclass.F_FileHash && this.F_InputDate == otherclass.F_InputDate);
         }
+
     }
 
 }
