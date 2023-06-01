@@ -112,6 +112,7 @@ namespace CSDB_COMServer.Entitys
         /// <value></value>
         [Pk]
         [AutoInc(int.MinValue,1)]
+        [NotIncludingValueList]
         public int F_Seq{get;set;}
         /// <summary>
         /// ラベルの印刷状態などのフラグを立てたUInt64
