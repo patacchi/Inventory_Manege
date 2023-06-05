@@ -95,7 +95,7 @@ namespace CSDB_COMServer.Entitys
     }
     
     [Name("T_INV_Label_Temp")]
-    public partial class T_INV_Label_Temp
+    public partial class T_INV_Label_Temp :IEquatable<T_INV_Label_Temp>
     {
         public enum enumLabelType
         {
@@ -104,12 +104,15 @@ namespace CSDB_COMServer.Entitys
             出庫 = 6,
             直行_後送 = 7
         }
+
+        #region ColumnField
         /// <summary>
         /// オートインクリメント型のプライマリーキー
         /// </summary>
         /// <value></value>
         [Pk]
         [AutoInc(int.MinValue,1)]
+        [NotIncludingValueList]
         public int F_Seq{get;set;}
         /// <summary>
         /// ラベルの印刷状態などのフラグを立てたUInt64
@@ -218,6 +221,21 @@ namespace CSDB_COMServer.Entitys
         /// </summary>
         /// <value></value>
         public Int32? F_INV_Require_Amount {get;set;} = 0;
+        #endregion 
+
+        public bool Equals(T_INV_Label_Temp? other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+            //引数を比較対象クラスでキャストする
+            T_INV_Label_Temp otherclass = (T_INV_Label_Temp)other;
+            //Entityクラス同士が同一である条件
+            //FileHash,
+            return (this.F_FileHash == otherclass.F_FileHash && this.F_InputDate == otherclass.F_InputDate);
+        }
+
     }
 
 }

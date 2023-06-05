@@ -31,7 +31,7 @@ namespace CSDB_COMServer.Entitys
         /// <summary>
         /// 格納するファイルのハッシュ
         /// </summary>
-        /// <value>SHA512で求めて、16進表記の文字列とする</value>
+        /// <value>SHA512で求めて、16進表記の文字列とする(文字列数 128)</value>
         public string? F_FileHash {get;set;} = string.Empty;
     }
 }

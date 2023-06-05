@@ -13,9 +13,10 @@ using SqlKata.Execution;
 
 namespace CSDB_COMServer
 {
-    public class DBUpdaptor<TEntity>
+    public class EntityUpdator<TEntity>
     where TEntity: class
     {
+        private List<TEntity> listEntity_;
         private List<object[]> listarrobjValues_;
         private List<string> liststrColumns_;
         private string strTableName;
@@ -25,13 +26,15 @@ namespace CSDB_COMServer
         /// List<Entityクラス>を引数にとり、カラム名一覧と値のObject配列のListメンバ変数にセットする
         /// </summary>
         /// <param name="listTEntiry">エンティティクラスのList、エンティティクラスはクラス名がテーブル名になってくること</param>
-        public DBUpdaptor(List<TEntity> listTEntiry)
+        public EntityUpdator(List<TEntity> listTEntiry)
         {
             if (listTEntiry is null || listTEntiry.Count() == 0)
             {
                 //引数がNullもしくは長さ0のリストだった場合
                 throw new ArgumentNullException();
             }
+            //エンティティクラスのListをメンバ変数へセット
+            listEntity_ = listTEntiry;
             //中身有りの場合は、クラス名がテーブル名になっているはずなのでメンバ変数テーブル名セット
             this.strTableName = typeof(TEntity).Name;
             //ここでテーブル・フィールド存在チェック(無ければ作成)する？
@@ -42,18 +45,15 @@ namespace CSDB_COMServer
             this.liststrColumns_ = colsVals.listColumuns;
             this.listarrobjValues_ = colsVals.listValues;
         }
-       public async void DBUp()
+       public async void DBUp(EnumDBType dbTypeEnum_)
         {
             ConStringBuilder conBuilder = new ConStringBuilder();
-            string strConString =  conBuilder.GetACCDB_TempDBConString();
-            // strConString =  conBuilder.GetSqlite_TempDBConString();
-            var conFatcoty = new SqlConnectionFactory(strConString,EnumDBType.ACCDB);
+            // string strConString =  conBuilder.GetACCDB_TempDBConString();
+            string strConString =  conBuilder.GetSqlite_TempDBConString();
+            // var conFatcoty = new SqlConnectionFactory(strConString,EnumDBType.ACCDB);
+            var conFatcoty = new SqlConnectionFactory(strConString,EnumDBType.SQLite);
             var connection =await conFatcoty.CreateConnectionAsync();
-            var sqlCompiler = new SqlKata.Compilers.SqlServerCompiler();
-            var db = new QueryFactory(connection,sqlCompiler);
-            db.Query(strTableName)
-            .AsInsert(liststrColumns_,listarrobjValues_);
-
+            var sqlCompiler = new SqlKata.Compilers.SqliteCompiler();
             //コンストラクタで得たテーブル名とColsValsを元にクエリ構築
             var Query_ = new Query(this.strTableName)
             .AsInsert(liststrColumns_,listarrobjValues_);
@@ -65,6 +65,16 @@ namespace CSDB_COMServer
             }
             #endif
             */
+            // 得られたSQLを利用して、INSERT実行
+            //パラメータリストを作成する
+            var parms = new DynamicParameters();
+            for (int intCounter = 0;intCounter <= result.Bindings.Count() -1 ;intCounter++)
+            {
+                //パラメータ名は p{連番} となっている
+                parms.Add($"p{intCounter.ToString()}",result.Bindings[intCounter]);
+            }
+            var rows = connection.Execute(result.Sql,parms);
+
         }
     }
 }
