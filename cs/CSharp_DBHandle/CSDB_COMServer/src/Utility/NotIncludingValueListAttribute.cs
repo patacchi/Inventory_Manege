@@ -9,7 +9,10 @@ namespace CSDB_COMServer.Utility
     public class NotIncludingValueListAttribute :System.Attribute
     {
         private bool _isNotInclude;
-        public NotIncludingValueListAttribute(){}
+        public NotIncludingValueListAttribute()
+        {
+            _isNotInclude = true;
+        }
         public NotIncludingValueListAttribute(bool? isNotInclude = true)
         {
             _isNotInclude = (bool)isNotInclude!;
