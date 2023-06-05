@@ -3,9 +3,6 @@ using System.Data;
 namespace CSDB_COMServer
 {
     /// <summary>
-    /// Entity モデルクラスを受け取り、DBにアップデートするクラス
-    /// </summary>
-    /// <summary>
     /// Connection作成に使うインターフェース
     /// </summary>
     public interface IDatabaseConnectionFactory
@@ -18,6 +15,9 @@ namespace CSDB_COMServer
         ACCDB = 2,
         SQLLocalDB = 3
     }
+    /// <summary>
+    /// 
+    /// </summary>
     public class SqlConnectionFactory:IDatabaseConnectionFactory
     {
         private readonly string _connectionString;
