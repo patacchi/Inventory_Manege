@@ -1,7 +1,6 @@
 using FluentMigrator;
 using EasyMigrator;
 using CSDB_COMServer.Utility;
-using System.ComponentModel.DataAnnotations;
 namespace CSDB_COMServer.Entitys
 {
 

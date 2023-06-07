@@ -180,7 +180,9 @@ namespace CSharp_Bridge_Label
                         currentRecord.F_INV_Seiban = varSpritText[1];
                         currentRecord.F_INV_SBL = varSpritText[3];
                         currentRecord.F_INV_ML_No = varSpritText[4];
-                        currentRecord.F_INV_Tana_Local_Text = varSpritText[9];
+                        //ラベルファイルから取得できる棚番はSystemとして扱う
+                        //currentRecord.F_INV_Tana_Local_Text = varSpritText[9];
+                        currentRecord.F_INV_Tana_System_Text = varSpritText[9];
                         currentRecord.F_INV_Tehai_Code = varSpritText[7];
                         currentRecord.F_INV_OrderNumber = varSpritText[5];
                         currentRecord.F_INV_Current_Amount = Convert.ToInt32(varSpritText[14]);
@@ -198,6 +200,8 @@ namespace CSharp_Bridge_Label
                         currentRecord.F_INV_Label_Remark_1 = "Remark1";
                         currentRecord.F_INV_Label_Remark_2 = "Remark2";
                         currentRecord.F_INV_Store_Code = "StoreCode";
+                        //TanaMasterに関しても後で
+                        currentRecord.F_INV_Tana_Local_Text = "Tana_Local";
                         //SavePointは固有のプレフィックス _Sys_Label を付与する
                         currentRecord.F_INV_Label_Savepoint = PREFIX_SAVEPOINT_LABEL + DateTime.Now.ToString("yyyyMMddHHmmss");
                         //FileHash
@@ -207,6 +211,7 @@ namespace CSharp_Bridge_Label
                 }
                 //
                 CSDB_COMServer.EntityUpdator<T_INV_Label_Temp> dbUpTempLabel = new CSDB_COMServer.EntityUpdator<T_INV_Label_Temp>(listTLabel);
+                //Entityクラスのリストを
                 dbUpTempLabel.DBUp(CSDB_COMServer.EnumDBType.SQLite);
                 #if (DEBUG)
                 {
