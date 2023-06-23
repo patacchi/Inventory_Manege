@@ -205,6 +205,7 @@ namespace CSDB_COMServer.Entitys
         public string? F_INV_ML_No { get; set; } = string.Empty;
         /// <summary>
         /// ラベル種別のコード、別途マスターが必要→Enumで指定した
+        /// 後送のラベルは、ここのコードと欠品フラグに0以外の数値が入っている
         /// </summary>
         /// <value></value>
         [DbType(System.Data.DbType.Int32)]
@@ -231,7 +232,7 @@ namespace CSDB_COMServer.Entitys
             //引数を比較対象クラスでキャストする
             T_INV_Label_Temp otherclass = (T_INV_Label_Temp)other;
             //Entityクラス同士が同一である条件
-            //FileHash,
+            //FileHash,InputDateが同じである
             return (this.F_FileHash == otherclass.F_FileHash && this.F_InputDate == otherclass.F_InputDate);
         }
 
