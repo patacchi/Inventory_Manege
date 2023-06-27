@@ -233,7 +233,10 @@ namespace CSDB_COMServer.Entitys
             T_INV_Label_Temp otherclass = (T_INV_Label_Temp)other;
             //Entityクラス同士が同一である条件
             //FileHash,InputDateが同じである
-            return (this.F_FileHash == otherclass.F_FileHash && this.F_InputDate == otherclass.F_InputDate);
+            return (
+                (this.F_FileHash ?? "null") == (otherclass.F_FileHash ?? "null")
+             && (this.F_InputDate ?? "null") == (otherclass.F_InputDate ?? "null")
+             );
         }
 
     }
